@@ -23,7 +23,7 @@ export function NowPage({ model }: NowPageProps) {
       <div className={`app-canvas__content ${styles.content}`}>
         <SystemRail {...model.rail} />
         {model.banner ? <AttentionBanner {...model.banner} /> : null}
-        <AvailableEvidenceExperience hero={model.hero} />
+        <AvailableEvidenceExperience evidence={model.evidence} hero={model.hero} />
         <StabilityStatement {...model.stability} />
         <ActionStrip {...model.actions} />
 

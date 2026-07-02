@@ -3,13 +3,14 @@
 import { useRef, useState } from "react";
 import { Hero, type HeroProps } from "../../../design-system/composites/Hero";
 import { AvailableEvidenceSheet } from "./AvailableEvidenceSheet";
-import { availableEvidenceFixture } from "./fixtures";
+import type { EvidenceBreakdown } from "./model";
 
 export interface AvailableEvidenceExperienceProps {
   hero: HeroProps;
+  evidence: EvidenceBreakdown;
 }
 
-export function AvailableEvidenceExperience({ hero }: AvailableEvidenceExperienceProps) {
+export function AvailableEvidenceExperience({ evidence, hero }: AvailableEvidenceExperienceProps) {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const availableTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -22,7 +23,7 @@ export function AvailableEvidenceExperience({ hero }: AvailableEvidenceExperienc
         valueActionLabel="Ver evidencia del disponible"
       />
       <AvailableEvidenceSheet
-        model={availableEvidenceFixture}
+        model={evidence}
         onOpenChange={setEvidenceOpen}
         open={evidenceOpen}
         returnFocusRef={availableTriggerRef}

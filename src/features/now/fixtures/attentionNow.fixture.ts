@@ -1,4 +1,5 @@
 import type { NowViewModel } from "../model";
+import { availableEvidenceFixture } from "../evidence/fixtures";
 
 export const attentionNowFixture = {
   rail: {
@@ -27,6 +28,7 @@ export const attentionNowFixture = {
       state: "atRisk",
     },
   },
+  evidence: availableEvidenceFixture,
   stability: {
     children: "Conviene cubrir este pago antes de hacer otra compra importante.",
     container: "none",

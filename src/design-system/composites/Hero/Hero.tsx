@@ -14,6 +14,7 @@ export type HeroTone = "raised" | "state-raised";
 interface HeroBaseProps {
   stateText: string;
   valueLabel: string;
+  inlineNote?: string;
   tone?: HeroTone;
   className?: string;
   onValueClick?: () => void;
@@ -48,6 +49,7 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
     scenario,
     stateText,
     valueLabel,
+    inlineNote,
     tone = "raised",
     className,
     ...props
@@ -65,7 +67,7 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
     <NumericValue
       {...(valuePrefix !== undefined ? { prefix: valuePrefix } : {})}
       size="xl"
-      state={scenario === "incomplete" ? "unavailable" : "confirmed"}
+      state={scenario === "incomplete" ? (value ? "partial" : "unavailable") : "confirmed"}
       tone={scenario === "attention" ? "attention" : "neutral"}
       value={value ?? ""}
     />
@@ -106,6 +108,11 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
           <Label size="m" tone="secondary">
             {valueLabel}
           </Label>
+          {inlineNote ? (
+            <Label as="p" className={styles.inlineNote} size="s" tone="tertiary">
+              {inlineNote}
+            </Label>
+          ) : null}
         </div>
       )}
 

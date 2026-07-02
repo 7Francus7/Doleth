@@ -44,6 +44,10 @@
   margin-top: var(--space-16);
 }
 
+.inlineNote {
+  margin: var(--space-4) 0 0;
+}
+
 .coverageGroup {
   display: flex;
   width: 100%;

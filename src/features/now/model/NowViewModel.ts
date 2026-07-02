@@ -6,11 +6,13 @@ import type { InformationBlockProps } from "../../../design-system/composites/In
 import type { ReserveBlockProps } from "../../../design-system/composites/ReserveBlock";
 import type { StabilityStatementProps } from "../../../design-system/composites/StabilityStatement";
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
+import type { EvidenceBreakdown } from "../evidence/model";
 
 export interface NowViewModel {
   rail: Pick<SystemRailProps, "items" | "state" | "wrap">;
   banner: Omit<AttentionBannerProps, "className" | "onAction"> | null;
   hero: HeroProps;
+  evidence: EvidenceBreakdown;
   stability: Pick<StabilityStatementProps, "children" | "container" | "kind">;
   actions: Omit<ActionStripProps, "className" | "onAction">;
   position: {

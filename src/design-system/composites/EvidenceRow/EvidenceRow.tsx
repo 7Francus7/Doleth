@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Label } from "../../primitives/Label";
-import { NumericValue } from "../../primitives/NumericValue";
+import { NumericValue, type NumericValueState } from "../../primitives/NumericValue";
 import styles from "./EvidenceRow.module.css";
 
 export type EvidenceRowKind = "neutral" | "positive" | "negative" | "total";
@@ -11,6 +11,7 @@ export interface EvidenceRowProps {
   valuePrefix?: string;
   sign?: "+" | "-";
   kind?: EvidenceRowKind;
+  state?: NumericValueState;
   expandable?: boolean;
   expanded?: boolean;
   children?: ReactNode;
@@ -23,6 +24,7 @@ function EvidenceRowContent({
   valuePrefix,
   sign,
   kind = "neutral",
+  state = "confirmed",
   expandable = false,
 }: Omit<EvidenceRowProps, "children" | "className" | "expanded">) {
   const prefix = `${sign ?? ""}${valuePrefix ?? ""}`;
@@ -36,6 +38,7 @@ function EvidenceRowContent({
         <NumericValue
           {...(prefix ? { prefix } : {})}
           size={kind === "total" ? "lg" : "md"}
+          state={state}
           value={value}
         />
         {expandable ? <span aria-hidden="true" className={styles.chevron} /> : null}

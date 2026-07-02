@@ -51,8 +51,11 @@ export const AttentionRaised: Story = {
 export const Incomplete: Story = {
   args: {
     scenario: "incomplete",
-    stateText: "Falta confirmar información.",
-    valueLabel: "Disponible sin confirmar",
+    stateText: "Hace falta confirmar saldo principal",
+    value: "432.180",
+    valuePrefix: "$",
+    valueLabel: "No confirmado",
+    inlineNote: "Último valor hace 19 h",
     coverage: {
       title: "Próximos 7 días",
       value: 64,

@@ -1,7 +1,7 @@
-import { stableNowFixture } from "../../fixtures";
 import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../model";
 
 const availableEvidence = {
+  status: "complete",
   title: "Disponible",
   subtitle: "Se calcula así",
   lines: [
@@ -40,5 +40,5 @@ const availableEvidence = {
 
 export const availableEvidenceFixture = validateEvidenceBreakdown(
   availableEvidence,
-  stableNowFixture.hero.value,
+  "432.180",
 );
