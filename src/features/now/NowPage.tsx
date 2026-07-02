@@ -1,4 +1,5 @@
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
+import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { InformationBlock } from "../../design-system/composites/InformationBlock";
 import { ReserveBlock } from "../../design-system/composites/ReserveBlock";
@@ -21,6 +22,7 @@ export function NowPage({ model }: NowPageProps) {
       <h1 className={styles.screenTitle}>Ahora</h1>
       <div className={`app-canvas__content ${styles.content}`}>
         <SystemRail {...model.rail} />
+        {model.banner ? <AttentionBanner {...model.banner} /> : null}
         <AvailableEvidenceExperience hero={model.hero} />
         <StabilityStatement {...model.stability} />
         <ActionStrip {...model.actions} />
@@ -43,10 +45,10 @@ export function NowPage({ model }: NowPageProps) {
           </div>
         </Surface>
 
-        {model.reserve ? <ReserveBlock {...model.reserve} /> : null}
         <div id="evidence">
           <InformationBlock {...model.information} />
         </div>
+        {model.reserve ? <ReserveBlock {...model.reserve} /> : null}
       </div>
     </main>
   );

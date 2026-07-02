@@ -1,4 +1,5 @@
 import type { ActionStripProps } from "../../../design-system/composites/ActionStrip";
+import type { AttentionBannerProps } from "../../../design-system/composites/AttentionBanner";
 import type { FinancialRowProps } from "../../../design-system/composites/FinancialRow";
 import type { HeroProps } from "../../../design-system/composites/Hero";
 import type { InformationBlockProps } from "../../../design-system/composites/InformationBlock";
@@ -8,6 +9,7 @@ import type { SystemRailProps } from "../../../design-system/composites/SystemRa
 
 export interface NowViewModel {
   rail: Pick<SystemRailProps, "items" | "state" | "wrap">;
+  banner: Omit<AttentionBannerProps, "className" | "onAction"> | null;
   hero: HeroProps;
   stability: Pick<StabilityStatementProps, "children" | "container" | "kind">;
   actions: Omit<ActionStripProps, "className" | "onAction">;

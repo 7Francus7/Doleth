@@ -1,34 +1,40 @@
 import type { NowViewModel } from "../model";
 
-export const stableNowFixture = {
+export const attentionNowFixture = {
   rail: {
     items: ["Actualizado hace 2 min", "ARS", "Personal", "Información completa"],
     state: "complete",
     wrap: "truncate",
   },
-  banner: null,
+  banner: {
+    title: "Necesita atención hoy",
+    detail: "Vence tu tarjeta Visa mañana y faltan $57.820.",
+    actionLabel: "Resolver ahora",
+    actionId: "resolve",
+  },
   hero: {
-    scenario: "stable",
-    stateText: "Hoy estás tranquilo.",
+    scenario: "attention",
+    stateText: "Necesita atención",
     value: "432.180",
     valuePrefix: "$",
-    valueLabel: "Disponibles para usar",
+    valueLabel: "Disponibles hasta el viernes",
+    tone: "state-raised",
     coverage: {
       title: "Próximos 7 días",
-      value: 100,
-      leftSummary: "Cobertura completa",
-      rightSummary: "$57.820 cubiertos",
-      state: "stable",
+      value: 62,
+      leftSummary: "Cobertura en riesgo",
+      rightSummary: "$57.820 pendientes",
+      state: "atRisk",
     },
   },
   stability: {
-    children: "No hay riesgos inmediatos.",
+    children: "Conviene cubrir este pago antes de hacer otra compra importante.",
     container: "none",
-    kind: "neutral",
+    kind: "attention",
   },
   actions: {
-    primary: "register",
-    primaryLabel: "Registrar movimiento",
+    primary: "resolve",
+    primaryLabel: "Resolver ahora",
     secondaryActions: [
       { id: "pay", label: "Pagar" },
       { id: "move", label: "Mover" },
@@ -45,6 +51,15 @@ export const stableNowFixture = {
       { label: "No disponible", value: "430.000", valuePrefix: "$" },
     ],
   },
+  information: {
+    title: "Cómo sabemos esto",
+    primaryLine: "La información continúa completa y actualizada.",
+    causalLine:
+      "Incluye $610.000 líquidos, menos $120.000 reservados y $57.820 en pagos próximos.",
+    linkLabel: "Ver evidencia",
+    linkHref: "#evidence",
+    state: "complete",
+  },
   reserve: {
     title: "Dinero reservado",
     amount: "120.000",
@@ -52,14 +67,5 @@ export const stableNowFixture = {
     purposeLine: "Separado del disponible para compromisos y objetivos activos.",
     priority: "normal",
     state: "active",
-  },
-  information: {
-    title: "Cómo sabemos esto",
-    primaryLine: "La información está completa.",
-    causalLine:
-      "Incluye $610.000 líquidos, menos $120.000 reservados y $57.820 en pagos próximos.",
-    linkLabel: "Ver evidencia",
-    linkHref: "#evidence",
-    state: "complete",
   },
 } satisfies NowViewModel;
