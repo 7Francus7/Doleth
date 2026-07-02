@@ -1,0 +1,58 @@
+"use client";
+
+import { BottomSheet } from "../../../design-system/composites/BottomSheet";
+import { EvidenceRow } from "../../../design-system/composites/EvidenceRow";
+import { SystemRail } from "../../../design-system/composites/SystemRail";
+import { Divider } from "../../../design-system/primitives/Divider";
+import type { RefObject } from "react";
+import type { EvidenceBreakdown } from "./model";
+import styles from "./AvailableEvidenceSheet.module.css";
+
+export interface AvailableEvidenceSheetProps {
+  model: EvidenceBreakdown;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
+}
+
+export function AvailableEvidenceSheet({
+  model,
+  open,
+  onOpenChange,
+  returnFocusRef,
+}: AvailableEvidenceSheetProps) {
+  return (
+    <BottomSheet
+      onOpenChange={onOpenChange}
+      open={open}
+      {...(returnFocusRef ? { returnFocusRef } : {})}
+      subtitle={model.subtitle}
+      title={model.title}
+    >
+      <div className={styles.breakdown}>
+        <div className={styles.lines}>
+          {model.lines.map((line, index) => (
+            <div className={styles.line} key={line.id}>
+              {index > 0 ? <Divider /> : null}
+              <EvidenceRow
+                kind={line.amount < 0 ? "negative" : "neutral"}
+                label={line.label}
+                {...(line.sign ? { sign: line.sign } : {})}
+                value={line.displayValue}
+                valuePrefix={line.valuePrefix}
+              />
+            </div>
+          ))}
+        </div>
+        <Divider tone="default" />
+        <EvidenceRow
+          kind="total"
+          label={model.total.label}
+          value={model.total.displayValue}
+          valuePrefix={model.total.valuePrefix}
+        />
+        <SystemRail items={model.metadata} state="complete" wrap="truncate" />
+      </div>
+    </BottomSheet>
+  );
+}

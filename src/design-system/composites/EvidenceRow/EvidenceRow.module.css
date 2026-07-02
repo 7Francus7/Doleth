@@ -1,0 +1,57 @@
+.row {
+  width: 100%;
+  min-width: 0;
+}
+
+.content {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  padding-block: var(--space-12);
+}
+
+.valueStack {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:focus-visible {
+  border-radius: var(--radius-xs);
+  outline: var(--border-width-hairline) solid var(--border-accent);
+  outline-offset: var(--space-2);
+}
+
+.chevron {
+  width: var(--space-8);
+  height: var(--space-8);
+  flex: 0 0 auto;
+  border-right: var(--border-width-hairline) solid var(--color-text-tertiary);
+  border-bottom: var(--border-width-hairline) solid var(--color-text-tertiary);
+  transform: rotate(45deg);
+}
+
+.row[open] .chevron {
+  transform: rotate(225deg);
+}
+
+.expandedContent {
+  padding: 0 0 var(--space-12) var(--space-16);
+}
+
+.kind-total {
+  color: var(--color-text-strong);
+}

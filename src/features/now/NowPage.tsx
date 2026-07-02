@@ -1,6 +1,5 @@
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
-import { Hero } from "../../design-system/composites/Hero";
 import { InformationBlock } from "../../design-system/composites/InformationBlock";
 import { ReserveBlock } from "../../design-system/composites/ReserveBlock";
 import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
@@ -8,6 +7,7 @@ import { SystemRail } from "../../design-system/composites/SystemRail";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
+import { AvailableEvidenceExperience } from "./evidence/AvailableEvidenceExperience";
 import type { NowViewModel } from "./model";
 import styles from "./NowPage.module.css";
 
@@ -21,7 +21,7 @@ export function NowPage({ model }: NowPageProps) {
       <h1 className={styles.screenTitle}>Ahora</h1>
       <div className={`app-canvas__content ${styles.content}`}>
         <SystemRail {...model.rail} />
-        <Hero {...model.hero} />
+        <AvailableEvidenceExperience hero={model.hero} />
         <StabilityStatement {...model.stability} />
         <ActionStrip {...model.actions} />
 

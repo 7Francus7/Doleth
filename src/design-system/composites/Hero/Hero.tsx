@@ -1,3 +1,6 @@
+"use client";
+
+import { forwardRef } from "react";
 import { Divider } from "../../primitives/Divider";
 import { Label } from "../../primitives/Label";
 import { NumericValue } from "../../primitives/NumericValue";
@@ -13,6 +16,8 @@ interface HeroBaseProps {
   valueLabel: string;
   tone?: HeroTone;
   className?: string;
+  onValueClick?: () => void;
+  valueActionLabel?: string;
 }
 
 interface HeroMeasuredProps extends HeroBaseProps {
@@ -38,14 +43,17 @@ interface HeroNewProps extends HeroBaseProps {
 
 export type HeroProps = HeroMeasuredProps | HeroIncompleteProps | HeroNewProps;
 
-export function Hero({
-  scenario,
-  stateText,
-  valueLabel,
-  tone = "raised",
-  className,
-  ...props
-}: HeroProps) {
+export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
+  {
+    scenario,
+    stateText,
+    valueLabel,
+    tone = "raised",
+    className,
+    ...props
+  },
+  valueButtonRef,
+) {
   const classes = [styles.hero, styles[`scenario-${scenario}`], className]
     .filter(Boolean)
     .join(" ");
@@ -53,6 +61,15 @@ export function Hero({
   const value = "value" in props ? props.value : undefined;
   const valuePrefix = "valuePrefix" in props ? props.valuePrefix : undefined;
   const coverage = "coverage" in props ? props.coverage : undefined;
+  const valueNode = (
+    <NumericValue
+      {...(valuePrefix !== undefined ? { prefix: valuePrefix } : {})}
+      size="xl"
+      state={scenario === "incomplete" ? "unavailable" : "confirmed"}
+      tone={scenario === "attention" ? "attention" : "neutral"}
+      value={value ?? ""}
+    />
+  );
 
   return (
     <Surface
@@ -72,13 +89,20 @@ export function Hero({
         </Label>
       ) : (
         <div className={styles.valueGroup}>
-          <NumericValue
-            {...(valuePrefix !== undefined ? { prefix: valuePrefix } : {})}
-            size="xl"
-            state={scenario === "incomplete" ? "unavailable" : "confirmed"}
-            tone={scenario === "attention" ? "attention" : "neutral"}
-            value={value ?? ""}
-          />
+          {props.onValueClick ? (
+            <button
+              aria-haspopup="dialog"
+              aria-label={props.valueActionLabel ?? `Ver evidencia de ${valueLabel}`}
+              className={styles.valueButton}
+              onClick={props.onValueClick}
+              ref={valueButtonRef}
+              type="button"
+            >
+              {valueNode}
+            </button>
+          ) : (
+            valueNode
+          )}
           <Label size="m" tone="secondary">
             {valueLabel}
           </Label>
@@ -93,4 +117,4 @@ export function Hero({
       ) : null}
     </Surface>
   );
-}
+});

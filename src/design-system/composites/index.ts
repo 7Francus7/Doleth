@@ -1,5 +1,7 @@
 export * from "./ActionStrip";
+export * from "./BottomSheet";
 export * from "./CoverageMeter";
+export * from "./EvidenceRow";
 export * from "./FinancialRow";
 export * from "./Hero";
 export * from "./InformationBlock";

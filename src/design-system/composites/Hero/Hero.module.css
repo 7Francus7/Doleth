@@ -24,6 +24,21 @@
   margin-top: var(--space-20);
 }
 
+.valueButton {
+  width: fit-content;
+  border: 0;
+  border-radius: var(--radius-xs);
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.valueButton:focus-visible {
+  outline: var(--border-width-hairline) solid var(--border-accent);
+  outline-offset: var(--space-4);
+}
+
 .newLabel {
   max-width: 42ch;
   margin-top: var(--space-16);
