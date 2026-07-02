@@ -1,3 +1,7 @@
+.motionRoot {
+  width: 100%;
+}
+
 .statement {
   max-width: 64ch;
   margin: 0;

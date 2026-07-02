@@ -21,12 +21,14 @@
 }
 
 .summary {
-  list-style: none;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
-}
-
-.summary::-webkit-details-marker {
-  display: none;
 }
 
 .summary:focus-visible {
@@ -44,11 +46,8 @@
   transform: rotate(45deg);
 }
 
-.row[open] .chevron {
-  transform: rotate(225deg);
-}
-
 .expandedContent {
+  overflow: hidden;
   padding: 0 0 var(--space-12) var(--space-16);
 }
 

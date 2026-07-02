@@ -85,8 +85,23 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay,
-  .sheet {
-    animation: none;
+  .overlay[data-state="open"],
+  .sheet[data-state="open"] {
+    animation: reduced-fade-in var(--motion-duration-micro) var(--motion-curve-snap);
   }
+
+  .overlay[data-state="closed"],
+  .sheet[data-state="closed"] {
+    animation: reduced-fade-out var(--motion-duration-micro) var(--motion-curve-exit);
+  }
+}
+
+@keyframes reduced-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes reduced-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }

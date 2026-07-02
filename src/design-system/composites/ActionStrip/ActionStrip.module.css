@@ -5,6 +5,10 @@
   gap: var(--space-8);
 }
 
+.primaryLabel {
+  display: inline-block;
+}
+
 .secondaryActions {
   display: grid;
   width: 100%;

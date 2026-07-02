@@ -1,6 +1,14 @@
+.layout {
+  width: 100%;
+}
+
 .hero {
   min-height: calc(var(--space-72) * 4);
   align-items: flex-start;
+}
+
+.valueMotion {
+  display: inline-flex;
 }
 
 .stateLine {

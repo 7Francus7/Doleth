@@ -1,6 +1,8 @@
 "use client";
 
 import { forwardRef } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motionCurve, motionDuration, motionSequence } from "../../tokens";
 import { Divider } from "../../primitives/Divider";
 import { Label } from "../../primitives/Label";
 import { NumericValue } from "../../primitives/NumericValue";
@@ -56,6 +58,7 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
   },
   valueButtonRef,
 ) {
+  const reduceMotion = useReducedMotion();
   const classes = [styles.hero, styles[`scenario-${scenario}`], className]
     .filter(Boolean)
     .join(" ");
@@ -72,56 +75,115 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
       value={value ?? ""}
     />
   );
+  const animatedValue = (
+    <AnimatePresence initial={false} mode="wait">
+      <motion.span
+        animate={{ opacity: 1, y: 0 }}
+        className={styles.valueMotion}
+        exit={{
+          opacity: 0,
+          transition: { duration: motionDuration.micro, ease: motionCurve.exit },
+          y: reduceMotion ? 0 : "var(--space-4)",
+        }}
+        initial={{ opacity: 0, y: reduceMotion ? 0 : "calc(var(--space-4) * -1)" }}
+        key={`${valuePrefix ?? ""}-${value ?? "unavailable"}`}
+        transition={{
+          delay: reduceMotion ? motionSequence.state : motionSequence.amount,
+          duration: reduceMotion ? motionDuration.micro : motionDuration.numeric,
+          ease: motionCurve.snap,
+        }}
+      >
+        {valueNode}
+      </motion.span>
+    </AnimatePresence>
+  );
 
   return (
-    <Surface
-      border={usesStateSurface ? "state" : "default"}
-      className={classes}
-      elevation="soft"
-      padding="lg"
-      radius="xl"
-      state={usesStateSurface ? "attention" : "default"}
-      tone="raised"
+    <motion.div
+      className={styles.layout}
+      layout={reduceMotion ? false : "position"}
+      transition={{ duration: motionDuration.reflow, ease: motionCurve.settle }}
     >
-      <p className={styles.stateLine}>{stateText}</p>
+      <Surface
+        border={usesStateSurface ? "state" : "default"}
+        className={classes}
+        elevation="soft"
+        padding="lg"
+        radius="xl"
+        state={usesStateSurface ? "attention" : "default"}
+        tone="raised"
+      >
+        <AnimatePresence initial={false} mode="wait">
+          <motion.p
+            animate={{ opacity: 1 }}
+            className={styles.stateLine}
+            exit={{
+              opacity: 0,
+              transition: { duration: motionDuration.micro, ease: motionCurve.exit },
+            }}
+            initial={{ opacity: 0 }}
+            key={stateText}
+            transition={{ duration: motionDuration.micro, ease: motionCurve.snap }}
+          >
+            {stateText}
+          </motion.p>
+        </AnimatePresence>
 
-      {scenario === "new" ? (
-        <Label as="p" className={styles.newLabel} size="l" tone="secondary">
-          {valueLabel}
-        </Label>
-      ) : (
-        <div className={styles.valueGroup}>
-          {props.onValueClick ? (
-            <button
-              aria-haspopup="dialog"
-              aria-label={props.valueActionLabel ?? `Ver evidencia de ${valueLabel}`}
-              className={styles.valueButton}
-              onClick={props.onValueClick}
-              ref={valueButtonRef}
-              type="button"
-            >
-              {valueNode}
-            </button>
-          ) : (
-            valueNode
-          )}
-          <Label size="m" tone="secondary">
+        {scenario === "new" ? (
+          <Label as="p" className={styles.newLabel} size="l" tone="secondary">
             {valueLabel}
           </Label>
-          {inlineNote ? (
-            <Label as="p" className={styles.inlineNote} size="s" tone="tertiary">
-              {inlineNote}
+        ) : (
+          <div className={styles.valueGroup}>
+            {props.onValueClick ? (
+              <button
+                aria-haspopup="dialog"
+                aria-label={props.valueActionLabel ?? `Ver evidencia de ${valueLabel}`}
+                className={styles.valueButton}
+                onClick={props.onValueClick}
+                ref={valueButtonRef}
+                type="button"
+              >
+                {animatedValue}
+              </button>
+            ) : (
+              animatedValue
+            )}
+            <Label size="m" tone="secondary">
+              {valueLabel}
             </Label>
-          ) : null}
-        </div>
-      )}
+            {inlineNote ? (
+              <Label as="p" className={styles.inlineNote} size="s" tone="tertiary">
+                {inlineNote}
+              </Label>
+            ) : null}
+          </div>
+        )}
 
-      {coverage ? (
-        <div className={styles.coverageGroup}>
-          <Divider />
-          <CoverageMeter {...coverage} />
-        </div>
-      ) : null}
-    </Surface>
+        <AnimatePresence initial={false} mode="wait">
+          {coverage ? (
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className={styles.coverageGroup}
+              exit={{
+                opacity: 0,
+                transition: { duration: motionDuration.micro, ease: motionCurve.exit },
+                y: reduceMotion ? 0 : "var(--space-4)",
+              }}
+              initial={{ opacity: 0, y: reduceMotion ? 0 : "var(--space-4)" }}
+              key={`${coverage.state ?? "stable"}-${coverage.value}-${coverage.title}`}
+              transition={{
+                delay: reduceMotion ? motionSequence.state : motionSequence.coverage,
+                duration: reduceMotion ? motionDuration.micro : motionDuration.surface,
+                ease: motionCurve.settle,
+              }}
+            >
+              <Divider />
+              <CoverageMeter {...coverage} />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </Surface>
+    </motion.div>
   );
 });

@@ -1,3 +1,6 @@
+"use client";
+
+import { AnimatePresence, LayoutGroup } from "motion/react";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -22,8 +25,12 @@ export function NowPage({ model }: NowPageProps) {
       <h1 className={styles.screenTitle}>Ahora</h1>
       <div className={`app-canvas__content ${styles.content}`}>
         <SystemRail {...model.rail} />
-        {model.banner ? <AttentionBanner {...model.banner} /> : null}
-        <AvailableEvidenceExperience evidence={model.evidence} hero={model.hero} />
+        <LayoutGroup id="now-primary-state">
+          <AnimatePresence initial={false}>
+            {model.banner ? <AttentionBanner key="attention" {...model.banner} /> : null}
+          </AnimatePresence>
+          <AvailableEvidenceExperience evidence={model.evidence} hero={model.hero} />
+        </LayoutGroup>
         <StabilityStatement {...model.stability} />
         <ActionStrip {...model.actions} />
 

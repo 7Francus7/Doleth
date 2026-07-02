@@ -1,6 +1,11 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Label } from "../../primitives/Label";
 import { NumericValue, type NumericValueState } from "../../primitives/NumericValue";
+import { motionCurve, motionDuration, motionSequence } from "../../tokens";
 import styles from "./EvidenceRow.module.css";
 
 export type EvidenceRowKind = "neutral" | "positive" | "negative" | "total";
@@ -14,6 +19,7 @@ export interface EvidenceRowProps {
   state?: NumericValueState;
   expandable?: boolean;
   expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
   children?: ReactNode;
   className?: string;
 }
@@ -26,7 +32,7 @@ function EvidenceRowContent({
   kind = "neutral",
   state = "confirmed",
   expandable = false,
-}: Omit<EvidenceRowProps, "children" | "className" | "expanded">) {
+}: Omit<EvidenceRowProps, "children" | "className" | "expanded" | "onExpandedChange">) {
   const prefix = `${sign ?? ""}${valuePrefix ?? ""}`;
 
   return (
@@ -49,24 +55,74 @@ function EvidenceRowContent({
 
 export function EvidenceRow({
   expandable = false,
-  expanded = false,
+  expanded,
+  onExpandedChange,
   children,
   className,
   ...props
 }: EvidenceRowProps) {
+  const reduceMotion = useReducedMotion();
+  const [internalExpanded, setInternalExpanded] = useState(false);
   const kind = props.kind ?? "neutral";
+  const canExpand = expandable && kind !== "total";
+  const isExpanded = canExpand && (expanded ?? internalExpanded);
   const classes = [styles.row, styles[`kind-${kind}`], className]
     .filter(Boolean)
     .join(" ");
 
-  if (expandable) {
+  if (canExpand) {
     return (
-      <details className={classes} open={expanded}>
-        <summary className={styles.summary}>
-          <EvidenceRowContent {...props} expandable />
-        </summary>
-        {children ? <div className={styles.expandedContent}>{children}</div> : null}
-      </details>
+      <div className={classes}>
+        <button
+          aria-expanded={isExpanded}
+          className={styles.summary}
+          onClick={() => {
+            const nextExpanded = !isExpanded;
+            setInternalExpanded(nextExpanded);
+            onExpandedChange?.(nextExpanded);
+          }}
+          type="button"
+        >
+          <EvidenceRowContent {...props} expandable={false} />
+          <motion.span
+            animate={{ rotate: isExpanded ? 225 : 45 }}
+            aria-hidden="true"
+            className={styles.chevron}
+            transition={{
+              duration: reduceMotion ? motionSequence.state : motionDuration.micro,
+              ease: motionCurve.snap,
+            }}
+          />
+        </button>
+        <AnimatePresence initial={false}>
+          {isExpanded && children ? (
+            <motion.div
+              animate={{
+                clipPath: "inset(0 0 0 0)",
+                height: "auto",
+                opacity: 1,
+              }}
+              className={styles.expandedContent}
+              exit={{
+                clipPath: reduceMotion ? "inset(0 0 0 0)" : "inset(0 0 100% 0)",
+                height: reduceMotion ? "auto" : 0,
+                opacity: 0,
+              }}
+              initial={{
+                clipPath: reduceMotion ? "inset(0 0 0 0)" : "inset(0 0 100% 0)",
+                height: reduceMotion ? "auto" : 0,
+                opacity: 0,
+              }}
+              transition={{
+                duration: reduceMotion ? motionDuration.micro : motionDuration.surface,
+                ease: motionCurve.settle,
+              }}
+            >
+              {children}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     );
   }
 

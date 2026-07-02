@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "../../primitives/Button";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motionCurve, motionDuration, motionSequence } from "../../tokens";
 import styles from "./ActionStrip.module.css";
 
 export type ActionStripPrimary = "register" | "resolve" | "add-first-account" | "update";
@@ -34,6 +36,7 @@ export function ActionStrip({
   onAction,
   className,
 }: ActionStripProps) {
+  const reduceMotion = useReducedMotion();
   const classes = [styles.actionStrip, styles[`state-${state}`], className]
     .filter(Boolean)
     .join(" ");
@@ -41,7 +44,25 @@ export function ActionStrip({
   return (
     <div className={classes} data-primary={primary}>
       <Button onClick={() => onAction?.(primary)} size="lg" width="fill">
-        {primaryLabel}
+        <AnimatePresence initial={false} mode="wait">
+          <motion.span
+            animate={{ opacity: 1 }}
+            className={styles.primaryLabel}
+            exit={{
+              opacity: 0,
+              transition: { duration: motionDuration.micro, ease: motionCurve.exit },
+            }}
+            initial={{ opacity: 0 }}
+            key={primaryLabel}
+            transition={{
+              delay: reduceMotion ? motionSequence.state : motionSequence.stability,
+              duration: motionDuration.micro,
+              ease: motionCurve.snap,
+            }}
+          >
+            {primaryLabel}
+          </motion.span>
+        </AnimatePresence>
       </Button>
       <div className={styles.secondaryActions}>
         {secondaryActions.map((action) => (
