@@ -1,0 +1,47 @@
+.label {
+  display: inline-block;
+  margin: 0;
+  font-family: var(--font-satoshi);
+  font-style: normal;
+}
+
+.size-s {
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  letter-spacing: var(--type-label-s-tracking);
+  line-height: var(--type-label-s-line);
+}
+
+.size-m {
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+  letter-spacing: var(--type-label-m-tracking);
+  line-height: var(--type-label-m-line);
+}
+
+.size-l {
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+  letter-spacing: var(--type-label-l-tracking);
+  line-height: var(--type-label-l-line);
+}
+
+.tone-primary {
+  color: var(--color-text-primary);
+}
+
+.tone-secondary {
+  color: var(--color-text-secondary);
+}
+
+.tone-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.case-sentence {
+  text-transform: none;
+}
+
+.case-uppercase {
+  text-transform: uppercase;
+}
