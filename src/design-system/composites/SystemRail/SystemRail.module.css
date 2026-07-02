@@ -35,6 +35,15 @@
   overflow: hidden;
 }
 
+.wrap-truncate .unit:not(:first-child, :last-child) {
+  flex: 0 0 auto;
+}
+
+.wrap-truncate .unit:first-child,
+.wrap-truncate .unit:last-child {
+  flex: 1 1 auto;
+}
+
 .wrap-truncate .item {
   overflow: hidden;
   text-overflow: ellipsis;

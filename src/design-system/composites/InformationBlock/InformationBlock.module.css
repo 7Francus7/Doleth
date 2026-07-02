@@ -1,0 +1,35 @@
+.block {
+  gap: var(--space-8);
+}
+
+.primaryLine,
+.causalLine {
+  margin: 0;
+  font-family: var(--font-satoshi);
+}
+
+.primaryLine {
+  color: var(--color-text-strong);
+  font-size: var(--type-body-m-size);
+  font-weight: var(--type-body-m-weight);
+  letter-spacing: var(--type-body-m-tracking);
+  line-height: var(--type-body-m-line);
+}
+
+.causalLine {
+  max-width: 64ch;
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+  letter-spacing: var(--type-body-s-tracking);
+  line-height: var(--type-body-s-line);
+}
+
+.state-partial .primaryLine,
+.state-stale .primaryLine {
+  color: var(--color-text-attention);
+}
+
+.state-conflict .primaryLine {
+  color: var(--color-text-critical);
+}
