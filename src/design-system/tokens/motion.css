@@ -1,0 +1,10 @@
+:root {
+  --motion-duration-micro: 120ms;
+  --motion-duration-numeric: 180ms;
+  --motion-duration-surface: 220ms;
+  --motion-duration-sheet: 280ms;
+  --motion-duration-reflow: 320ms;
+  --motion-curve-snap: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-curve-settle: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-curve-exit: cubic-bezier(0.4, 0, 0.2, 1);
+}

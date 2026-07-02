@@ -1,0 +1,39 @@
+body {
+  background: var(--color-canvas-default);
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-canvas {
+  min-height: 100svh;
+  padding:
+    max(var(--space-24), env(safe-area-inset-top))
+    max(var(--space-20), env(safe-area-inset-right))
+    max(var(--space-24), env(safe-area-inset-bottom))
+    max(var(--space-20), env(safe-area-inset-left));
+}
+
+.app-canvas__content {
+  width: min(100%, 42rem);
+  margin-inline: auto;
+}
+
+.app-canvas__brand {
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  letter-spacing: var(--type-label-s-tracking);
+  line-height: var(--type-label-s-line);
+}
+
+.app-canvas__title {
+  margin-top: var(--space-8);
+  color: var(--color-text-strong);
+  font-size: var(--type-heading-l-size);
+  font-weight: var(--type-heading-l-weight);
+  letter-spacing: var(--type-heading-l-tracking);
+  line-height: var(--type-heading-l-line);
+}

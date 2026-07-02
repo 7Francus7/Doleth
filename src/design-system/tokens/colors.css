@@ -1,0 +1,61 @@
+:root {
+  --color-ink-900: #171a1f;
+  --color-ink-700: #303640;
+  --color-ink-500: #5c6675;
+  --color-ink-300: #97a0ad;
+  --color-ink-200: #b7bfca;
+  --color-ink-100: #d6dce3;
+  --color-bone-000: #f7f5f1;
+  --color-bone-050: #f2efe9;
+  --color-bone-100: #e8e3db;
+  --color-bone-200: #ddd7ce;
+
+  --color-mineral-700: #184e47;
+  --color-mineral-600: #1e5d55;
+  --color-mineral-500: #2a756c;
+  --color-mineral-300: #86b3ab;
+  --color-mineral-100: #ddeae7;
+
+  --color-slate-700: #2a3d57;
+  --color-slate-500: #48617f;
+  --color-slate-100: #e3eaf1;
+
+  --color-stable-text: #1e5d55;
+  --color-stable-bg: #e7f0ee;
+  --color-stable-border: #b9d4cd;
+  --color-attention-text: #8a5a17;
+  --color-attention-bg: #f5ead6;
+  --color-attention-border: #e6c995;
+  --color-critical-text: #7a4437;
+  --color-critical-bg: #f3e7e2;
+  --color-critical-border: #d8b0a6;
+  --color-info-text: #39597a;
+  --color-info-bg: #e9eff5;
+  --color-info-border: #c3d2e2;
+
+  --color-canvas-default: #f7f5f1;
+  --color-surface-base: #f2efe9;
+  --color-surface-raised: #fbfaf7;
+  --color-surface-subtle: #ece8e1;
+  --color-surface-inverse: #171a1f;
+
+  --color-text-strong: var(--color-ink-900);
+  --color-text-primary: var(--color-ink-700);
+  --color-text-secondary: var(--color-ink-500);
+  --color-text-tertiary: var(--color-ink-300);
+  --color-text-inverse: var(--color-bone-000);
+  --color-text-accent: var(--color-mineral-700);
+  --color-text-attention: var(--color-attention-text);
+  --color-text-critical: var(--color-critical-text);
+
+  --color-action-primary-bg: var(--color-mineral-700);
+  --color-action-primary-text: var(--color-bone-000);
+  --color-action-secondary-bg: var(--color-mineral-100);
+  --color-state-attention-bg: var(--color-attention-bg);
+  --color-state-attention-border: var(--color-attention-border);
+  --color-state-critical-bg: var(--color-critical-bg);
+  --color-state-critical-border: var(--color-critical-border);
+  --color-data-positive: var(--color-mineral-600);
+  --color-data-neutral: var(--color-ink-700);
+  --color-data-at-risk: var(--color-critical-text);
+}

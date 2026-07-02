@@ -1,0 +1,35 @@
+schema_version: 1.0.0
+corpus_version: 0.1.0
+status: bootstrap
+frozen_language:
+  domains_version: 1.0.0
+  tags_version: 1.0.0
+  invariants_version: 1.0.0
+validation_layers:
+  - ontology
+  - state
+  - cognition
+  - decision
+active_canons:
+  - canon-1.0
+case_lifecycle:
+  - draft
+  - reviewed
+  - canonical
+  - regression_locked
+  - deprecated
+  - replaced
+release_policy:
+  locked_cases_block_merge: true
+  require_explained_diff: true
+  require_equivalence_check: true
+links:
+  rfc: docs/rfc-001-corpus-universal-de-la-vida-financiera.md
+  knowledge_governance: docs/rfc-002-knowledge-governance.md
+  master_specification_index: docs/master-specification-index.md
+  canon_1_0: docs/doleth-canon-1.0.md
+  brand_foundation: docs/doleth-brand-foundation.md
+  ontology: docs/doleth-ontologia-financiera.md
+  states: docs/doleth-estados-del-valor.md
+  cognition: docs/doleth-motor-cognitivo.md
+  architecture: docs/doleth-arquitectura-conceptual.md

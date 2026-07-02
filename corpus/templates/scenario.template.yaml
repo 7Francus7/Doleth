@@ -1,0 +1,129 @@
+schema_version: 1.0.0
+case_version: 0.1.0
+status: draft
+
+id: CASE-XXXX
+title: Titulo breve del escenario
+summary: >
+  Resumen humano corto del fenómeno que se quiere validar.
+
+ownership:
+  author: nombre-o-equipo
+  reviewers: []
+  introduced_in: 0.1.0
+  last_reviewed_at: YYYY-MM-DD
+
+classification:
+  primary_domain: 10-verbos-economicos
+  secondary_domains: []
+  validation_layers: [ontology, state]
+  event_verb: composite
+  state_transition: composite
+  time_pattern: immediate
+  firmness_pattern: firm
+  sphere_pattern: single_personal
+  agent_topology: self_only
+  instrument_family: mixed
+  evidence_shape: natural_language
+  ambiguity_level: low
+  decision_pressure: medium
+  complexity_level: simple
+  case_role: regression
+
+normalization:
+  equivalence_key: verb|state|time|firmness|sphere|agents|instrument|evidence|decision
+  narrative_fingerprint: pending
+  canonical_question: >
+    Pregunta dominante que este escenario obliga a responder.
+
+business_context:
+  locale: ar-uy-latam-global
+  notes: >
+    Contexto institucional o de mercado si importa.
+
+narrative:
+  facts:
+    - actor focal hace X
+    - existe evidencia Y
+  ambiguity:
+    - punto ambiguo 1
+  excluded_assumptions:
+    - cosa que sistema no puede asumir
+
+inputs:
+  evidence:
+    - id: ev-1
+      type: natural_language
+      content: "Texto de ejemplo"
+      reliability: user_declared
+    - id: ev-2
+      type: statement
+      content: "Fila o extracto"
+      reliability: institution_observed
+
+expected:
+  ontology:
+    entities:
+      - agent
+      - value
+      - unit
+      - vehicle
+      - economic_relation
+    event_sequence:
+      - transform
+      - transfer
+    forbidden_interpretations:
+      - gasto_puro
+  state:
+    before:
+      - relation: caja_personal
+        state: free
+        firmness: firm
+    after:
+      - relation: caja_personal
+        state: assigned
+        firmness: firm
+    illegal_alternatives:
+      - pending_negative
+  cognition:
+    hypotheses:
+      - label: hipotesis_1
+        confidence: 0.78
+        status: provisional
+    ask_if_missing:
+      - campo material faltante
+    must_not_assume:
+      - destino no evidenciado
+  decision:
+    primary_question: >
+      Que cambia en capacidad de decision del usuario.
+    expected_readout:
+      - insight 1
+    forbidden_recommendations:
+      - recomendacion incompatible
+
+acceptance:
+  must_pass:
+    - modelo representa fenomeno sin violar invariantes
+    - salida preserva incertidumbre material
+  must_fail_if:
+    - sistema clasifica esto como ingreso
+    - sistema pierde trazabilidad de evidencia
+
+invariants:
+  required:
+    - INV-001
+    - INV-005
+  forbidden_failure_modes:
+    - FM-005
+    - FM-007
+
+breakage_signals:
+  - signal: si para resolver hay que inventar nuevo verbo
+    type: ontology_gap
+
+notes:
+  rationale: >
+    Por que este caso merece existir.
+  migration_hint: >
+    Como revisar si cambia ontologia o decision engine.

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doleth.local/corpus/schemas/scenario.schema.json",
+  "title": "Doleth Corpus Scenario",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "case_version",
+    "status",
+    "id",
+    "title",
+    "classification",
+    "normalization",
+    "narrative",
+    "inputs",
+    "expected",
+    "acceptance",
+    "invariants"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "case_version": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "reviewed", "canonical", "regression_locked", "deprecated", "replaced"]
+    },
+    "id": { "type": "string", "minLength": 4 },
+    "title": { "type": "string", "minLength": 4 },
+    "summary": { "type": "string" },
+    "ownership": { "type": "object" },
+    "classification": {
+      "type": "object",
+      "required": ["primary_domain", "validation_layers", "event_verb", "ambiguity_level", "complexity_level"],
+      "properties": {
+        "primary_domain": { "type": "string" },
+        "secondary_domains": { "type": "array", "items": { "type": "string" } },
+        "validation_layers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "event_verb": { "type": "string" },
+        "state_transition": { "type": "string" },
+        "time_pattern": { "type": "string" },
+        "firmness_pattern": { "type": "string" },
+        "sphere_pattern": { "type": "string" },
+        "agent_topology": { "type": "string" },
+        "instrument_family": { "type": "string" },
+        "evidence_shape": { "type": "string" },
+        "ambiguity_level": { "type": "string" },
+        "decision_pressure": { "type": "string" },
+        "complexity_level": { "type": "string" },
+        "case_role": { "type": "string" }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "required": ["equivalence_key", "canonical_question"],
+      "properties": {
+        "equivalence_key": { "type": "string", "minLength": 8 },
+        "narrative_fingerprint": { "type": "string" },
+        "canonical_question": { "type": "string", "minLength": 8 }
+      }
+    },
+    "business_context": { "type": "object" },
+    "narrative": {
+      "type": "object",
+      "required": ["facts"],
+      "properties": {
+        "facts": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "ambiguity": { "type": "array", "items": { "type": "string" } },
+        "excluded_assumptions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["evidence"],
+      "properties": {
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "content"],
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string" },
+              "content": { "type": "string" },
+              "reliability": { "type": "string" }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "required": ["ontology", "state", "cognition", "decision"],
+      "properties": {
+        "ontology": { "type": "object" },
+        "state": { "type": "object" },
+        "cognition": { "type": "object" },
+        "decision": { "type": "object" }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["must_pass"],
+      "properties": {
+        "must_pass": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "must_fail_if": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "invariants": {
+      "type": "object",
+      "required": ["required"],
+      "properties": {
+        "required": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "forbidden_failure_modes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "breakage_signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["signal", "type"],
+        "properties": {
+          "signal": { "type": "string" },
+          "type": { "type": "string" }
+        }
+      }
+    },
+    "notes": { "type": "object" }
+  }
+}

@@ -1,0 +1,31 @@
+failure_modes:
+  - id: FM-001
+    type: ontology_gap
+    meaning: Caso no puede expresarse con primitives vigentes.
+  - id: FM-002
+    type: illegal_state_transition
+    meaning: Caso exige transición no permitida por máquina de estados.
+  - id: FM-003
+    type: hidden_uncertainty
+    meaning: Sistema consolida como firme lo que sigue siendo incierto.
+  - id: FM-004
+    type: sphere_leak
+    meaning: Sistema mezcla esferas sin mutación explícita.
+  - id: FM-005
+    type: double_count
+    meaning: Sistema duplica valor o compromiso.
+  - id: FM-006
+    type: source_divergence
+    meaning: Fuentes equivalentes generan modelos finales incompatibles.
+  - id: FM-007
+    type: decision_overreach
+    meaning: Sistema recomienda más allá de evidencia disponible.
+  - id: FM-008
+    type: decision_contradiction
+    meaning: Recomendación contradice estado calculado.
+  - id: FM-009
+    type: duplicate_case
+    meaning: Caso no agrega cobertura nueva.
+  - id: FM-010
+    type: conceptual_conflict
+    meaning: Dos casos equivalentes exigen verdades distintas.

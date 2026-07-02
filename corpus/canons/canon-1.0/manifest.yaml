@@ -1,0 +1,129 @@
+id: canon-1.0
+name: Doleth Canon 1.0
+status: proposed
+canon_version: 1.0.0
+scenario_count: 50
+selection_rule: foundational_only
+locked_policy: all_cases_must_be_regression_locked
+groups:
+  - id: A
+    name: Casos atómicos
+    count: 10
+    objective: Fijar primitives irreducibles.
+  - id: B
+    name: Casos cotidianos
+    count: 10
+    objective: Fijar lectura correcta del mundo frecuente.
+  - id: C
+    name: Casos compuestos
+    count: 10
+    objective: Fijar secuencias y trayectorias.
+  - id: D
+    name: Casos ambiguos
+    count: 10
+    objective: Fijar disciplina del motor cognitivo.
+  - id: E
+    name: Casos que rompen el modelo
+    count: 10
+    objective: Fijar frontera viva del sistema.
+cases:
+  - group: A
+    slug: salary-basic
+  - group: A
+    slug: cash-expense
+  - group: A
+    slug: usd-buy
+  - group: A
+    slug: usd-sell
+  - group: A
+    slug: interest-credit
+  - group: A
+    slug: stock-buy
+  - group: A
+    slug: cash-inflow
+  - group: A
+    slug: internal-transfer
+  - group: A
+    slug: loan-origination
+  - group: A
+    slug: debt-payment
+  - group: B
+    slug: subscription-netflix
+  - group: B
+    slug: fuel-purchase
+  - group: B
+    slug: grocery-purchase
+  - group: B
+    slug: credit-card-purchase
+  - group: B
+    slug: client-payment
+  - group: B
+    slug: mercadopago-settlement
+  - group: B
+    slug: rent-payment
+  - group: B
+    slug: usdt-buy
+  - group: B
+    slug: btc-sell
+  - group: B
+    slug: laptop-purchase
+  - group: C
+    slug: usd-income-to-pesos-card-payment
+  - group: C
+    slug: btc-appreciation-sale-rent
+  - group: C
+    slug: laptop-installments
+  - group: C
+    slug: car-loan-purchase
+  - group: C
+    slug: vacation-fund-allocation
+  - group: C
+    slug: freelance-income-tax-reserve
+  - group: C
+    slug: salary-split-across-accounts
+  - group: C
+    slug: business-revenue-owner-draw
+  - group: C
+    slug: invoice-partial-collection
+  - group: C
+    slug: dollar-sale-to-pay-card
+  - group: D
+    slug: unknown-inflow
+  - group: D
+    slug: vague-expense
+  - group: D
+    slug: partial-refund
+  - group: D
+    slug: unknown-purchase
+  - group: D
+    slug: missing-amount
+  - group: D
+    slug: fuzzy-date-two-weeks
+  - group: D
+    slug: unlabeled-transfer
+  - group: D
+    slug: mixed-message-multiple-events
+  - group: D
+    slug: unknown-cash-withdrawal
+  - group: D
+    slug: probable-income-without-proof
+  - group: E
+    slug: shared-account
+  - group: E
+    slug: dual-currency-debt
+  - group: E
+    slug: shared-wallet
+  - group: E
+    slug: informal-loan
+  - group: E
+    slug: inheritance-arrival
+  - group: E
+    slug: fraud-loss
+  - group: E
+    slug: unregistered-cash-found
+  - group: E
+    slug: partial-debt-forgiveness
+  - group: E
+    slug: business-paid-personal
+  - group: E
+    slug: committed-asset-revaluation

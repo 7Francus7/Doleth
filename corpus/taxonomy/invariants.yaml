@@ -1,0 +1,21 @@
+invariants:
+  - id: INV-001
+    statement: Transferencia interna no crea ingreso neto.
+  - id: INV-002
+    statement: Transformación de valor no implica gasto por defecto.
+  - id: INV-003
+    statement: Liquidez no equivale a patrimonio.
+  - id: INV-004
+    statement: No puede contarse dos veces mismo valor económico.
+  - id: INV-005
+    statement: Incertidumbre no se promueve a firmeza sin evidencia.
+  - id: INV-006
+    statement: Mezcla de esferas requiere evento explícito.
+  - id: INV-007
+    statement: Revaluación no es flujo operativo.
+  - id: INV-008
+    statement: Entrada o salida de caja no define por sí sola significado económico.
+  - id: INV-009
+    statement: Recomendación no puede contradecir verdad financiera calculada.
+  - id: INV-010
+    statement: Misma realidad debe converger al mismo modelo final salvo nueva evidencia material.

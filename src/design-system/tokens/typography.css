@@ -1,0 +1,70 @@
+:root {
+  --font-satoshi: "Satoshi", sans-serif;
+  --font-instrument-serif: "Instrument Serif", serif;
+  --font-ibm-plex-mono: "IBM Plex Mono", monospace;
+
+  --type-display-xl-size: 2.5rem;
+  --type-display-xl-line: 2.75rem;
+  --type-display-xl-weight: 500;
+  --type-display-xl-tracking: -0.03em;
+  --type-display-l-size: 2rem;
+  --type-display-l-line: 2.25rem;
+  --type-display-l-weight: 500;
+  --type-display-l-tracking: -0.025em;
+  --type-display-m-size: 1.75rem;
+  --type-display-m-line: 2rem;
+  --type-display-m-weight: 500;
+  --type-display-m-tracking: -0.02em;
+
+  --type-heading-l-size: 1.5rem;
+  --type-heading-l-line: 1.75rem;
+  --type-heading-l-weight: 550;
+  --type-heading-l-tracking: -0.02em;
+  --type-heading-m-size: 1.25rem;
+  --type-heading-m-line: 1.5rem;
+  --type-heading-m-weight: 550;
+  --type-heading-m-tracking: -0.015em;
+  --type-heading-s-size: 1.125rem;
+  --type-heading-s-line: 1.375rem;
+  --type-heading-s-weight: 550;
+  --type-heading-s-tracking: -0.01em;
+
+  --type-body-l-size: 1.0625rem;
+  --type-body-l-line: 1.5rem;
+  --type-body-l-weight: 450;
+  --type-body-l-tracking: -0.005em;
+  --type-body-m-size: 0.9375rem;
+  --type-body-m-line: 1.375rem;
+  --type-body-m-weight: 450;
+  --type-body-m-tracking: 0;
+  --type-body-s-size: 0.8125rem;
+  --type-body-s-line: 1.125rem;
+  --type-body-s-weight: 450;
+  --type-body-s-tracking: 0.005em;
+
+  --type-label-l-size: 0.9375rem;
+  --type-label-l-line: 1.125rem;
+  --type-label-l-weight: 520;
+  --type-label-l-tracking: 0;
+  --type-label-m-size: 0.8125rem;
+  --type-label-m-line: 1rem;
+  --type-label-m-weight: 520;
+  --type-label-m-tracking: 0.01em;
+  --type-label-s-size: 0.75rem;
+  --type-label-s-line: 0.875rem;
+  --type-label-s-weight: 520;
+  --type-label-s-tracking: 0.02em;
+
+  --type-data-l-size: 1.25rem;
+  --type-data-l-line: 1.5rem;
+  --type-data-l-weight: 500;
+  --type-data-l-tracking: -0.01em;
+  --type-data-m-size: 1rem;
+  --type-data-m-line: 1.25rem;
+  --type-data-m-weight: 500;
+  --type-data-m-tracking: 0;
+  --type-data-s-size: 0.8125rem;
+  --type-data-s-line: 1rem;
+  --type-data-s-weight: 500;
+  --type-data-s-tracking: 0.01em;
+}

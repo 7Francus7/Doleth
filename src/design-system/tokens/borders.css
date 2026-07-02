@@ -1,0 +1,9 @@
+:root {
+  --border-width-hairline: 1px;
+  --border-subtle: rgb(23 26 31 / 8%);
+  --border-default: rgb(23 26 31 / 14%);
+  --border-strong: rgb(23 26 31 / 22%);
+  --border-accent: var(--color-mineral-300);
+  --border-attention: var(--color-attention-border);
+  --border-critical: var(--color-critical-border);
+}

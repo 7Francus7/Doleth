@@ -1,0 +1,75 @@
+axes:
+  validation_layer:
+    values: [ontology, state, cognition, decision]
+  event_verb:
+    values: [create, transfer, transform, extinguish, revalue, composite]
+  state_transition:
+    values:
+      - free_to_assigned
+      - assigned_to_free
+      - free_to_exposed
+      - exposed_to_free
+      - free_to_pending_positive
+      - pending_positive_to_free
+      - free_to_pending_negative
+      - pending_negative_to_extinguished
+      - free_to_extinguished
+      - exposed_to_extinguished
+      - no_state_change
+      - composite
+  time_pattern:
+    values:
+      - immediate
+      - delayed
+      - scheduled
+      - installment
+      - recurring
+      - split_timeline
+  firmness_pattern:
+    values: [firm, probable, contingent, deteriorated, mixed]
+  sphere_pattern:
+    values:
+      - single_personal
+      - single_operational
+      - single_shared
+      - single_investment
+      - cross_sphere
+      - consolidated
+  agent_topology:
+    values:
+      - self_only
+      - self_and_institution
+      - self_and_person
+      - self_and_business
+      - multi_party
+  instrument_family:
+    values:
+      - cash
+      - bank
+      - wallet
+      - card
+      - debt
+      - receivable
+      - equity_like
+      - crypto
+      - tax
+      - physical_asset
+      - mixed
+  evidence_shape:
+    values:
+      - natural_language
+      - structured_row
+      - statement
+      - notification
+      - invoice
+      - pdf
+      - voice
+      - multi_source
+  ambiguity_level:
+    values: [none, low, medium, high, extreme]
+  decision_pressure:
+    values: [none, low, medium, high, critical]
+  complexity_level:
+    values: [atomic, simple, compound, systemic]
+  case_role:
+    values: [happy_path, regression, negative, boundary, breaking, migration]

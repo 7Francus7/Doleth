@@ -1,0 +1,236 @@
+domains:
+  - id: 00-axiomas-y-limites
+    name: Axiomas y límites
+    purpose: Validar invariantes fundacionales y fronteras de lo que jamás debe interpretarse mal.
+    scope:
+      - no confundir ingreso con transferencia interna
+      - no confundir gasto con transformación
+      - no confundir saldo con liquidez
+      - no contar doble mismo valor
+    scenario_types:
+      - axiomas mínimos
+      - negativos conceptuales
+      - confusiones típicas
+      - límites de expresividad
+    edge_cases:
+      - mismo movimiento con lecturas intuitivas erróneas
+      - activo ilíquido que parece riqueza disponible
+      - pago que cancela obligación pero parece gasto puro
+    acceptance:
+      - escenario respeta invariantes globales
+      - modelo rechaza interpretación prohibida
+      - caso puede explicarse sin categorías superficiales
+
+  - id: 10-verbos-economicos
+    name: Verbos económicos
+    purpose: Validar que realidad financiera se reduzca correctamente a crear, transferir, transformar, extinguir y revaluar.
+    scope:
+      - eventos atómicos
+      - secuencias cortas de verbos
+      - ambigüedades entre verbos vecinos
+    scenario_types:
+      - creación
+      - transferencia
+      - transformación
+      - extinción
+      - revaluación
+      - composiciones pequeñas
+    edge_cases:
+      - compra de activo con fee
+      - pago de tarjeta
+      - cashback o reintegro
+      - compra venta multi moneda
+    acceptance:
+      - todo caso se descompone en verbos permitidos
+      - no aparece verbo ad hoc
+      - secuencia elegida preserva significado económico
+
+  - id: 20-maquina-de-estados
+    name: Máquina de estados
+    purpose: Validar estados base del valor y transiciones permitidas.
+    scope:
+      - libre
+      - asignado
+      - expuesto
+      - pendiente
+      - extinguido
+    scenario_types:
+      - transiciones simples
+      - particiones de valor
+      - reversiones
+      - estados incompatibles
+    edge_cases:
+      - valor parcialmente asignado y parcialmente libre
+      - pendiente que se deteriora
+      - expuesto con revaluación
+    acceptance:
+      - transición es legal o falla explícitamente
+      - no se mezclan estados incompatibles
+      - liquidez derivada coincide con estado resultante
+
+  - id: 30-tiempo-y-firmeza
+    name: Tiempo y firmeza
+    purpose: Validar que verdad financiera siempre conserve cuándo impacta y qué tan firme es.
+    scope:
+      - tiempo efectivo
+      - tiempo de caja
+      - firme
+      - probable
+      - contingente
+      - deteriorada
+    scenario_types:
+      - cuotas
+      - cobros diferidos
+      - preautorizaciones
+      - vencimientos
+      - eventos con múltiples horizontes
+    edge_cases:
+      - pago prometido no cobrado
+      - tarjeta ya consumida pero no exigida
+      - cheque diferido
+      - plazo fijo precancelable
+    acceptance:
+      - tiempo y firmeza quedan explícitos
+      - decisión cambia correctamente según horizonte y certeza
+      - no se consolida como firme lo que sigue siendo probable
+
+  - id: 40-esferas-y-contrapartes
+    name: Esferas y contrapartes
+    purpose: Validar mezcla entre mundos financieros, agentes y relaciones.
+    scope:
+      - esfera personal
+      - esfera operativa o negocio
+      - esfera compartida
+      - esfera inversión
+      - relaciones entre agentes
+    scenario_types:
+      - cruces de esfera
+      - préstamos informales
+      - gastos compartidos
+      - pagos por terceros
+    edge_cases:
+      - usar caja del negocio para gasto personal
+      - socio que adelanta gasto
+      - pareja que cubre cuota
+      - cuenta de tercero usada como puente
+    acceptance:
+      - toda mutación tiene esfera y contraparte correctas
+      - no hay mezcla silenciosa
+      - consolidado y vista por esfera son consistentes
+
+  - id: 50-evidencia-e-inferencia
+    name: Evidencia e inferencia
+    purpose: Validar cómo Doleth interpreta señales imperfectas y construye verdad provisional o consolidada.
+    scope:
+      - texto
+      - PDF
+      - notificación
+      - extracto
+      - voz
+      - señales conflictivas
+    scenario_types:
+      - señal clara
+      - señal ambigua
+      - múltiples hipótesis
+      - consolidación multi fuente
+    edge_cases:
+      - mensaje sin monto
+      - extracto sin contraparte
+      - dos fuentes que no coinciden
+      - texto que mezcla varios hechos
+    acceptance:
+      - hipótesis quedan trazables
+      - sistema pregunta cuando debe
+      - misma realidad converge a mismo modelo final
+
+  - id: 60-presion-de-decision
+    name: Presión de decisión
+    purpose: Validar traducción de verdad financiera a criterio accionable.
+    scope:
+      - liquidez inmediata
+      - compromiso próximo
+      - tensión operativa
+      - riesgo de sobre decisión
+    scenario_types:
+      - puedo gastar o no
+      - conviene mover valor o no
+      - tensión próxima
+      - reserva insuficiente
+    edge_cases:
+      - mismo saldo con distinta presión real
+      - ingreso probable usado como base de gasto
+      - compra que mejora cobertura pero rompe caja
+    acceptance:
+      - recomendación depende de verdad calculada
+      - no aconseja más allá de evidencia disponible
+      - explicita tradeoff material
+
+  - id: 70-instrumentos-y-regimenes
+    name: Instrumentos y regímenes
+    purpose: Validar que distintos soportes institucionales y contextos regulatorios sigan entrando en mismo modelo conceptual.
+    scope:
+      - bancos
+      - cash
+      - billeteras
+      - tarjetas
+      - cripto
+      - inversiones
+      - impuestos
+      - comercio internacional
+    scenario_types:
+      - instrumento único
+      - instrumento híbrido
+      - contexto regulatorio
+      - fricción institucional
+    edge_cases:
+      - stablecoin usada como caja
+      - impuesto devengado pero no pagado
+      - tarjeta extranjera
+      - diferencia entre valor nominal y realizable
+    acceptance:
+      - instrumento no introduce ontología paralela
+      - fenómeno se describe con mismos primitives
+      - reglas locales no rompen verdad base
+
+  - id: 80-vidas-compuestas
+    name: Vidas compuestas
+    purpose: Validar secuencias reales largas donde se cruzan tiempo, esferas, instrumentos y decisiones.
+    scope:
+      - historias multi evento
+      - semanas o meses de evolución
+      - tensiones acumulativas
+    scenario_types:
+      - flujo variable + deuda
+      - negocio + vida personal
+      - ahorro + inversión + gasto
+      - múltiples agentes
+    edge_cases:
+      - cadena de pagos parciales
+      - mezcla de préstamo, cuotas e inversión
+      - deudas en moneda distinta
+    acceptance:
+      - no hay doble conteo
+      - trayectoria conserva coherencia
+      - decisión final surge de historia completa
+
+  - id: 90-casos-que-rompen
+    name: Casos que rompen
+    purpose: Mantener frontera viva del modelo y detectar escenarios que obligan a cambiarlo o a declarar límites.
+    scope:
+      - casos patológicos
+      - escenarios imposibles
+      - escenarios subdeterminados
+      - contradicciones internas
+    scenario_types:
+      - modelo insuficiente
+      - evidencia incompatible
+      - semántica irresoluble
+      - conflicto entre capas
+    edge_cases:
+      - misma realidad exige dos lecturas incompatibles
+      - soporte institucional no modelable hoy
+      - decisión requiere dato imposible
+    acceptance:
+      - sistema falla de forma explícita
+      - breakage queda tipificado
+      - caso alimenta roadmap conceptual

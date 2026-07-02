@@ -1,0 +1,18 @@
+@import "../styles/fonts.css";
+@import "tailwindcss";
+@import "../design-system/tokens/index.css";
+@import "../styles/reset.css";
+@import "../styles/global.css";
+
+@theme inline {
+  --color-canvas: var(--color-canvas-default);
+  --color-surface-base: var(--color-surface-base);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-text-strong: var(--color-text-strong);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-accent: var(--color-text-accent);
+  --font-sans: var(--font-satoshi);
+  --font-serif: var(--font-instrument-serif);
+  --font-mono: var(--font-ibm-plex-mono);
+}
