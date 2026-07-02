@@ -1,0 +1,45 @@
+.rail {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-8);
+  overflow: hidden;
+}
+
+.unit {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.separator {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
+}
+
+.item {
+  white-space: nowrap;
+}
+
+.wrap-single-line {
+  flex-wrap: nowrap;
+}
+
+.wrap-truncate .unit {
+  overflow: hidden;
+}
+
+.wrap-truncate .item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state-partial .unit:last-child .item {
+  color: var(--color-text-attention);
+}

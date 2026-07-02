@@ -1,0 +1,26 @@
+.statement {
+  max-width: 64ch;
+  margin: 0;
+  font-family: var(--font-instrument-serif);
+  font-size: var(--type-heading-s-size);
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: var(--type-heading-s-tracking);
+  line-height: var(--type-heading-s-line);
+}
+
+.kind-neutral {
+  color: var(--color-text-primary);
+}
+
+.kind-stable {
+  color: var(--color-stable-text);
+}
+
+.kind-attention {
+  color: var(--color-text-attention);
+}
+
+.kind-caution {
+  color: var(--color-text-critical);
+}

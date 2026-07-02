@@ -1,0 +1,66 @@
+.meter {
+  --coverage-fill: var(--color-stable-text);
+
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.track {
+  width: 100%;
+  height: var(--space-8);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  appearance: none;
+  background: var(--color-surface-subtle);
+}
+
+.track::-webkit-progress-bar {
+  border-radius: var(--radius-full);
+  background: var(--color-surface-subtle);
+}
+
+.track::-webkit-progress-value {
+  border-radius: var(--radius-full);
+  background: var(--coverage-fill);
+}
+
+.track::-moz-progress-bar {
+  border-radius: var(--radius-full);
+  background: var(--coverage-fill);
+}
+
+.summary {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.leftSummary {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.rightSummary {
+  min-width: 0;
+  flex: 0 1 auto;
+  text-align: right;
+}
+
+.state-atRisk {
+  --coverage-fill: var(--color-attention-text);
+}
+
+.state-empty {
+  --coverage-fill: var(--border-default);
+}
+
+.state-partial {
+  --coverage-fill: var(--color-info-text);
+}

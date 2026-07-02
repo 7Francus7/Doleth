@@ -1,0 +1,48 @@
+.hero {
+  min-height: calc(var(--space-72) * 4);
+  align-items: flex-start;
+}
+
+.stateLine {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--color-text-strong);
+  font-family: var(--font-instrument-serif);
+  font-size: var(--type-heading-l-size);
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: var(--type-heading-l-tracking);
+  line-height: var(--type-heading-l-line);
+}
+
+.valueGroup {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-20);
+}
+
+.newLabel {
+  max-width: 42ch;
+  margin-top: var(--space-16);
+}
+
+.coverageGroup {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--space-20);
+  margin-top: auto;
+  padding-top: var(--space-24);
+}
+
+.scenario-attention .stateLine,
+.scenario-incomplete .stateLine {
+  color: var(--color-text-attention);
+}
+
+.scenario-new {
+  min-height: calc(var(--space-72) * 3);
+}
