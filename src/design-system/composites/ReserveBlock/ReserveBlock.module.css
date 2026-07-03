@@ -14,7 +14,7 @@
 }
 
 .state-paused .purpose {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .state-near-target {

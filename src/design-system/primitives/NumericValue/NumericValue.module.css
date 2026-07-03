@@ -61,7 +61,7 @@
 .state-partial,
 .state-estimated,
 .state-unavailable {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .delta {
