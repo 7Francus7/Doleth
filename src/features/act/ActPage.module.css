@@ -1,0 +1,96 @@
+.canvas {
+  padding-top: max(var(--space-48), env(safe-area-inset-top));
+}
+
+.content {
+  display: flex;
+  max-width: 35rem;
+  flex-direction: column;
+}
+
+.navigation {
+  position: relative;
+  display: grid;
+  min-height: calc(var(--space-40) + var(--space-4));
+  grid-template-columns: calc(var(--space-40) + var(--space-4)) 1fr calc(var(--space-40) + var(--space-4));
+  align-items: center;
+}
+
+.backLink {
+  min-width: calc(var(--space-40) + var(--space-4));
+  min-height: calc(var(--space-40) + var(--space-4));
+  justify-content: flex-start;
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-m-size);
+  line-height: var(--type-label-m-line);
+}
+
+.title {
+  position: absolute;
+  left: 50%;
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+  letter-spacing: var(--type-label-l-tracking);
+  line-height: var(--type-label-l-line);
+  transform: translate(-50%, -1px);
+}
+
+.navigationReserve {
+  grid-column: 3;
+}
+
+.rail {
+  min-height: calc(var(--space-16) + var(--space-2));
+  margin-top: var(--space-16);
+}
+
+.recommendation {
+  min-height: 15.75rem;
+  gap: var(--space-12);
+  margin-top: var(--space-16);
+}
+
+.conclusion {
+  max-width: 19rem;
+  margin: 0 0 var(--space-4) -1px;
+  color: var(--color-text-strong);
+  font-family: var(--font-instrument-serif);
+  font-size: var(--type-heading-l-size);
+  font-weight: 400;
+  letter-spacing: var(--type-heading-l-tracking);
+  line-height: var(--type-heading-l-line);
+}
+
+.consequence {
+  margin: calc(var(--space-8) * -1) 0 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+  letter-spacing: var(--type-body-s-tracking);
+  line-height: var(--type-body-s-line);
+}
+
+.divider {
+  margin-top: auto;
+}
+
+@media (max-width: 359px) {
+  .canvas {
+    padding-top: max(var(--space-20), env(safe-area-inset-top));
+    padding-right: max(var(--space-16), env(safe-area-inset-right));
+    padding-left: max(var(--space-16), env(safe-area-inset-left));
+  }
+
+  .rail {
+    min-height: var(--type-label-s-line);
+  }
+
+  .recommendation {
+    min-height: 14rem;
+    padding: var(--space-20);
+  }
+}
