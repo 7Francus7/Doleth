@@ -1,7 +1,10 @@
+import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { SystemRail } from "../../design-system/composites/SystemRail";
+import { Button } from "../../design-system/primitives/Button";
 import { Divider } from "../../design-system/primitives/Divider";
 import { Label } from "../../design-system/primitives/Label";
 import { NumericValue } from "../../design-system/primitives/NumericValue";
+import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
 import { TextLink } from "../../design-system/primitives/TextLink";
 import type { ActViewModel } from "./model";
@@ -44,6 +47,39 @@ export function ActPage({ model }: ActPageProps) {
             {model.recommendation.confidenceLabel}
           </Label>
         </Surface>
+
+        <p className={styles.reason}>{model.reason}</p>
+
+        <Surface
+          border="subtle"
+          className={styles.impact}
+          padding="sm"
+          radius="lg"
+          tone="base"
+        >
+          <SectionTitle title={model.impact.title} />
+          <div className={styles.impactRows}>
+            {model.impact.rows.map((row, index) => (
+              <div className={styles.impactUnit} key={row.label}>
+                {index > 0 ? <Divider /> : null}
+                <FinancialRow {...row} className={styles.impactRow!} />
+              </div>
+            ))}
+          </div>
+        </Surface>
+
+        <div className={styles.decision}>
+          <Button kind="primary" size="lg" width="fill">
+            {model.decision.primaryLabel}
+          </Button>
+          <div className={styles.secondaryActions}>
+            {model.decision.secondaryActions.map((action) => (
+              <TextLink href={action.href} key={action.label} kind="standalone">
+                {action.label}
+              </TextLink>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   );

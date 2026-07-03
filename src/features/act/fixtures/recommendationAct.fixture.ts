@@ -13,7 +13,7 @@ export const recommendationActFixture = {
   },
   recommendation: {
     stateLabel: "Recomendación para hoy",
-    conclusion: "Conviene cubrir tu Visa hoy",
+    conclusion: "Cubrir tarjeta Visa",
     amount: {
       value: "57.820",
       prefix: "$",
@@ -24,5 +24,31 @@ export const recommendationActFixture = {
     },
     consequence: "Dejás cubierto el vencimiento de mañana",
     confidenceLabel: "Información completa",
+  },
+  reason: "Vence mañana y hoy faltan $57.820 para dejarla cubierta.",
+  impact: {
+    title: "Qué cambia",
+    rows: [
+      {
+        label: "Si actuás",
+        supportingLabel:
+          "El compromiso queda cubierto y evitás llegar al vencimiento con faltante.",
+        value: "Hoy",
+        density: "compact",
+      },
+      {
+        label: "Si esperás",
+        supportingLabel: "Mañana vas a necesitar resolverlo con menos margen.",
+        value: "Mañana",
+        density: "compact",
+      },
+    ],
+  },
+  decision: {
+    primaryLabel: "Continuar",
+    secondaryActions: [
+      { href: "/ahora#evidence", label: "Revisar datos" },
+      { href: "/ahora", label: "Ahora no" },
+    ],
   },
 } satisfies ActViewModel;

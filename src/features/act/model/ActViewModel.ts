@@ -1,4 +1,5 @@
 import type { NumericValueProps } from "../../../design-system/primitives/NumericValue";
+import type { FinancialRowProps } from "../../../design-system/composites/FinancialRow";
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
 
 export interface ActViewModel {
@@ -17,5 +18,17 @@ export interface ActViewModel {
     >;
     consequence: string;
     confidenceLabel: string;
+  };
+  reason: string;
+  impact: {
+    title: string;
+    rows: readonly [FinancialRowProps, FinancialRowProps];
+  };
+  decision: {
+    primaryLabel: string;
+    secondaryActions: readonly [
+      { href: string; label: string },
+      { href: string; label: string },
+    ];
   };
 }
