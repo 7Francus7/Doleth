@@ -1,6 +1,7 @@
 import type { NumericValueProps } from "../../../design-system/primitives/NumericValue";
 import type { FinancialRowProps } from "../../../design-system/composites/FinancialRow";
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
+import type { RecommendationEvidence } from "../evidence/model";
 
 export interface ActViewModel {
   navigation: {
@@ -18,7 +19,9 @@ export interface ActViewModel {
     >;
     consequence: string;
     confidenceLabel: string;
+    evidenceTriggerLabel: string;
   };
+  evidence: RecommendationEvidence;
   reason: string;
   impact: {
     title: string;

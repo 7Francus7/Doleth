@@ -7,6 +7,7 @@ import { NumericValue } from "../../design-system/primitives/NumericValue";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
 import { TextLink } from "../../design-system/primitives/TextLink";
+import { RecommendationEvidenceExperience } from "./evidence";
 import type { ActViewModel } from "./model";
 import styles from "./ActPage.module.css";
 
@@ -43,9 +44,11 @@ export function ActPage({ model }: ActPageProps) {
           <NumericValue {...model.recommendation.amount} />
           <p className={styles.consequence}>{model.recommendation.consequence}</p>
           <Divider className={styles.divider} />
-          <Label as="p" size="s" tone="secondary">
-            {model.recommendation.confidenceLabel}
-          </Label>
+          <RecommendationEvidenceExperience
+            confidenceLabel={model.recommendation.confidenceLabel}
+            evidence={model.evidence}
+            triggerLabel={model.recommendation.evidenceTriggerLabel}
+          />
         </Surface>
 
         <p className={styles.reason}>{model.reason}</p>

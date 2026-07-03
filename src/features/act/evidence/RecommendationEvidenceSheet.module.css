@@ -1,0 +1,36 @@
+.content,
+.lines,
+.line,
+.explanation,
+.contextGrid {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.content {
+  gap: var(--space-16);
+}
+
+.lines {
+  gap: 0;
+}
+
+.explanation {
+  gap: var(--space-8);
+}
+
+.body {
+  max-width: 64ch;
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  font-weight: var(--type-body-m-weight);
+  letter-spacing: var(--type-body-m-tracking);
+  line-height: var(--type-body-m-line);
+}
+
+.contextGrid {
+  gap: var(--space-16);
+}

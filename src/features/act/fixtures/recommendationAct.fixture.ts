@@ -1,4 +1,5 @@
 import type { ActViewModel } from "../model";
+import { recommendationEvidenceFixture } from "../evidence/fixtures";
 
 export const recommendationActFixture = {
   navigation: {
@@ -24,7 +25,9 @@ export const recommendationActFixture = {
     },
     consequence: "Dejás cubierto el vencimiento de mañana",
     confidenceLabel: "Información completa",
+    evidenceTriggerLabel: "Ver por qué",
   },
+  evidence: recommendationEvidenceFixture,
   reason: "Vence mañana y hoy faltan $57.820 para dejarla cubierta.",
   impact: {
     title: "Qué cambia",

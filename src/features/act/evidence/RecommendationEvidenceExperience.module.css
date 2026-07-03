@@ -1,0 +1,13 @@
+.summary {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+
+.summary a {
+  flex: 0 0 auto;
+  font-size: var(--type-label-s-size);
+  line-height: var(--type-label-s-line);
+}
