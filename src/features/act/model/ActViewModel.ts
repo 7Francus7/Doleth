@@ -3,6 +3,16 @@ import type { FinancialRowProps } from "../../../design-system/composites/Financ
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
 import type { RecommendationEvidence } from "../evidence/model";
 
+export type ActDecisionState = "idle" | "applied" | "deferred" | "dismissed";
+export type ActDecisionOutcomeState = Exclude<ActDecisionState, "idle">;
+
+export interface ActDecisionOutcome {
+  label: string;
+  title: string;
+  detail: string;
+  resetLabel: string;
+}
+
 export interface ActViewModel {
   navigation: {
     backHref: string;
@@ -28,10 +38,13 @@ export interface ActViewModel {
     rows: readonly [FinancialRowProps, FinancialRowProps];
   };
   decision: {
-    primaryLabel: string;
+    label: string;
+    helper: string;
+    primaryActionLabel: string;
     secondaryActions: readonly [
-      { href: string; label: string },
-      { href: string; label: string },
+      { id: "deferred"; label: string },
+      { id: "dismissed"; label: string },
     ];
+    outcomes: Record<ActDecisionOutcomeState, ActDecisionOutcome>;
   };
 }

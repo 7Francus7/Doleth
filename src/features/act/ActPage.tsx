@@ -1,5 +1,10 @@
+"use client";
+
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useState } from "react";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { SystemRail } from "../../design-system/composites/SystemRail";
+import { motionCurve, motionDuration } from "../../design-system/tokens";
 import { Button } from "../../design-system/primitives/Button";
 import { Divider } from "../../design-system/primitives/Divider";
 import { Label } from "../../design-system/primitives/Label";
@@ -8,14 +13,27 @@ import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
 import { TextLink } from "../../design-system/primitives/TextLink";
 import { RecommendationEvidenceExperience } from "./evidence";
-import type { ActViewModel } from "./model";
+import type { ActDecisionState, ActViewModel } from "./model";
 import styles from "./ActPage.module.css";
 
 export interface ActPageProps {
   model: ActViewModel;
+  initialDecisionState?: ActDecisionState;
 }
 
-export function ActPage({ model }: ActPageProps) {
+export function ActPage({
+  model,
+  initialDecisionState = "idle",
+}: ActPageProps) {
+  const [decisionState, setDecisionState] = useState(initialDecisionState);
+  const reduceMotion = useReducedMotion();
+  const decisionOutcome =
+    decisionState === "idle" ? null : model.decision.outcomes[decisionState];
+  const decisionTransition = {
+    duration: reduceMotion ? motionDuration.micro : motionDuration.surface,
+    ease: motionCurve.settle,
+  };
+
   return (
     <main className={`app-canvas ${styles.canvas}`}>
       <div className={`app-canvas__content ${styles.content}`}>
@@ -71,17 +89,87 @@ export function ActPage({ model }: ActPageProps) {
           </div>
         </Surface>
 
-        <div className={styles.decision}>
-          <Button kind="primary" size="lg" width="fill">
-            {model.decision.primaryLabel}
-          </Button>
-          <div className={styles.secondaryActions}>
-            {model.decision.secondaryActions.map((action) => (
-              <TextLink href={action.href} key={action.label} kind="standalone">
-                {action.label}
-              </TextLink>
-            ))}
+        <div className={styles.decision} id="act-decision">
+          <div className={styles.decisionHeader}>
+            <Label as="p" size="m" tone="secondary">
+              {model.decision.label}
+            </Label>
+            {decisionState === "idle" ? (
+              <p className={styles.decisionHelper}>{model.decision.helper}</p>
+            ) : null}
           </div>
+
+          <AnimatePresence initial={false} mode="wait">
+            {decisionOutcome ? (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className={styles.decisionState}
+                exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
+                initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+                key={decisionState}
+                transition={decisionTransition}
+              >
+                <Surface
+                  border="subtle"
+                  className={styles.decisionResult}
+                  padding="md"
+                  radius="lg"
+                  tone="base"
+                >
+                  <div className={styles.decisionResultCopy}>
+                    <Label as="p" size="m" tone="primary">
+                      {decisionOutcome.label}
+                    </Label>
+                    <p className={styles.decisionResultTitle}>{decisionOutcome.title}</p>
+                    <p className={styles.decisionResultDetail}>{decisionOutcome.detail}</p>
+                  </div>
+                  <TextLink
+                    href="#act-decision"
+                    kind="standalone"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setDecisionState("idle");
+                    }}
+                  >
+                    {decisionOutcome.resetLabel}
+                  </TextLink>
+                </Surface>
+              </motion.div>
+            ) : (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className={styles.decisionActions}
+                exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
+                initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+                key="idle"
+                transition={decisionTransition}
+              >
+                <Button
+                  kind="primary"
+                  onClick={() => setDecisionState("applied")}
+                  size="lg"
+                  width="fill"
+                >
+                  {model.decision.primaryActionLabel}
+                </Button>
+                <div className={styles.secondaryActions}>
+                  {model.decision.secondaryActions.map((action) => (
+                    <TextLink
+                      href="#act-decision"
+                      key={action.id}
+                      kind="standalone"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDecisionState(action.id);
+                      }}
+                    >
+                      {action.label}
+                    </TextLink>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </main>

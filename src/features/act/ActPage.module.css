@@ -114,6 +114,60 @@
   margin-top: var(--space-24);
 }
 
+.decisionHeader,
+.decisionActions,
+.decisionState,
+.decisionResultCopy {
+  display: flex;
+  flex-direction: column;
+}
+
+.decisionHeader,
+.decisionResultCopy {
+  gap: var(--space-4);
+}
+
+.decisionActions,
+.decisionState {
+  gap: var(--space-12);
+}
+
+.decisionHelper,
+.decisionResultTitle,
+.decisionResultDetail {
+  margin: 0;
+  font-family: var(--font-satoshi);
+}
+
+.decisionHelper {
+  max-width: 34ch;
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+  letter-spacing: var(--type-body-s-tracking);
+  line-height: var(--type-body-s-line);
+}
+
+.decisionResult {
+  gap: var(--space-12);
+}
+
+.decisionResultTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-body-m-size);
+  font-weight: var(--type-body-m-weight);
+  letter-spacing: var(--type-body-m-tracking);
+  line-height: var(--type-body-m-line);
+}
+
+.decisionResultDetail {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+  letter-spacing: var(--type-body-s-tracking);
+  line-height: var(--type-body-s-line);
+}
+
 .secondaryActions {
   display: flex;
   min-height: calc(var(--space-40) + var(--space-4));
@@ -147,6 +201,13 @@
   }
 
   .impactRow {
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .secondaryActions {
+    min-height: 0;
+    align-items: flex-start;
     flex-direction: column;
     gap: var(--space-8);
   }

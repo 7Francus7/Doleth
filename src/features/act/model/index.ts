@@ -1,1 +1,6 @@
-export type { ActViewModel } from "./ActViewModel";
+export type {
+  ActDecisionOutcome,
+  ActDecisionOutcomeState,
+  ActDecisionState,
+  ActViewModel,
+} from "./ActViewModel";

@@ -48,10 +48,33 @@ export const recommendationActFixture = {
     ],
   },
   decision: {
-    primaryLabel: "Continuar",
+    label: "Tu decision",
+    helper: "Elegis que hacer con esta sugerencia. Todavia no se mueve dinero.",
+    primaryActionLabel: "Aplicar recomendacion",
     secondaryActions: [
-      { href: "/ahora#evidence", label: "Revisar datos" },
-      { href: "/ahora", label: "Ahora no" },
+      { id: "deferred", label: "Dejar para despues" },
+      { id: "dismissed", label: "No sugerir de nuevo" },
     ],
+    outcomes: {
+      applied: {
+        label: "Recomendacion aplicada",
+        title: "La dejamos como tu siguiente paso.",
+        detail: "Todavia no movimos dinero. Antes de confirmar, vas a revisar importe y destino.",
+        resetLabel: "Deshacer",
+      },
+      deferred: {
+        label: "La dejamos para despues",
+        title: "La sugerencia queda en pausa.",
+        detail: "Podes retomarla desde Actuar cuando tengas margen para decidir sin apuro.",
+        resetLabel: "Retomar ahora",
+      },
+      dismissed: {
+        label: "No la vamos a insistir",
+        title: "Esta sugerencia deja de aparecer en este estado.",
+        detail:
+          "Si cambian el vencimiento, el faltante o la cobertura, Doleth puede recalcularla otra vez.",
+        resetLabel: "Volver a sugerirla",
+      },
+    },
   },
 } satisfies ActViewModel;
