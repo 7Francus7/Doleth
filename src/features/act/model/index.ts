@@ -1,4 +1,5 @@
 export type {
+  ActDecisionCompletion,
   ActDecisionConfirmationDetail,
   ActDecisionOutcome,
   ActDecisionOutcomeState,

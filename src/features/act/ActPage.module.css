@@ -117,11 +117,14 @@
 .decisionHeader,
 .decisionActions,
 .decisionState,
+.decisionCompletion,
 .decisionResultCopy,
 .confirmation,
 .confirmationDetails,
 .confirmationHeader,
 .confirmationDetailContent,
+.decisionCompletionCopy,
+.decisionCompletionActions,
 .confirmationActions,
 .confirmationDetail {
   display: flex;
@@ -132,12 +135,15 @@
 .decisionResultCopy,
 .confirmationHeader,
 .confirmationDetailContent,
+.decisionCompletionCopy,
+.decisionCompletionActions,
 .confirmationActions {
   gap: var(--space-4);
 }
 
 .decisionActions,
 .decisionState,
+.decisionCompletion,
 .confirmation,
 .confirmationDetails {
   gap: var(--space-12);
@@ -146,6 +152,9 @@
 .decisionHelper,
 .decisionResultTitle,
 .decisionResultDetail,
+.decisionCompletionTitle,
+.decisionCompletionDetail,
+.decisionCompletionControl,
 .confirmationHelper,
 .confirmationValue {
   margin: 0;
@@ -169,6 +178,10 @@
   gap: var(--space-12);
 }
 
+.decisionCompletion {
+  gap: var(--space-12);
+}
+
 .confirmationAmount {
   display: flex;
   flex-direction: column;
@@ -176,12 +189,22 @@
 }
 
 .confirmationHelper,
+.decisionCompletionDetail,
+.decisionCompletionControl,
 .confirmationValue {
   color: var(--color-text-secondary);
   font-size: var(--type-body-s-size);
   font-weight: var(--type-body-s-weight);
   letter-spacing: var(--type-body-s-tracking);
   line-height: var(--type-body-s-line);
+}
+
+.decisionCompletionTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-body-m-size);
+  font-weight: var(--type-body-m-weight);
+  letter-spacing: var(--type-body-m-tracking);
+  line-height: var(--type-body-m-line);
 }
 
 .confirmationValue {
@@ -205,6 +228,10 @@
 }
 
 .confirmationActions {
+  align-items: flex-start;
+}
+
+.decisionCompletionActions {
   align-items: flex-start;
 }
 
@@ -246,6 +273,10 @@
   }
 
   .confirmation {
+    padding: var(--space-20);
+  }
+
+  .decisionCompletion {
     padding: var(--space-20);
   }
 

@@ -28,8 +28,9 @@ export function ActPage({
   const [decisionState, setDecisionState] = useState(initialDecisionState);
   const reduceMotion = useReducedMotion();
   const isConfirming = decisionState === "confirming";
+  const isConfirmed = decisionState === "confirmed";
   const decisionOutcome =
-    decisionState === "idle" || decisionState === "confirming"
+    decisionState === "idle" || decisionState === "confirming" || decisionState === "confirmed"
       ? null
       : model.decision.outcomes[decisionState];
   const decisionTransition = {
@@ -74,7 +75,7 @@ export function ActPage({
 
         <p className={styles.reason}>{model.reason}</p>
 
-        {isConfirming ? null : (
+        {isConfirming || isConfirmed ? null : (
           <Surface
             border="subtle"
             className={styles.impact}
@@ -173,6 +174,58 @@ export function ActPage({
                       }}
                     >
                       {model.decision.confirmation.secondaryActionLabel}
+                    </TextLink>
+                  </div>
+                </Surface>
+              </motion.div>
+            ) : isConfirmed ? (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className={styles.decisionState}
+                exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
+                initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+                key="confirmed"
+                transition={decisionTransition}
+              >
+                <Surface
+                  border="subtle"
+                  className={styles.decisionCompletion}
+                  padding="md"
+                  radius="lg"
+                  tone="base"
+                >
+                  <div className={styles.decisionCompletionCopy}>
+                    <Label as="p" size="m" tone="primary">
+                      {model.decision.completion.label}
+                    </Label>
+                    <p className={styles.decisionCompletionTitle}>
+                      {model.decision.completion.title}
+                    </p>
+                    <p className={styles.decisionCompletionDetail}>
+                      {model.decision.completion.detail}
+                    </p>
+                    <p className={styles.decisionCompletionControl}>
+                      {model.decision.completion.control}
+                    </p>
+                  </div>
+                  <div className={styles.decisionCompletionActions}>
+                    <Button
+                      kind="secondary"
+                      onClick={() => setDecisionState("confirming")}
+                      size="lg"
+                      width="fill"
+                    >
+                      {model.decision.completion.undoLabel}
+                    </Button>
+                    <TextLink
+                      href="#act-decision"
+                      kind="standalone"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDecisionState("idle");
+                      }}
+                    >
+                      {model.decision.completion.closeLabel}
                     </TextLink>
                   </div>
                 </Surface>

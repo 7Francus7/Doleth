@@ -73,17 +73,19 @@ export const recommendationActFixture = {
       primaryActionLabel: "Confirmar",
       secondaryActionLabel: "Volver",
     },
+    completion: {
+      label: "Recomendacion preparada",
+      title: "Cubrir tarjeta Visa queda preparada en esta vista.",
+      detail: "Todavia no hubo movimiento real.",
+      control: "Cuando exista ejecucion, la vas a continuar desde este mismo flujo. Podes deshacer o cerrar ahora.",
+      undoLabel: "Deshacer",
+      closeLabel: "Cerrar",
+    },
     secondaryActions: [
       { id: "deferred", label: "Dejar para despues" },
       { id: "dismissed", label: "No sugerir de nuevo" },
     ],
     outcomes: {
-      confirmed: {
-        label: "Confirmacion local lista",
-        title: "La decision queda validada en esta vista.",
-        detail: "Todavia no enviamos ningun pago. El siguiente paso real seria ejecutar con contexto vigente.",
-        resetLabel: "Revisar otra vez",
-      },
       deferred: {
         label: "La dejamos para despues",
         title: "La sugerencia queda en pausa.",

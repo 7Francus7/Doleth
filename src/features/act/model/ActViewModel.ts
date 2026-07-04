@@ -9,13 +9,25 @@ export type ActDecisionState =
   | "confirmed"
   | "deferred"
   | "dismissed";
-export type ActDecisionOutcomeState = Exclude<ActDecisionState, "idle" | "confirming">;
+export type ActDecisionOutcomeState = Exclude<
+  ActDecisionState,
+  "idle" | "confirming" | "confirmed"
+>;
 
 export interface ActDecisionOutcome {
   label: string;
   title: string;
   detail: string;
   resetLabel: string;
+}
+
+export interface ActDecisionCompletion {
+  label: string;
+  title: string;
+  detail: string;
+  control: string;
+  undoLabel: string;
+  closeLabel: string;
 }
 
 export interface ActDecisionConfirmationDetail {
@@ -69,6 +81,7 @@ export interface ActViewModel {
       primaryActionLabel: string;
       secondaryActionLabel: string;
     };
+    completion: ActDecisionCompletion;
     secondaryActions: readonly [
       { id: "deferred"; label: string },
       { id: "dismissed"; label: string },
