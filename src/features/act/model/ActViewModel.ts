@@ -71,13 +71,7 @@ export interface ActViewModel {
         NumericValueProps,
         "format" | "prefix" | "size" | "state" | "tone" | "value"
       >;
-      details: readonly [
-        ActDecisionConfirmationDetail,
-        ActDecisionConfirmationDetail,
-        ActDecisionConfirmationDetail,
-        ActDecisionConfirmationDetail,
-        ActDecisionConfirmationDetail,
-      ];
+      details: readonly ActDecisionConfirmationDetail[];
       primaryActionLabel: string;
       secondaryActionLabel: string;
     };

@@ -75,7 +75,7 @@ export function ActPage({
 
         <p className={styles.reason}>{model.reason}</p>
 
-        {isConfirming || isConfirmed ? null : (
+        {decisionState !== "idle" ? null : (
           <Surface
             border="subtle"
             className={styles.impact}
