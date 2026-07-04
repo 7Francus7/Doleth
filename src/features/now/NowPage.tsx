@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { AnimatePresence, LayoutGroup } from "motion/react";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
@@ -21,7 +20,6 @@ export interface NowPageProps {
 }
 
 export function NowPage({ model }: NowPageProps) {
-  const router = useRouter();
   const actionStripProps = styles.actions ? { className: styles.actions } : {};
   const reserveProps = styles.reserve ? { className: styles.reserve } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
@@ -31,7 +29,7 @@ export function NowPage({ model }: NowPageProps) {
       return;
     }
 
-    router.push("/actuar");
+    window.location.assign("/actuar");
   };
 
   return (
