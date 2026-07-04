@@ -27,8 +27,11 @@ export function ActPage({
 }: ActPageProps) {
   const [decisionState, setDecisionState] = useState(initialDecisionState);
   const reduceMotion = useReducedMotion();
+  const isConfirming = decisionState === "confirming";
   const decisionOutcome =
-    decisionState === "idle" ? null : model.decision.outcomes[decisionState];
+    decisionState === "idle" || decisionState === "confirming"
+      ? null
+      : model.decision.outcomes[decisionState];
   const decisionTransition = {
     duration: reduceMotion ? motionDuration.micro : motionDuration.surface,
     ease: motionCurve.settle,
@@ -71,23 +74,25 @@ export function ActPage({
 
         <p className={styles.reason}>{model.reason}</p>
 
-        <Surface
-          border="subtle"
-          className={styles.impact}
-          padding="sm"
-          radius="lg"
-          tone="base"
-        >
-          <SectionTitle title={model.impact.title} />
-          <div className={styles.impactRows}>
-            {model.impact.rows.map((row, index) => (
-              <div className={styles.impactUnit} key={row.label}>
-                {index > 0 ? <Divider /> : null}
-                <FinancialRow {...row} className={styles.impactRow!} />
-              </div>
-            ))}
-          </div>
-        </Surface>
+        {isConfirming ? null : (
+          <Surface
+            border="subtle"
+            className={styles.impact}
+            padding="sm"
+            radius="lg"
+            tone="base"
+          >
+            <SectionTitle title={model.impact.title} />
+            <div className={styles.impactRows}>
+              {model.impact.rows.map((row, index) => (
+                <div className={styles.impactUnit} key={row.label}>
+                  {index > 0 ? <Divider /> : null}
+                  <FinancialRow {...row} className={styles.impactRow!} />
+                </div>
+              ))}
+            </div>
+          </Surface>
+        )}
 
         <div className={styles.decision} id="act-decision">
           <div className={styles.decisionHeader}>
@@ -100,7 +105,79 @@ export function ActPage({
           </div>
 
           <AnimatePresence initial={false} mode="wait">
-            {decisionOutcome ? (
+            {isConfirming ? (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className={styles.decisionState}
+                exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
+                initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+                key="confirming"
+                transition={decisionTransition}
+              >
+                <Surface
+                  border="subtle"
+                  className={styles.confirmation}
+                  padding="md"
+                  radius="lg"
+                  tone="base"
+                >
+                  <div className={styles.confirmationHeader}>
+                    <Label as="p" size="m" tone="primary">
+                      {model.decision.confirmation.label}
+                    </Label>
+                    <p className={styles.confirmationHelper}>
+                      {model.decision.confirmation.helper}
+                    </p>
+                  </div>
+
+                  <Divider />
+
+                  <div className={styles.confirmationAmount}>
+                    <Label as="p" size="s" tone="secondary">
+                      {model.decision.confirmation.amountLabel}
+                    </Label>
+                    <NumericValue {...model.decision.confirmation.amount} />
+                  </div>
+
+                  <Divider />
+
+                  <div className={styles.confirmationDetails}>
+                    {model.decision.confirmation.details.map((detail, index) => (
+                      <div className={styles.confirmationDetail} key={detail.label}>
+                        {index > 0 ? <Divider /> : null}
+                        <div className={styles.confirmationDetailContent}>
+                          <Label as="p" size="s" tone="secondary">
+                            {detail.label}
+                          </Label>
+                          <p className={styles.confirmationValue}>{detail.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={styles.confirmationActions}>
+                    <Button
+                      kind="primary"
+                      onClick={() => setDecisionState("confirmed")}
+                      size="lg"
+                      width="fill"
+                    >
+                      {model.decision.confirmation.primaryActionLabel}
+                    </Button>
+                    <TextLink
+                      href="#act-decision"
+                      kind="standalone"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setDecisionState("idle");
+                      }}
+                    >
+                      {model.decision.confirmation.secondaryActionLabel}
+                    </TextLink>
+                  </div>
+                </Surface>
+              </motion.div>
+            ) : decisionOutcome ? (
               <motion.div
                 animate={{ opacity: 1, y: 0 }}
                 className={styles.decisionState}
@@ -146,7 +223,7 @@ export function ActPage({
               >
                 <Button
                   kind="primary"
-                  onClick={() => setDecisionState("applied")}
+                  onClick={() => setDecisionState("confirming")}
                   size="lg"
                   width="fill"
                 >

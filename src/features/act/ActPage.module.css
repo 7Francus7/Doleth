@@ -117,24 +117,37 @@
 .decisionHeader,
 .decisionActions,
 .decisionState,
-.decisionResultCopy {
+.decisionResultCopy,
+.confirmation,
+.confirmationDetails,
+.confirmationHeader,
+.confirmationDetailContent,
+.confirmationActions,
+.confirmationDetail {
   display: flex;
   flex-direction: column;
 }
 
 .decisionHeader,
-.decisionResultCopy {
+.decisionResultCopy,
+.confirmationHeader,
+.confirmationDetailContent,
+.confirmationActions {
   gap: var(--space-4);
 }
 
 .decisionActions,
-.decisionState {
+.decisionState,
+.confirmation,
+.confirmationDetails {
   gap: var(--space-12);
 }
 
 .decisionHelper,
 .decisionResultTitle,
-.decisionResultDetail {
+.decisionResultDetail,
+.confirmationHelper,
+.confirmationValue {
   margin: 0;
   font-family: var(--font-satoshi);
 }
@@ -152,6 +165,29 @@
   gap: var(--space-12);
 }
 
+.confirmation {
+  gap: var(--space-12);
+}
+
+.confirmationAmount {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.confirmationHelper,
+.confirmationValue {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+  letter-spacing: var(--type-body-s-tracking);
+  line-height: var(--type-body-s-line);
+}
+
+.confirmationValue {
+  color: var(--color-text-primary);
+}
+
 .decisionResultTitle {
   color: var(--color-text-primary);
   font-size: var(--type-body-m-size);
@@ -166,6 +202,10 @@
   font-weight: var(--type-body-s-weight);
   letter-spacing: var(--type-body-s-tracking);
   line-height: var(--type-body-s-line);
+}
+
+.confirmationActions {
+  align-items: flex-start;
 }
 
 .secondaryActions {
@@ -203,6 +243,10 @@
   .impactRow {
     flex-direction: column;
     gap: var(--space-8);
+  }
+
+  .confirmation {
+    padding: var(--space-20);
   }
 
   .secondaryActions {

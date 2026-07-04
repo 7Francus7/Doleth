@@ -17,8 +17,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Screen: Story = {};
-export const Applied: Story = {
-  args: { initialDecisionState: "applied" },
+export const Confirming: Story = {
+  args: { initialDecisionState: "confirming" },
+};
+export const Confirmed: Story = {
+  args: { initialDecisionState: "confirmed" },
 };
 export const Deferred: Story = {
   args: { initialDecisionState: "deferred" },

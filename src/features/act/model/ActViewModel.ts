@@ -3,14 +3,24 @@ import type { FinancialRowProps } from "../../../design-system/composites/Financ
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
 import type { RecommendationEvidence } from "../evidence/model";
 
-export type ActDecisionState = "idle" | "applied" | "deferred" | "dismissed";
-export type ActDecisionOutcomeState = Exclude<ActDecisionState, "idle">;
+export type ActDecisionState =
+  | "idle"
+  | "confirming"
+  | "confirmed"
+  | "deferred"
+  | "dismissed";
+export type ActDecisionOutcomeState = Exclude<ActDecisionState, "idle" | "confirming">;
 
 export interface ActDecisionOutcome {
   label: string;
   title: string;
   detail: string;
   resetLabel: string;
+}
+
+export interface ActDecisionConfirmationDetail {
+  label: string;
+  value: string;
 }
 
 export interface ActViewModel {
@@ -41,6 +51,24 @@ export interface ActViewModel {
     label: string;
     helper: string;
     primaryActionLabel: string;
+    confirmation: {
+      label: string;
+      helper: string;
+      amountLabel: string;
+      amount: Pick<
+        NumericValueProps,
+        "format" | "prefix" | "size" | "state" | "tone" | "value"
+      >;
+      details: readonly [
+        ActDecisionConfirmationDetail,
+        ActDecisionConfirmationDetail,
+        ActDecisionConfirmationDetail,
+        ActDecisionConfirmationDetail,
+        ActDecisionConfirmationDetail,
+      ];
+      primaryActionLabel: string;
+      secondaryActionLabel: string;
+    };
     secondaryActions: readonly [
       { id: "deferred"; label: string },
       { id: "dismissed"; label: string },

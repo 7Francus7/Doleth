@@ -51,16 +51,38 @@ export const recommendationActFixture = {
     label: "Tu decision",
     helper: "Elegis que hacer con esta sugerencia. Todavia no se mueve dinero.",
     primaryActionLabel: "Aplicar recomendacion",
+    confirmation: {
+      label: "Listo para confirmar",
+      helper: "Todavia no se movio dinero. Revisa estos datos antes de confirmar.",
+      amountLabel: "Importe",
+      amount: {
+        value: "57.820",
+        prefix: "$",
+        size: "lg",
+        tone: "neutral",
+        format: "currency",
+        state: "confirmed",
+      },
+      details: [
+        { label: "Origen", value: "Cuenta principal" },
+        { label: "Destino", value: "Visa terminada en 1842" },
+        { label: "Fecha", value: "Hoy" },
+        { label: "Efecto esperado", value: "Disponible despues: $374.360" },
+        { label: "Reversibilidad", value: "No reversible una vez confirmado" },
+      ],
+      primaryActionLabel: "Confirmar",
+      secondaryActionLabel: "Volver",
+    },
     secondaryActions: [
       { id: "deferred", label: "Dejar para despues" },
       { id: "dismissed", label: "No sugerir de nuevo" },
     ],
     outcomes: {
-      applied: {
-        label: "Recomendacion aplicada",
-        title: "La dejamos como tu siguiente paso.",
-        detail: "Todavia no movimos dinero. Antes de confirmar, vas a revisar importe y destino.",
-        resetLabel: "Deshacer",
+      confirmed: {
+        label: "Confirmacion local lista",
+        title: "La decision queda validada en esta vista.",
+        detail: "Todavia no enviamos ningun pago. El siguiente paso real seria ejecutar con contexto vigente.",
+        resetLabel: "Revisar otra vez",
       },
       deferred: {
         label: "La dejamos para despues",
