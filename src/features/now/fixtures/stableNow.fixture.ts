@@ -13,7 +13,7 @@ export const stableNowFixture = {
     stateText: "Hoy estás tranquilo.",
     value: "432.180",
     valuePrefix: "$",
-    valueLabel: "Disponibles para usar",
+    valueLabel: "Disponible para hoy",
     coverage: {
       title: "Próximos 7 días",
       value: 100,
@@ -24,23 +24,21 @@ export const stableNowFixture = {
   },
   evidence: availableEvidenceFixture,
   stability: {
-    children: "No hay riesgos inmediatos.",
+    children: "No hay nada urgente. Lo importante ya está bajo control.",
     container: "none",
     kind: "neutral",
   },
   actions: {
-    primary: "register",
-    primaryLabel: "Registrar movimiento",
+    primary: "resolve",
+    primaryLabel: "Ver qué hacer hoy",
     secondaryActions: [
-      { id: "pay", label: "Pagar" },
-      { id: "move", label: "Mover" },
-      { id: "update", label: "Actualizar" },
-      { id: "evidence", label: "Evidencia" },
+      { id: "evidence", label: "Ver evidencia" },
+      { id: "update", label: "Actualizar lectura" },
     ],
-    state: "default",
+    state: "reduced",
   },
   position: {
-    title: "Dónde está tu dinero",
+    title: "Posición actual",
     rows: [
       { label: "Líquido confirmado", value: "610.000", valuePrefix: "$" },
       { label: "Invertido", value: "1.240.000", valuePrefix: "$" },
@@ -48,18 +46,17 @@ export const stableNowFixture = {
     ],
   },
   reserve: {
-    title: "Dinero reservado",
+    title: "Puede esperar hoy",
     amount: "120.000",
     amountPrefix: "$",
-    purposeLine: "Separado del disponible para compromisos y objetivos activos.",
+    purposeLine: "Ya está separado para compromisos y objetivos activos.",
     priority: "normal",
     state: "active",
   },
   information: {
-    title: "Cómo sabemos esto",
+    title: "Confianza de esta lectura",
     primaryLine: "La información está completa.",
-    causalLine:
-      "Incluye $610.000 líquidos, menos $120.000 reservados y $57.820 en pagos próximos.",
+    causalLine: "Disponible, cobertura y reservas usan datos vigentes de hoy.",
     linkLabel: "Ver evidencia",
     linkHref: "#evidence",
     state: "complete",

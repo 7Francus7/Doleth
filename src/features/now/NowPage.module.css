@@ -14,9 +14,20 @@
   padding-bottom: var(--space-72);
 }
 
+.actions {
+  margin-top: calc(var(--space-8) * -1);
+}
+
+.reserve {
+  margin-top: calc(var(--space-8) * -1);
+}
+
 .position {
   gap: var(--space-8);
-  margin-top: var(--space-8);
+}
+
+.information {
+  margin-top: calc(var(--space-8) * -1);
 }
 
 .positionRows,

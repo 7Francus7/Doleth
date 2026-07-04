@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { AnimatePresence, LayoutGroup } from "motion/react";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
@@ -20,6 +21,19 @@ export interface NowPageProps {
 }
 
 export function NowPage({ model }: NowPageProps) {
+  const router = useRouter();
+  const actionStripProps = styles.actions ? { className: styles.actions } : {};
+  const reserveProps = styles.reserve ? { className: styles.reserve } : {};
+  const informationProps = styles.information ? { className: styles.information } : {};
+  const handleAction = (actionId: string) => {
+    if (actionId === "evidence") {
+      document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    router.push("/actuar");
+  };
+
   return (
     <main className="app-canvas">
       <h1 className={styles.screenTitle}>Ahora</h1>
@@ -27,12 +41,15 @@ export function NowPage({ model }: NowPageProps) {
         <SystemRail {...model.rail} />
         <LayoutGroup id="now-primary-state">
           <AnimatePresence initial={false}>
-            {model.banner ? <AttentionBanner key="attention" {...model.banner} /> : null}
+            {model.banner ? (
+              <AttentionBanner key="attention" {...model.banner} onAction={handleAction} />
+            ) : null}
           </AnimatePresence>
           <AvailableEvidenceExperience evidence={model.evidence} hero={model.hero} />
         </LayoutGroup>
         <StabilityStatement {...model.stability} />
-        <ActionStrip {...model.actions} />
+        <ActionStrip {...model.actions} {...actionStripProps} onAction={handleAction} />
+        {model.reserve ? <ReserveBlock {...model.reserve} {...reserveProps} /> : null}
 
         <Surface
           border="subtle"
@@ -53,9 +70,8 @@ export function NowPage({ model }: NowPageProps) {
         </Surface>
 
         <div id="evidence">
-          <InformationBlock {...model.information} />
+          <InformationBlock {...model.information} {...informationProps} />
         </div>
-        {model.reserve ? <ReserveBlock {...model.reserve} /> : null}
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
-import { incompleteNowFixture } from "../../features/now/fixtures";
+import { stableNowFixture } from "../../features/now/fixtures";
 import { NowPage } from "../../features/now/NowPage";
 
 export default function AhoraPage() {
-  return <NowPage model={incompleteNowFixture} />;
+  return <NowPage model={stableNowFixture} />;
 }

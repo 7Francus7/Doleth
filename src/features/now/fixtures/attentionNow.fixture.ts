@@ -10,15 +10,15 @@ export const attentionNowFixture = {
   banner: {
     title: "Necesita atención hoy",
     detail: "Vence tu tarjeta Visa mañana y faltan $57.820.",
-    actionLabel: "Resolver ahora",
+    actionLabel: "Ver cómo resolverlo",
     actionId: "resolve",
   },
   hero: {
     scenario: "attention",
-    stateText: "Necesita atención",
+    stateText: "Hoy necesita atención",
     value: "432.180",
     valuePrefix: "$",
-    valueLabel: "Disponibles hasta el viernes",
+    valueLabel: "Disponible para decidir hoy",
     tone: "state-raised",
     coverage: {
       title: "Próximos 7 días",
@@ -30,23 +30,21 @@ export const attentionNowFixture = {
   },
   evidence: availableEvidenceFixture,
   stability: {
-    children: "Conviene cubrir este pago antes de hacer otra compra importante.",
+    children: "Primero resolvé Visa. El resto puede esperar hasta cubrirla.",
     container: "none",
     kind: "attention",
   },
   actions: {
     primary: "resolve",
-    primaryLabel: "Resolver ahora",
+    primaryLabel: "Ver cómo resolverlo",
     secondaryActions: [
-      { id: "pay", label: "Pagar" },
-      { id: "move", label: "Mover" },
-      { id: "update", label: "Actualizar" },
-      { id: "evidence", label: "Evidencia" },
+      { id: "evidence", label: "Ver evidencia" },
+      { id: "update", label: "Actualizar lectura" },
     ],
-    state: "default",
+    state: "reduced",
   },
   position: {
-    title: "Dónde está tu dinero",
+    title: "Posición actual",
     rows: [
       { label: "Líquido confirmado", value: "610.000", valuePrefix: "$" },
       { label: "Invertido", value: "1.240.000", valuePrefix: "$" },
@@ -54,19 +52,18 @@ export const attentionNowFixture = {
     ],
   },
   information: {
-    title: "Cómo sabemos esto",
-    primaryLine: "La información continúa completa y actualizada.",
-    causalLine:
-      "Incluye $610.000 líquidos, menos $120.000 reservados y $57.820 en pagos próximos.",
+    title: "Confianza de esta lectura",
+    primaryLine: "La lectura sigue completa y vigente.",
+    causalLine: "El faltante y la cobertura se apoyan en datos confirmados de hoy.",
     linkLabel: "Ver evidencia",
     linkHref: "#evidence",
     state: "complete",
   },
   reserve: {
-    title: "Dinero reservado",
+    title: "Puede esperar hoy",
     amount: "120.000",
     amountPrefix: "$",
-    purposeLine: "Separado del disponible para compromisos y objetivos activos.",
+    purposeLine: "No hace falta moverlo antes de resolver este vencimiento.",
     priority: "normal",
     state: "active",
   },

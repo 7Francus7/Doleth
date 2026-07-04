@@ -13,7 +13,7 @@ export const incompleteNowFixture = {
     stateText: "Hace falta confirmar saldo principal",
     value: "432.180",
     valuePrefix: "$",
-    valueLabel: "No confirmado",
+    valueLabel: "Lectura todavía no confirmada",
     inlineNote: "Último valor hace 19 h",
     coverage: {
       title: "Cobertura estimada",
@@ -25,23 +25,21 @@ export const incompleteNowFixture = {
   },
   evidence: incompleteAvailableEvidenceFixture,
   stability: {
-    children: "Podés orientarte, pero no cerrar una decisión grande todavía.",
+    children: "Podés orientarte, pero conviene revisar esto antes de decidir.",
     container: "none",
     kind: "caution",
   },
   actions: {
     primary: "update",
-    primaryLabel: "Actualizar saldo",
+    primaryLabel: "Revisar antes de actuar",
     secondaryActions: [
-      { id: "pay", label: "Pagar" },
-      { id: "move", label: "Mover" },
-      { id: "update", label: "Actualizar" },
-      { id: "evidence", label: "Evidencia" },
+      { id: "evidence", label: "Ver evidencia" },
+      { id: "update", label: "Actualizar lectura" },
     ],
-    state: "default",
+    state: "reduced",
   },
   position: {
-    title: "Dónde está tu dinero",
+    title: "Posición actual",
     rows: [
       {
         label: "Saldo principal",
@@ -55,7 +53,7 @@ export const incompleteNowFixture = {
     ],
   },
   information: {
-    title: "Estado de la información",
+    title: "Confianza de esta lectura",
     primaryLine: "Cuenta principal sin confirmar.",
     causalLine: "El disponible puede variar cuando se actualice el saldo.",
     linkLabel: "Ver evidencia",
@@ -63,10 +61,10 @@ export const incompleteNowFixture = {
     state: "partial",
   },
   reserve: {
-    title: "Dinero reservado",
+    title: "Puede esperar hoy",
     amount: "120.000",
     amountPrefix: "$",
-    purposeLine: "Separado del disponible para compromisos y objetivos activos.",
+    purposeLine: "No hace falta tocarlo hasta confirmar el saldo principal.",
     priority: "normal",
     state: "active",
   },
