@@ -12,7 +12,8 @@
 }
 
 .stateLine {
-  max-width: 42ch;
+  max-width: min(100%, 42ch);
+  min-width: 0;
   margin: 0;
   color: var(--color-text-strong);
   font-family: var(--font-instrument-serif);
@@ -21,6 +22,8 @@
   font-weight: normal;
   letter-spacing: var(--type-heading-l-tracking);
   line-height: var(--type-heading-l-line);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .valueGroup {

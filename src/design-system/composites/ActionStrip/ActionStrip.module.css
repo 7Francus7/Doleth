@@ -20,5 +20,22 @@
 }
 
 .state-reduced .secondaryActions {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.secondaryActions button {
+  min-width: 0;
+}
+
+.secondaryActions button span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+@media (min-width: 30rem) {
+  .state-reduced .secondaryActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
