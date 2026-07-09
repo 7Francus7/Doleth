@@ -1,0 +1,60 @@
+.screenTitle {
+  position: absolute;
+  width: var(--border-width-hairline);
+  height: var(--border-width-hairline);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  padding-bottom: var(--space-72);
+}
+
+.composition,
+.section,
+.rows,
+.unit {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.composition,
+.section {
+  gap: var(--space-8);
+}
+
+.compositionSummary {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+  letter-spacing: var(--type-body-s-tracking);
+  line-height: var(--type-body-s-line);
+}
+
+.compositionSummary[data-kind="stable"] {
+  color: var(--color-text-accent);
+}
+
+.compositionSummary[data-kind="attention"],
+.compositionSummary[data-kind="caution"] {
+  color: var(--color-text-attention);
+}
+
+.actions {
+  margin-top: calc(var(--space-8) * -1);
+}
+
+.missing {
+  margin-top: calc(var(--space-8) * -1);
+}
+
+.information {
+  margin-top: calc(var(--space-8) * -1);
+}
