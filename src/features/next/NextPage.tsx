@@ -9,7 +9,7 @@ import { SystemRail } from "../../design-system/composites/SystemRail";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
-import { HorizonEvidenceExperience } from "./evidence";
+import { EvidenceBreakdownExperience } from "../evidence";
 import type { NextViewModel } from "./model";
 import styles from "./NextPage.module.css";
 
@@ -40,7 +40,11 @@ export function NextPage({ model }: NextPageProps) {
       <div className={`app-canvas__content ${styles.content}`}>
         <SystemRail {...model.rail} />
         {model.banner ? <AttentionBanner {...model.banner} onAction={handleAction} /> : null}
-        <HorizonEvidenceExperience evidence={model.evidence} hero={model.hero} />
+        <EvidenceBreakdownExperience
+          evidence={model.evidence}
+          hero={model.hero}
+          valueActionLabel="Ver evidencia de la cobertura proxima"
+        />
         <StabilityStatement {...model.stability} />
         {model.actions ? <ActionStrip {...model.actions} {...actionProps} onAction={handleAction} /> : null}
 

@@ -6,7 +6,7 @@ import type { InformationBlockProps } from "../../../design-system/composites/In
 import type { ReserveBlockProps } from "../../../design-system/composites/ReserveBlock";
 import type { StabilityStatementProps } from "../../../design-system/composites/StabilityStatement";
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
-import type { EvidenceBreakdown } from "../evidence/model";
+import type { EvidenceBreakdown } from "../../evidence/model";
 
 export interface NowViewModel {
   rail: Pick<SystemRailProps, "items" | "state" | "wrap">;

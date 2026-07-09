@@ -5,13 +5,13 @@ import type { HeroProps } from "../../../design-system/composites/Hero";
 import type { InformationBlockProps } from "../../../design-system/composites/InformationBlock";
 import type { StabilityStatementProps } from "../../../design-system/composites/StabilityStatement";
 import type { SystemRailProps } from "../../../design-system/composites/SystemRail";
-import type { ChangeEvidence } from "../evidence/model";
+import type { EvidenceBreakdown } from "../../evidence/model";
 
 export interface ChangesViewModel {
   rail: Pick<SystemRailProps, "items" | "state" | "wrap">;
   banner: Omit<AttentionBannerProps, "className" | "onAction"> | null;
   hero: HeroProps;
-  evidence: ChangeEvidence;
+  evidence: EvidenceBreakdown;
   comparison: {
     title: string;
     supportingLine: string;

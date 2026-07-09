@@ -1,19 +1,21 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Hero, type HeroProps } from "../../../design-system/composites/Hero";
-import type { RealityEvidence } from "./model";
-import { RealityEvidenceSheet } from "./RealityEvidenceSheet";
+import { Hero, type HeroProps } from "../../design-system/composites/Hero";
+import type { EvidenceBreakdown } from "./model";
+import { EvidenceBreakdownSheet } from "./EvidenceBreakdownSheet";
 
-export interface RealityEvidenceExperienceProps {
+export interface EvidenceBreakdownExperienceProps {
   hero: HeroProps;
-  evidence: RealityEvidence | null;
+  evidence: EvidenceBreakdown | null;
+  valueActionLabel: string;
 }
 
-export function RealityEvidenceExperience({
+export function EvidenceBreakdownExperience({
   hero,
   evidence,
-}: RealityEvidenceExperienceProps) {
+  valueActionLabel,
+}: EvidenceBreakdownExperienceProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -27,9 +29,9 @@ export function RealityEvidenceExperience({
         {...hero}
         onValueClick={() => setOpen(true)}
         ref={triggerRef}
-        valueActionLabel="Ver evidencia de la base patrimonial"
+        valueActionLabel={valueActionLabel}
       />
-      <RealityEvidenceSheet
+      <EvidenceBreakdownSheet
         model={evidence}
         onOpenChange={setOpen}
         open={open}

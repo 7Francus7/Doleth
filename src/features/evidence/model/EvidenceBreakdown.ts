@@ -1,6 +1,6 @@
-import type { SystemRailItems } from "../../../../design-system/composites/SystemRail";
+import type { SystemRailItems } from "../../../design-system/composites/SystemRail";
 
-export interface RealityEvidenceLine {
+export interface EvidenceBreakdownLine {
   id: string;
   label: string;
   amount: number | null;
@@ -10,12 +10,12 @@ export interface RealityEvidenceLine {
   status?: "confirmed" | "missing";
 }
 
-export interface RealityEvidence {
+export interface EvidenceBreakdown {
   status: "complete" | "partial";
   title: string;
   subtitle: string;
-  summary: string;
-  lines: readonly RealityEvidenceLine[];
+  summary?: string;
+  lines: readonly EvidenceBreakdownLine[];
   total: {
     label: string;
     amount: number;
@@ -25,33 +25,36 @@ export interface RealityEvidence {
   metadata: SystemRailItems;
 }
 
-export function validateRealityEvidence(
-  evidence: RealityEvidence,
+export function validateEvidenceBreakdown(
+  breakdown: EvidenceBreakdown,
   expectedDisplayValue: string,
-): RealityEvidence {
-  if (evidence.total.displayValue !== expectedDisplayValue) {
+): EvidenceBreakdown {
+  if (breakdown.total.displayValue !== expectedDisplayValue) {
     throw new Error("Evidence total does not match the visible Hero value.");
   }
 
-  const missingLines = evidence.lines.filter((line) => line.amount === null);
+  const missingLines = breakdown.lines.filter((line) => line.amount === null);
 
-  if (evidence.status === "partial") {
+  if (breakdown.status === "partial") {
     if (missingLines.length === 0) {
       throw new Error("Partial evidence requires at least one missing line.");
     }
 
-    return evidence;
+    return breakdown;
   }
 
   if (missingLines.length > 0) {
     throw new Error("Complete evidence cannot contain missing lines.");
   }
 
-  const reconciledAmount = evidence.lines.reduce((total, line) => total + (line.amount ?? 0), 0);
+  const reconciledAmount = breakdown.lines.reduce(
+    (total, line) => total + (line.amount ?? 0),
+    0,
+  );
 
-  if (reconciledAmount !== evidence.total.amount) {
+  if (reconciledAmount !== breakdown.total.amount) {
     throw new Error("Evidence breakdown does not reconcile with its total.");
   }
 
-  return evidence;
+  return breakdown;
 }

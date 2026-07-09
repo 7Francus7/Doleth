@@ -9,7 +9,7 @@ import { SystemRail } from "../../design-system/composites/SystemRail";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
-import { RealityEvidenceExperience } from "./evidence";
+import { EvidenceBreakdownExperience } from "../evidence";
 import type { RealityViewModel } from "./model";
 import styles from "./RealityPage.module.css";
 
@@ -48,7 +48,11 @@ export function RealityPage({ model }: RealityPageProps) {
       <div className={`app-canvas__content ${styles.content}`}>
         <SystemRail {...model.rail} />
         {model.banner ? <AttentionBanner {...model.banner} onAction={handleAction} /> : null}
-        <RealityEvidenceExperience evidence={model.evidence} hero={model.hero} />
+        <EvidenceBreakdownExperience
+          evidence={model.evidence}
+          hero={model.hero}
+          valueActionLabel="Ver evidencia de la base patrimonial"
+        />
 
         <Surface
           border="subtle"

@@ -1,4 +1,4 @@
-import { validateRealityEvidence, type RealityEvidence } from "../model";
+import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
 const stableRealityEvidence = {
   status: "complete",
@@ -55,9 +55,9 @@ const stableRealityEvidence = {
     valuePrefix: "$",
   },
   metadata: ["Corte de hoy", "ARS", "Personal", "Informacion completa"],
-} satisfies RealityEvidence;
+} satisfies EvidenceBreakdown;
 
-export const stableRealityEvidenceFixture = validateRealityEvidence(
+export const stableRealityEvidenceFixture = validateEvidenceBreakdown(
   stableRealityEvidence,
   "647.500",
 );

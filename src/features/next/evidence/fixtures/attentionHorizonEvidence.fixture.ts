@@ -1,4 +1,4 @@
-import { validateHorizonEvidence, type HorizonEvidence } from "../model";
+import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
 const attentionHorizonEvidence = {
   status: "complete",
@@ -37,9 +37,9 @@ const attentionHorizonEvidence = {
     valuePrefix: "$",
   },
   metadata: ["Proximos 7 dias", "ARS", "Personal", "Informacion completa"],
-} satisfies HorizonEvidence;
+} satisfies EvidenceBreakdown;
 
-export const attentionHorizonEvidenceFixture = validateHorizonEvidence(
+export const attentionHorizonEvidenceFixture = validateEvidenceBreakdown(
   attentionHorizonEvidence,
   "100.000",
 );

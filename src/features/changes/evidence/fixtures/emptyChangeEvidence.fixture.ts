@@ -1,4 +1,4 @@
-import { validateChangeEvidence, type ChangeEvidence } from "../model";
+import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
 const emptyChangeEvidence = {
   status: "complete",
@@ -13,6 +13,6 @@ const emptyChangeEvidence = {
     valuePrefix: "$",
   },
   metadata: ["Ultimos 7 dias", "ARS", "Personal", "Informacion completa"],
-} satisfies ChangeEvidence;
+} satisfies EvidenceBreakdown;
 
-export const emptyChangeEvidenceFixture = validateChangeEvidence(emptyChangeEvidence, "0");
+export const emptyChangeEvidenceFixture = validateEvidenceBreakdown(emptyChangeEvidence, "0");

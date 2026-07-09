@@ -1,4 +1,4 @@
-import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../model";
+import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
 const incompleteAvailableEvidence = {
   status: "partial",

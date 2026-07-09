@@ -11,7 +11,7 @@ import { SystemRail } from "../../design-system/composites/SystemRail";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
-import { AvailableEvidenceExperience } from "./evidence/AvailableEvidenceExperience";
+import { EvidenceBreakdownExperience } from "../evidence";
 import type { NowViewModel } from "./model";
 import styles from "./NowPage.module.css";
 
@@ -43,7 +43,11 @@ export function NowPage({ model }: NowPageProps) {
               <AttentionBanner key="attention" {...model.banner} onAction={handleAction} />
             ) : null}
           </AnimatePresence>
-          <AvailableEvidenceExperience evidence={model.evidence} hero={model.hero} />
+          <EvidenceBreakdownExperience
+            evidence={model.evidence}
+            hero={model.hero}
+            valueActionLabel="Ver evidencia del disponible"
+          />
         </LayoutGroup>
         <StabilityStatement {...model.stability} />
         <ActionStrip {...model.actions} {...actionStripProps} onAction={handleAction} />

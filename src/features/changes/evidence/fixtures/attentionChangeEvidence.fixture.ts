@@ -1,4 +1,4 @@
-import { validateChangeEvidence, type ChangeEvidence } from "../model";
+import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
 const attentionChangeEvidence = {
   status: "partial",
@@ -32,9 +32,9 @@ const attentionChangeEvidence = {
     valuePrefix: "$",
   },
   metadata: ["Ultimos 7 dias", "ARS", "Personal", "Informacion parcial"],
-} satisfies ChangeEvidence;
+} satisfies EvidenceBreakdown;
 
-export const attentionChangeEvidenceFixture = validateChangeEvidence(
+export const attentionChangeEvidenceFixture = validateEvidenceBreakdown(
   attentionChangeEvidence,
   "84.000",
 );

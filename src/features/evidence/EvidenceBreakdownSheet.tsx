@@ -1,26 +1,26 @@
 "use client";
 
 import type { RefObject } from "react";
-import { BottomSheet } from "../../../design-system/composites/BottomSheet";
-import { EvidenceRow } from "../../../design-system/composites/EvidenceRow";
-import { SystemRail } from "../../../design-system/composites/SystemRail";
-import { Divider } from "../../../design-system/primitives/Divider";
-import type { HorizonEvidence } from "./model";
-import styles from "./HorizonEvidenceSheet.module.css";
+import { BottomSheet } from "../../design-system/composites/BottomSheet";
+import { EvidenceRow } from "../../design-system/composites/EvidenceRow";
+import { SystemRail } from "../../design-system/composites/SystemRail";
+import { Divider } from "../../design-system/primitives/Divider";
+import type { EvidenceBreakdown } from "./model";
+import styles from "./EvidenceBreakdownSheet.module.css";
 
-export interface HorizonEvidenceSheetProps {
-  model: HorizonEvidence;
+export interface EvidenceBreakdownSheetProps {
+  model: EvidenceBreakdown;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
-export function HorizonEvidenceSheet({
+export function EvidenceBreakdownSheet({
   model,
   open,
   onOpenChange,
   returnFocusRef,
-}: HorizonEvidenceSheetProps) {
+}: EvidenceBreakdownSheetProps) {
   return (
     <BottomSheet
       onOpenChange={onOpenChange}
@@ -30,6 +30,7 @@ export function HorizonEvidenceSheet({
       title={model.title}
     >
       <div className={styles.breakdown}>
+        {model.summary ? <p className={styles.summary}>{model.summary}</p> : null}
         <div className={styles.lines}>
           {model.lines.map((line, index) => (
             <div className={styles.line} key={line.id}>
