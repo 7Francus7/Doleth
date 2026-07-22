@@ -19,6 +19,22 @@ export interface NowViewModel {
     title: string;
     rows: readonly FinancialRowProps[];
   };
+  accounts?: readonly {
+    id: string;
+    name: string;
+    type: string;
+    balance: string;
+    balancePrefix: string;
+    state: "stable" | "attention";
+  }[];
+  trend?: readonly {
+    month: string;
+    label: string;
+    income: string;
+    expense: string;
+    incomePercent: number;
+    expensePercent: number;
+  }[];
   operational?: readonly {
     title: string;
     actionLabel: string;
