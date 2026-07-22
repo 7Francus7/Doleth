@@ -48,7 +48,7 @@ export function MovementForm({
       <input name="idempotencyKey" type="hidden" value={idempotencyKey} />
       <label className={`${styles.field} ${styles.amountField}`}>
         <span>Importe</span>
-        <input autoFocus inputMode="decimal" name="amount" placeholder="0,00" defaultValue={defaults?.amount} required />
+        <input inputMode="decimal" name="amount" placeholder="0,00" defaultValue={defaults?.amount} required />
       </label>
       <fieldset className={styles.segmented}>
         <legend>Tipo</legend>
