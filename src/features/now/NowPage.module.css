@@ -231,6 +231,7 @@
 }
 
 .chart {
+  position: relative;
   display: grid;
   height: 164px;
   grid-template-columns: repeat(6, 1fr);
@@ -243,6 +244,21 @@
     transparent 39px,
     var(--border-subtle) 40px
   );
+}
+
+.chart[data-empty="true"] .bars {
+  opacity: .18;
+}
+
+.chartEmpty {
+  position: absolute;
+  inset: var(--space-16) var(--space-20) 24px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+  text-align: center;
 }
 
 .chartGroup {

@@ -27,6 +27,7 @@ export function NowPage({ model }: NowPageProps) {
   const informationProps = styles.information ? { className: styles.information } : {};
   const accounts = model.accounts ?? [];
   const trend = model.trend ?? [];
+  const trendHasActivity = trend.some((point) => point.incomePercent > 4 || point.expensePercent > 4);
   const handleAction = (actionId: string) => {
     if (actionId === "evidence") {
       document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -117,7 +118,12 @@ export function NowPage({ model }: NowPageProps) {
               <span><i data-kind="expense" />Gastos</span>
             </div>
           </div>
-          <div aria-label="Tendencia financiera de los últimos seis meses" className={styles.chart} role="img">
+          <div
+            aria-label={trendHasActivity ? "Tendencia financiera de los últimos seis meses" : "Sin movimientos en los últimos seis meses"}
+            className={styles.chart}
+            data-empty={!trendHasActivity}
+            role="img"
+          >
             {trend.map((point) => (
               <div
                 aria-label={`${point.label}: ingresos $${point.income}, gastos $${point.expense}`}
@@ -135,6 +141,7 @@ export function NowPage({ model }: NowPageProps) {
                 <small>{point.label}</small>
               </div>
             ))}
+            {!trendHasActivity ? <p className={styles.chartEmpty}>Aún no hay movimientos para comparar.</p> : null}
           </div>
           <div className={styles.positionRows}>
             {model.position.rows.map((row, index) => (
