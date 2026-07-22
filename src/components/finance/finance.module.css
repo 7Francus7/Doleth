@@ -31,7 +31,9 @@
 .itemTitle { color: var(--color-text-strong); font-size: var(--type-label-l-size); font-weight: var(--type-label-l-weight); }
 .itemMeta { color: var(--color-text-tertiary); font-size: var(--type-body-s-size); }
 .itemAmount { flex: none; color: var(--color-text-strong); font-family: var(--font-ibm-plex-mono); font-size: var(--type-data-m-size); font-variant-numeric: tabular-nums; }
-.voided { opacity: .55; text-decoration: line-through; }
+.voided { background: var(--color-surface-subtle); }
+.voided .itemTitle, .voided .itemAmount { color: var(--color-text-secondary); text-decoration: line-through; text-decoration-thickness: var(--border-width-hairline); }
+.voided .itemMeta { color: var(--color-text-secondary); }
 .filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-12); }
 .filters .field input, .filters .field select { min-height: 44px; }
 .empty { padding: var(--space-32); border-radius: var(--radius-lg); background: var(--color-surface-base); color: var(--color-text-secondary); text-align: center; }
