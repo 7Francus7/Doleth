@@ -10,6 +10,24 @@ export async function getNowModel(): Promise<NowViewModel> {
     ? Math.max(0, Math.min(100, Number((data.totalCents * 100n) / data.upcomingCents)))
     : 100;
   const metadata = ["Actualizado ahora", "ARS", "Personal", "Información completa"] as const;
+  const trendMaximum = data.monthlyHistory.reduce(
+    (maximum, point) => point.incomeCents > maximum
+      ? point.incomeCents
+      : point.expenseCents > maximum
+        ? point.expenseCents
+        : maximum,
+    0n,
+  );
+  const trendPercent = (value: bigint) => value === 0n || trendMaximum === 0n
+    ? 4
+    : Math.max(10, Number((value * 100n) / trendMaximum));
+  const accountTypeLabels: Record<string, string> = {
+    CASH: "Efectivo",
+    BANK: "Banco",
+    WALLET: "Billetera",
+    SAVINGS: "Ahorro",
+    OTHER: "Otra",
+  };
 
   return {
     rail: { items: metadata, state: "complete", wrap: "truncate" },
@@ -65,9 +83,8 @@ export async function getNowModel(): Promise<NowViewModel> {
       secondaryActions: [
         { id: "history", label: "Ver historial" },
         { id: "upcoming", label: "Próximos pagos" },
-        { id: "accounts", label: "Cuentas" },
       ],
-      state: "reduced",
+      state: "default",
     } : {
       primary: "add-first-account",
       primaryLabel: "Crear primera cuenta",
@@ -75,7 +92,7 @@ export async function getNowModel(): Promise<NowViewModel> {
         { id: "history", label: "Ver historial" },
         { id: "upcoming", label: "Próximos pagos" },
       ],
-      state: "reduced",
+      state: "default",
     },
     position: {
       title: "Resumen del mes",
@@ -90,6 +107,22 @@ export async function getNowModel(): Promise<NowViewModel> {
         },
       ],
     },
+    accounts: data.accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: accountTypeLabels[account.type] ?? "Cuenta",
+      balance: formatCents(account.balanceCents < 0n ? -account.balanceCents : account.balanceCents),
+      balancePrefix: account.balanceCents < 0n ? "-$" : "$",
+      state: account.balanceCents < 0n ? "attention" : "stable",
+    })),
+    trend: data.monthlyHistory.map((point) => ({
+      month: point.month,
+      label: point.label,
+      income: formatCents(point.incomeCents),
+      expense: formatCents(point.expenseCents),
+      incomePercent: trendPercent(point.incomeCents),
+      expensePercent: trendPercent(point.expenseCents),
+    })),
     operational: [
       {
         title: "Próximos pagos",

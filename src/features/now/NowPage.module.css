@@ -1,10 +1,9 @@
 .screenTitle {
-  position: absolute;
-  width: var(--border-width-hairline);
-  height: var(--border-width-hairline);
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+  line-height: var(--type-label-m-line);
 }
 
 .content {
@@ -12,6 +11,53 @@
   flex-direction: column;
   gap: var(--space-24);
   padding-bottom: var(--space-72);
+}
+
+.topBar,
+.sectionHeader,
+.accountCardTopline,
+.trendHeader,
+.legend {
+  display: flex;
+  align-items: center;
+}
+
+.topBar,
+.sectionHeader,
+.accountCardTopline,
+.trendHeader {
+  justify-content: space-between;
+}
+
+.topBar {
+  min-height: 48px;
+}
+
+.brand {
+  color: var(--color-text-strong);
+  font-family: var(--font-instrument-serif);
+  font-size: var(--type-heading-l-size);
+  letter-spacing: var(--type-heading-l-tracking);
+  line-height: var(--type-heading-l-line);
+}
+
+.accountShortcut {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-base);
+  color: var(--color-text-accent);
+}
+
+.accountShortcut svg {
+  width: 21px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
 }
 
 .actions {
@@ -26,6 +72,229 @@
   gap: var(--space-8);
 }
 
+.accountsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.sectionHeader h2 {
+  color: var(--color-text-strong);
+  font-size: var(--type-heading-m-size);
+  font-weight: var(--type-heading-m-weight);
+  letter-spacing: var(--type-heading-m-tracking);
+  line-height: var(--type-heading-m-line);
+}
+
+.sectionHeader a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-accent);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+  text-decoration: none;
+}
+
+.sectionEyebrow {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.accountScroller {
+  display: grid;
+  grid-auto-columns: minmax(164px, 46%);
+  grid-auto-flow: column;
+  gap: var(--space-12);
+  margin-inline: calc(var(--space-20) * -1);
+  padding-inline: var(--space-20);
+  padding-bottom: var(--space-4);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.accountScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.accountCard,
+.addAccountCard {
+  min-height: 144px;
+  scroll-snap-align: start;
+  border: var(--border-width-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.accountCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-16);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+}
+
+.accountCard:first-child {
+  border-color: transparent;
+  background: var(--color-mineral-700);
+  color: var(--color-text-inverse);
+}
+
+.accountCard[data-state="attention"] {
+  border-color: var(--color-state-attention-border);
+  background: var(--color-state-attention-bg);
+  color: var(--color-attention-text);
+}
+
+.accountCardTopline {
+  color: currentColor;
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  opacity: .76;
+}
+
+.accountCard > p {
+  color: currentColor;
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+}
+
+.accountCard strong {
+  color: currentColor;
+  font-family: var(--font-ibm-plex-mono);
+  font-size: var(--type-data-m-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--type-data-m-weight);
+}
+
+.addAccountCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  background: transparent;
+  color: var(--color-text-accent);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+  text-decoration: none;
+}
+
+.addAccountCard span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: var(--border-width-hairline) solid var(--border-accent);
+  border-radius: var(--radius-full);
+  font-size: var(--type-heading-m-size);
+  font-weight: 400;
+}
+
+.trendHeader {
+  gap: var(--space-12);
+  padding-top: var(--space-8);
+}
+
+.trendHeader > p {
+  color: var(--color-text-primary);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+}
+
+.legend {
+  gap: var(--space-12);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+}
+
+.legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-mineral-600);
+}
+
+.legend i[data-kind="expense"] {
+  background: var(--color-state-attention-border);
+}
+
+.chart {
+  position: relative;
+  display: grid;
+  height: 164px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-4) 0;
+  border-bottom: var(--border-width-hairline) solid var(--border-subtle);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 39px,
+    var(--border-subtle) 40px
+  );
+}
+
+.chart[data-empty="true"] .bars {
+  opacity: .18;
+}
+
+.chartEmpty {
+  position: absolute;
+  inset: var(--space-16) var(--space-20) 24px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+  text-align: center;
+}
+
+.chartGroup {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 1fr 18px;
+  gap: var(--space-4);
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+}
+
+.bars span {
+  width: min(10px, 38%);
+  height: var(--income-height);
+  min-height: 4px;
+  border-radius: var(--radius-xs) var(--radius-xs) 2px 2px;
+  background: var(--color-mineral-600);
+  transition: height var(--motion-duration-surface) var(--motion-curve-settle);
+}
+
+.bars span[data-kind="expense"] {
+  height: var(--expense-height);
+  background: var(--color-state-attention-border);
+}
+
+.chartGroup small {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  text-align: center;
+}
+
 .information {
   margin-top: calc(var(--space-8) * -1);
 }
@@ -35,4 +304,12 @@
   display: flex;
   width: 100%;
   flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .accountScroller {
+    grid-auto-columns: minmax(180px, 1fr);
+    margin-inline: 0;
+    padding-inline: 0;
+  }
 }

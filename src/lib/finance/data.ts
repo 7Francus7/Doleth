@@ -43,14 +43,20 @@ export async function getDashboardData() {
   const today = todayInArgentina();
   const month = today.slice(0, 7);
   const { start, end } = monthBounds(month);
+  const historyStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 5, 1));
   const inSevenDays = new Date(`${today}T00:00:00.000Z`);
   inSevenDays.setUTCDate(inSevenDays.getUTCDate() + 7);
 
-  const [accounts, monthMovements, upcoming, recent] = await Promise.all([
+  const [accounts, monthMovements, historyMovements, upcoming, recent] = await Promise.all([
     getAccountsWithBalances(),
     db.transaction.findMany({
       where: { occurredOn: { gte: start, lt: end } },
       select: { type: true, amountCents: true, voidedAt: true },
+    }),
+    db.transaction.findMany({
+      where: { occurredOn: { gte: historyStart, lt: end } },
+      select: { type: true, amountCents: true, occurredOn: true, voidedAt: true },
+      orderBy: { occurredOn: "asc" },
     }),
     db.upcomingPayment.findMany({
       where: { status: "PENDING", dueOn: { lte: inSevenDays } },
@@ -68,6 +74,19 @@ export async function getDashboardData() {
   const { incomeCents, expenseCents, balanceCents } = summarizeMonth(monthMovements);
   const totalCents = accounts.reduce((sum, account) => sum + account.balanceCents, 0n);
   const upcomingCents = upcoming.reduce((sum, payment) => sum + payment.estimatedCents, 0n);
+  const monthLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthlyHistory = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - (5 - index), 1));
+    const key = date.toISOString().slice(0, 7);
+    const movements = historyMovements.filter((movement) => movement.occurredOn.toISOString().slice(0, 7) === key);
+    const totals = summarizeMonth(movements);
+    return {
+      month: key,
+      label: monthLabels[date.getUTCMonth()] ?? key.slice(5),
+      incomeCents: totals.incomeCents,
+      expenseCents: totals.expenseCents,
+    };
+  });
 
   return {
     accounts,
@@ -75,6 +94,7 @@ export async function getDashboardData() {
     incomeCents,
     expenseCents,
     monthlyBalanceCents: balanceCents,
+    monthlyHistory,
     upcomingCents,
     upcoming: upcoming.map((payment) => ({
       id: payment.id,

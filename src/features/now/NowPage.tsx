@@ -1,6 +1,8 @@
 "use client";
 
 import { AnimatePresence, LayoutGroup } from "motion/react";
+import Link from "next/link";
+import type { CSSProperties } from "react";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -23,6 +25,9 @@ export function NowPage({ model }: NowPageProps) {
   const actionStripProps = styles.actions ? { className: styles.actions } : {};
   const reserveProps = styles.reserve ? { className: styles.reserve } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
+  const accounts = model.accounts ?? [];
+  const trend = model.trend ?? [];
+  const trendHasActivity = trend.some((point) => point.incomePercent > 4 || point.expensePercent > 4);
   const handleAction = (actionId: string) => {
     if (actionId === "evidence") {
       document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -41,8 +46,18 @@ export function NowPage({ model }: NowPageProps) {
 
   return (
     <main className="app-canvas">
-      <h1 className={styles.screenTitle}>Ahora</h1>
       <div className={`app-canvas__content ${styles.content}`}>
+        <header className={styles.topBar}>
+          <div>
+            <p className={styles.brand}>Doleth</p>
+            <h1 className={styles.screenTitle}>Ahora</h1>
+          </div>
+          <Link aria-label="Gestionar cuentas" className={styles.accountShortcut} href="/cuentas">
+            <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+              <path d="M4 7.5h16v11H4zM7 7.5V5.8c0-.9.7-1.6 1.6-1.6h6.8c.9 0 1.6.7 1.6 1.6v1.7M7.5 12h9" />
+            </svg>
+          </Link>
+        </header>
         <SystemRail {...model.rail} />
         <LayoutGroup id="now-primary-state">
           <AnimatePresence initial={false}>
@@ -60,6 +75,34 @@ export function NowPage({ model }: NowPageProps) {
         <ActionStrip {...model.actions} {...actionStripProps} onAction={handleAction} />
         {model.reserve ? <ReserveBlock {...model.reserve} {...reserveProps} /> : null}
 
+        {accounts.length > 0 ? (
+          <section aria-labelledby="accounts-title" className={styles.accountsSection}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <p className={styles.sectionEyebrow}>Base financiera</p>
+                <h2 id="accounts-title">Mis cuentas</h2>
+              </div>
+              <Link href="/cuentas">Gestionar</Link>
+            </div>
+            <div className={styles.accountScroller}>
+              {accounts.map((account) => (
+                <article className={styles.accountCard} data-state={account.state} key={account.id}>
+                  <div className={styles.accountCardTopline}>
+                    <span>{account.type}</span>
+                    <span aria-hidden="true">•••</span>
+                  </div>
+                  <p>{account.name}</p>
+                  <strong>{account.balancePrefix}{account.balance}</strong>
+                </article>
+              ))}
+              <Link className={styles.addAccountCard} href="/cuentas/nueva">
+                <span aria-hidden="true">+</span>
+                Nueva cuenta
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
         <Surface
           border="subtle"
           className={styles.position}
@@ -68,6 +111,38 @@ export function NowPage({ model }: NowPageProps) {
           tone="base"
         >
           <SectionTitle title={model.position.title} />
+          <div className={styles.trendHeader}>
+            <p>Ingresos y gastos</p>
+            <div aria-label="Leyenda" className={styles.legend}>
+              <span><i data-kind="income" />Ingresos</span>
+              <span><i data-kind="expense" />Gastos</span>
+            </div>
+          </div>
+          <div
+            aria-label={trendHasActivity ? "Tendencia financiera de los últimos seis meses" : "Sin movimientos en los últimos seis meses"}
+            className={styles.chart}
+            data-empty={!trendHasActivity}
+            role="img"
+          >
+            {trend.map((point) => (
+              <div
+                aria-label={`${point.label}: ingresos $${point.income}, gastos $${point.expense}`}
+                className={styles.chartGroup}
+                key={point.month}
+                style={{
+                  "--income-height": `${point.incomePercent}%`,
+                  "--expense-height": `${point.expensePercent}%`,
+                } as CSSProperties}
+              >
+                <div className={styles.bars}>
+                  <span data-kind="income" />
+                  <span data-kind="expense" />
+                </div>
+                <small>{point.label}</small>
+              </div>
+            ))}
+            {!trendHasActivity ? <p className={styles.chartEmpty}>Aún no hay movimientos para comparar.</p> : null}
+          </div>
           <div className={styles.positionRows}>
             {model.position.rows.map((row, index) => (
               <div className={styles.positionUnit} key={`${row.label}-${row.value}`}>
