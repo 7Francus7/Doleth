@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPostings,
   createPostings,
+  formatDateAR,
   monthBounds,
   idempotencyDecision,
   paymentConversionDecision,
@@ -69,5 +70,9 @@ describe("invariantes contables", () => {
       start: new Date("2026-07-01T00:00:00.000Z"),
       end: new Date("2026-08-01T00:00:00.000Z"),
     });
+  });
+  it("muestra fechas en formato local", () => {
+    expect(formatDateAR("2026-07-22")).toBe("22/07/2026");
+    expect(formatDateAR(new Date("2026-07-22T00:00:00.000Z"))).toBe("22/07/2026");
   });
 });

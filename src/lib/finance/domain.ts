@@ -108,6 +108,16 @@ export function todayInArgentina(now = new Date()): string {
   return `${value.year}-${value.month}-${value.day}`;
 }
 
+export function formatDateAR(value: Date | string): string {
+  const date = typeof value === "string" ? new Date(`${value}T00:00:00.000Z`) : value;
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 export function monthBounds(month: string): { start: Date; end: Date } {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("Mes inválido.");
   const [yearText, monthText] = month.split("-");

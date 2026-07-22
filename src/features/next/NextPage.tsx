@@ -42,8 +42,11 @@ export function NextPage({ model }: NextPageProps) {
 
   return (
     <main className="app-canvas">
-      <h1 className={styles.screenTitle}>Proximo</h1>
       <div className={`app-canvas__content ${styles.content}`}>
+        <header className={styles.topBar}>
+          <p className={styles.brand}>Doleth</p>
+          <h1 className={styles.screenTitle}>Próximo</h1>
+        </header>
         <SystemRail {...model.rail} />
         {model.banner ? <AttentionBanner {...model.banner} onAction={handleAction} /> : null}
         <EvidenceBreakdownExperience
