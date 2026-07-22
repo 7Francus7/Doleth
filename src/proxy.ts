@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessToken } from "./lib/auth-token";
 
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname === "/ingresar") return NextResponse.next();
+  if (["/ingresar", "/manifest.webmanifest"].includes(request.nextUrl.pathname)) return NextResponse.next();
   const secret = process.env.DOLETH_SESSION_SECRET;
   const token = request.cookies.get("doleth_session")?.value;
   if (!secret || secret.length < 32 || !(await verifyAccessToken(token, secret))) {
