@@ -83,9 +83,8 @@ export async function getNowModel(): Promise<NowViewModel> {
       secondaryActions: [
         { id: "history", label: "Ver historial" },
         { id: "upcoming", label: "Próximos pagos" },
-        { id: "accounts", label: "Cuentas" },
       ],
-      state: "reduced",
+      state: "default",
     } : {
       primary: "add-first-account",
       primaryLabel: "Crear primera cuenta",
@@ -93,7 +92,7 @@ export async function getNowModel(): Promise<NowViewModel> {
         { id: "history", label: "Ver historial" },
         { id: "upcoming", label: "Próximos pagos" },
       ],
-      state: "reduced",
+      state: "default",
     },
     position: {
       title: "Resumen del mes",
