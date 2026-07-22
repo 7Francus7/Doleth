@@ -3,6 +3,7 @@
 import { AnimatePresence, LayoutGroup } from "motion/react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { DolethBrand } from "../../components/brand/DolethBrand";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -49,7 +50,7 @@ export function NowPage({ model }: NowPageProps) {
       <div className={`app-canvas__content ${styles.content}`}>
         <header className={styles.topBar}>
           <div>
-            <p className={styles.brand}>Doleth</p>
+            <DolethBrand />
             <h1 className={styles.screenTitle}>Ahora</h1>
           </div>
           <Link aria-label="Gestionar cuentas" className={styles.accountShortcut} href="/cuentas">

@@ -10,14 +10,6 @@
   min-height: 48px;
 }
 
-.brand {
-  color: var(--color-text-strong);
-  font-family: var(--font-instrument-serif);
-  font-size: var(--type-heading-l-size);
-  letter-spacing: var(--type-heading-l-tracking);
-  line-height: var(--type-heading-l-line);
-}
-
 .content {
   display: flex;
   flex-direction: column;

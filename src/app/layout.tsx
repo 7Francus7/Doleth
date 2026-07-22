@@ -23,7 +23,16 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Doleth",
-  description: "Claridad financiera para entender donde estas hoy.",
+  description: "Claridad financiera para entender dónde estás hoy.",
+  icons: {
+    icon: "/brand/doleth-mark.svg",
+    apple: "/brand/doleth-apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Doleth",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
