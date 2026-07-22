@@ -37,7 +37,8 @@
 .voided .itemMeta { color: var(--color-text-secondary); }
 .filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-12); }
 .filters .field input, .filters .field select { min-height: 44px; }
-.empty { padding: var(--space-32); border-radius: var(--radius-lg); background: var(--color-surface-base); color: var(--color-text-secondary); text-align: center; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-16); padding: var(--space-32); border-radius: var(--radius-lg); background: var(--color-surface-base); color: var(--color-text-secondary); text-align: center; }
+.empty p { margin: 0; }
 .detailGrid { display: grid; gap: var(--space-16); }
 .detailRow { display: flex; justify-content: space-between; gap: var(--space-16); padding-bottom: var(--space-12); border-bottom: var(--border-width-hairline) solid var(--border-subtle); }
 .detailRow dt { color: var(--color-text-secondary); }
