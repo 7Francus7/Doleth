@@ -31,7 +31,13 @@ export function NextPage({ model }: NextPageProps) {
       return;
     }
 
-    window.location.assign("/actuar");
+    const routes: Record<string, string> = {
+      register: "/proximo/nuevo",
+      "add-first-account": "/cuentas/nueva",
+      history: "/movimientos",
+      accounts: "/cuentas",
+    };
+    window.location.assign(routes[actionId] ?? "/proximo/nuevo");
   };
 
   return (

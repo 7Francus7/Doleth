@@ -1,6 +1,8 @@
-import { stableNowFixture } from "../../features/now/fixtures";
 import { NowPage } from "../../features/now/NowPage";
+import { getNowModel } from "../../features/now/data/getNowModel";
 
-export default function AhoraPage() {
-  return <NowPage model={stableNowFixture} />;
+export const dynamic = "force-dynamic";
+
+export default async function AhoraPage() {
+  return <NowPage model={await getNowModel()} />;
 }

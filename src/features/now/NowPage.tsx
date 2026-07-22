@@ -29,7 +29,14 @@ export function NowPage({ model }: NowPageProps) {
       return;
     }
 
-    window.location.assign("/actuar");
+    const routes: Record<string, string> = {
+      register: "/movimientos/nuevo",
+      "add-first-account": "/cuentas/nueva",
+      history: "/movimientos",
+      accounts: "/cuentas",
+      upcoming: "/proximo",
+    };
+    window.location.assign(routes[actionId] ?? "/movimientos/nuevo");
   };
 
   return (
@@ -70,6 +77,20 @@ export function NowPage({ model }: NowPageProps) {
             ))}
           </div>
         </Surface>
+
+        {model.operational?.map((section) => (
+          <Surface border="subtle" className={styles.position} key={section.title} padding="md" radius="lg" tone="base">
+            <SectionTitle action="link" actionHref={section.actionHref} actionLabel={section.actionLabel} title={section.title} />
+            <div className={styles.positionRows}>
+              {section.rows.map((row, index) => (
+                <div className={styles.positionUnit} key={`${row.label}-${row.value}-${index}`}>
+                  {index > 0 ? <Divider /> : null}
+                  <FinancialRow {...row} />
+                </div>
+              ))}
+            </div>
+          </Surface>
+        ))}
 
         <div id="evidence">
           <InformationBlock {...model.information} {...informationProps} />

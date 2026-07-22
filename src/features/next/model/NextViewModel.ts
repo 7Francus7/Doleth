@@ -11,7 +11,7 @@ export interface NextViewModel {
   rail: Pick<SystemRailProps, "items" | "state" | "wrap">;
   banner: Omit<AttentionBannerProps, "className" | "onAction"> | null;
   hero: HeroProps;
-  evidence: EvidenceBreakdown;
+  evidence: EvidenceBreakdown | null;
   stability: Pick<StabilityStatementProps, "children" | "container" | "kind">;
   actions: Omit<ActionStripProps, "className" | "onAction"> | null;
   confirmed: {

@@ -12,13 +12,19 @@ export interface NowViewModel {
   rail: Pick<SystemRailProps, "items" | "state" | "wrap">;
   banner: Omit<AttentionBannerProps, "className" | "onAction"> | null;
   hero: HeroProps;
-  evidence: EvidenceBreakdown;
+  evidence: EvidenceBreakdown | null;
   stability: Pick<StabilityStatementProps, "children" | "container" | "kind">;
   actions: Omit<ActionStripProps, "className" | "onAction">;
   position: {
     title: string;
     rows: readonly FinancialRowProps[];
   };
+  operational?: readonly {
+    title: string;
+    actionLabel: string;
+    actionHref: string;
+    rows: readonly FinancialRowProps[];
+  }[];
   reserve: ReserveBlockProps | null;
   information: InformationBlockProps;
 }

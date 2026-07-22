@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountType {
+  CASH
+  BANK
+  WALLET
+  SAVINGS
+  OTHER
+}
+
+enum AccountStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum UpcomingPaymentStatus {
+  PENDING
+  PAID
+}
+
+model Account {
+  id                  String        @id @default(cuid())
+  name                String
+  type                AccountType
+  currency            String        @default("ARS")
+  initialBalanceCents BigInt
+  status              AccountStatus @default(ACTIVE)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  entries             LedgerEntry[]
+  sourceTransactions  Transaction[] @relation("TransactionSource")
+  targetTransactions  Transaction[] @relation("TransactionTarget")
+  upcomingPayments    UpcomingPayment[]
+
+  @@index([status])
+}
+
+model Category {
+  id           String          @id @default(cuid())
+  slug         String          @unique
+  name         String
+  kind         CategoryKind
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  transactions Transaction[]
+
+  @@index([kind])
+}
+
+model Transaction {
+  id                   String          @id @default(cuid())
+  type                 TransactionType
+  amountCents          BigInt
+  occurredOn           DateTime        @db.Date
+  description          String?
+  sourceAccountId      String
+  destinationAccountId String?
+  categoryId           String?
+  idempotencyKey       String          @unique
+  voidedAt             DateTime?
+  voidReason           String?
+  correctedFromId      String?         @unique
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  sourceAccount        Account         @relation("TransactionSource", fields: [sourceAccountId], references: [id])
+  destinationAccount   Account?        @relation("TransactionTarget", fields: [destinationAccountId], references: [id], onDelete: Restrict)
+  category             Category?       @relation(fields: [categoryId], references: [id])
+  entries              LedgerEntry[]
+  correctedFrom        Transaction?    @relation("CorrectionChain", fields: [correctedFromId], references: [id])
+  correction           Transaction?    @relation("CorrectionChain")
+  upcomingPayment      UpcomingPayment?
+
+  @@index([occurredOn])
+  @@index([type, occurredOn])
+  @@index([sourceAccountId, occurredOn])
+}
+
+model LedgerEntry {
+  id           String      @id @default(cuid())
+  transactionId String
+  accountId    String
+  amountCents  BigInt
+  createdAt    DateTime    @default(now())
+  transaction  Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  account      Account     @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([accountId])
+  @@index([transactionId])
+}
+
+model UpcomingPayment {
+  id              String                @id @default(cuid())
+  concept         String
+  estimatedCents  BigInt
+  dueOn           DateTime              @db.Date
+  frequency       String?
+  plannedAccountId String
+  status          UpcomingPaymentStatus @default(PENDING)
+  transactionId   String?               @unique
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  plannedAccount  Account               @relation(fields: [plannedAccountId], references: [id])
+  transaction     Transaction?           @relation(fields: [transactionId], references: [id])
+
+  @@index([status, dueOn])
+}
