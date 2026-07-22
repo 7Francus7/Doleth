@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import styles from "./finance.module.css";
 
 const items = [
-  ["/ahora", "Ahora", "home"],
-  ["/movimientos", "Movimientos", "activity"],
-  ["/proximo", "Próximo", "calendar"],
-  ["/cuentas", "Cuentas", "wallet"],
+  ["/ahora", "Ahora", "Ahora", "home"],
+  ["/movimientos", "Movimientos", "Movs.", "activity"],
+  ["/proximo", "Próximo", "Pagos", "calendar"],
+  ["/cuentas", "Cuentas", "Cuentas", "wallet"],
 ] as const;
 
-function NavIcon({ name }: { name: (typeof items)[number][2] }) {
+function NavIcon({ name }: { name: (typeof items)[number][3] }) {
   const paths = {
     home: <><path d="m4 10 8-6 8 6v9H4z" /><path d="M9 19v-6h6v6" /></>,
     activity: <><path d="M4 18V9M10 18V5M16 18v-7M22 18V7" /><path d="M3 18h19" /></>,
@@ -26,20 +26,22 @@ export function AppNav() {
   if (pathname === "/ingresar") return null;
   return (
     <nav aria-label="Navegación principal" className={styles.nav}>
-      {items.slice(0, 2).map(([href, label, icon]) => (
-        <Link aria-current={pathname.startsWith(href) ? "page" : undefined} href={href} key={href}>
+      {items.slice(0, 2).map(([href, label, compactLabel, icon]) => (
+        <Link aria-current={pathname.startsWith(href) ? "page" : undefined} aria-label={label} href={href} key={href}>
           <NavIcon name={icon} />
-          <span>{label}</span>
+          <span className={styles.navLabel}>{label}</span>
+          <span aria-hidden="true" className={styles.navLabelCompact}>{compactLabel}</span>
         </Link>
       ))}
       <Link aria-label="Registrar movimiento" className={styles.navAction} href="/movimientos/nuevo">
         <span aria-hidden="true">+</span>
         <small>Registrar</small>
       </Link>
-      {items.slice(2).map(([href, label, icon]) => (
-        <Link aria-current={pathname.startsWith(href) ? "page" : undefined} href={href} key={href}>
+      {items.slice(2).map(([href, label, compactLabel, icon]) => (
+        <Link aria-current={pathname.startsWith(href) ? "page" : undefined} aria-label={label} href={href} key={href}>
           <NavIcon name={icon} />
-          <span>{label}</span>
+          <span className={styles.navLabel}>{label}</span>
+          <span aria-hidden="true" className={styles.navLabelCompact}>{compactLabel}</span>
         </Link>
       ))}
     </nav>
