@@ -1,5 +1,5 @@
 :root {
-  --font-satoshi: "Satoshi", sans-serif;
+  --font-satoshi: var(--font-manrope), "Manrope", sans-serif;
   --font-instrument-serif: "Instrument Serif", serif;
   --font-ibm-plex-mono: "IBM Plex Mono", monospace;
 

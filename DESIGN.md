@@ -193,7 +193,7 @@ Usage rules:
 Doleth uses typographic contrast between interpretation and accounting.
 
 - Synthesis / calm statements: `Instrument Serif`
-- UI / body / labels: `Satoshi`
+- UI / body / labels: `Manrope`
 - Dense data / ledger / fallback numeric detail: `IBM Plex Mono`
 
 This creates a recognizable voice:
@@ -202,12 +202,12 @@ This creates a recognizable voice:
 
 ### Role rules
 - `Instrument Serif` is only for short interpretive lines, empty-state headlines, and premium framing.
-- `Satoshi` carries interface, labels, body, buttons, navigation, and section titles.
+- `Manrope` carries interface, labels, body, buttons, navigation, section titles, and primary financial values.
 - `IBM Plex Mono` is never used for paragraph copy. It appears only where numerical alignment or evidentiary precision matters.
 
 ### Numeric rules
 - all financial values use tabular numerals
-- large hero values use tabular numerals in `Satoshi` if implementation supports `tnum`; fallback is `IBM Plex Mono`
+- large hero values use tabular lining numerals in `Manrope`; fallback is `IBM Plex Mono`
 - comparisons, breakdown rows, and ledger-like evidence always use tabular numerals
 
 ### Type scale
