@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import { AppNav } from "../components/finance/AppNav";
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -37,7 +38,7 @@ export default function RootLayout({
       lang="es"
       className={`${instrumentSerif.variable} ${ibmPlexMono.variable}`}
     >
-      <body>{children}</body>
+      <body>{children}<AppNav /></body>
     </html>
   );
 }
