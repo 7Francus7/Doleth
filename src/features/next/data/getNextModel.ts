@@ -56,12 +56,12 @@ export async function getNextModel(): Promise<NextViewModel> {
       primary: "register",
       primaryLabel: "Registrar próximo pago",
       secondaryActions: [{ id: "history", label: "Ver movimientos" }, { id: "accounts", label: "Ver cuentas" }],
-      state: "reduced",
+      state: "default",
     } : {
       primary: "add-first-account",
       primaryLabel: "Crear primera cuenta",
       secondaryActions: [{ id: "history", label: "Ver movimientos" }, { id: "accounts", label: "Ver cuentas" }],
-      state: "reduced",
+      state: "default",
     },
     confirmed: paid.length ? {
       title: "Pagados",

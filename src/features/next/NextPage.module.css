@@ -1,10 +1,21 @@
 .screenTitle {
-  position: absolute;
-  width: var(--border-width-hairline);
-  height: var(--border-width-hairline);
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+  line-height: var(--type-label-m-line);
+}
+
+.topBar {
+  min-height: 48px;
+}
+
+.brand {
+  color: var(--color-text-strong);
+  font-family: var(--font-instrument-serif);
+  font-size: var(--type-heading-l-size);
+  letter-spacing: var(--type-heading-l-tracking);
+  line-height: var(--type-heading-l-line);
 }
 
 .content {
