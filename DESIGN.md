@@ -435,6 +435,14 @@ Avoid icons when:
 ### Special rule
 Doleth should never depend on icons to explain finance. Icons support orientation, not meaning.
 
+### Brand mark
+- Primary mark: segmented mineral ring with a central compass-diamond.
+- Meaning: the ring represents control and continuity; the diamond represents oriented financial truth.
+- Wordmark: `Doleth` in `Manrope`, weight 650, tight tracking.
+- The in-product mark is flat and token-colored. Gradients, shadows, and the tagline are excluded from mobile chrome.
+- Minimum mark size: 24px in interface, 32px for standalone identity, 192px for installed-app assets.
+- At small sizes, preserve only the ring, stems, and two-part diamond; never add internal micro-details.
+
 ## 8. Component Principles
 
 Every component in Doleth must follow these rules:

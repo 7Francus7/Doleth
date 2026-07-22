@@ -1,5 +1,6 @@
 "use client";
 
+import { DolethBrand } from "../../components/brand/DolethBrand";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -44,7 +45,7 @@ export function NextPage({ model }: NextPageProps) {
     <main className="app-canvas">
       <div className={`app-canvas__content ${styles.content}`}>
         <header className={styles.topBar}>
-          <p className={styles.brand}>Doleth</p>
+          <DolethBrand />
           <h1 className={styles.screenTitle}>Próximo</h1>
         </header>
         <SystemRail {...model.rail} />

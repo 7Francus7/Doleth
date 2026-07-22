@@ -1,0 +1,43 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-heading-m-size);
+  font-weight: 650;
+  letter-spacing: var(--type-heading-m-tracking);
+  line-height: 1;
+}
+
+.mark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+
+.stem,
+.arcMain,
+.arcSupport {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 3.5;
+}
+
+.stem { stroke: var(--color-mineral-700); }
+.arcMain { stroke: var(--color-mineral-600); }
+.arcSupport { stroke: var(--color-mineral-500); }
+.diamondMain { fill: var(--color-mineral-700); }
+.diamondSupport { fill: var(--color-mineral-500); }
+.diamondShade { fill: var(--color-mineral-600); }
+
+.brand[data-compact="true"] {
+  gap: var(--space-4);
+  font-size: var(--type-label-l-size);
+  letter-spacing: var(--type-label-l-tracking);
+}
+
+.brand[data-compact="true"] .mark {
+  width: 24px;
+  height: 24px;
+}
