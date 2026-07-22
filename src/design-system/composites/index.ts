@@ -1,4 +1,5 @@
 export * from "./ActionStrip";
+export * from "./AllocationChart";
 export * from "./AttentionBanner";
 export * from "./BottomSheet";
 export * from "./CoverageMeter";

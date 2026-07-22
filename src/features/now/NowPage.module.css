@@ -202,6 +202,70 @@
   margin-top: calc(var(--space-8) * -1);
 }
 
+.investmentsEntry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  min-height: 64px;
+  padding: var(--space-16);
+  border: var(--border-width-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-base);
+  text-decoration: none;
+  transition: background var(--motion-duration-surface) var(--motion-curve-settle);
+}
+
+.investmentsEntry:active {
+  background: var(--color-surface-subtle);
+}
+
+.investmentsCopy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.investmentsEyebrow {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.investmentsValue {
+  color: var(--color-text-strong);
+  font-family: var(--font-manrope);
+  font-size: var(--type-data-l-size);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: var(--type-data-l-weight);
+  letter-spacing: var(--type-data-l-tracking);
+}
+
+.investmentsCta {
+  color: var(--color-text-accent);
+  font-size: var(--type-body-m-size);
+  font-weight: var(--type-label-m-weight);
+}
+
+.investmentsDelta {
+  font-family: var(--font-ibm-plex-mono);
+  font-size: var(--type-data-m-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.investmentsDelta[data-state="positive"] { color: var(--color-stable-text); }
+.investmentsDelta[data-state="negative"] { color: var(--color-attention-text); }
+.investmentsDelta[data-state="neutral"] { color: var(--color-text-tertiary); }
+
+.investmentsChevron {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-heading-m-size);
+  line-height: 1;
+}
+
 .positionRows,
 .positionUnit {
   display: flex;

@@ -44,6 +44,14 @@ export interface NowViewModel {
     actionHref: string;
     rows: readonly FinancialRowProps[];
   }[];
+  investments?: {
+    hasInvestments: boolean;
+    value: string;
+    valuePrefix: string;
+    deltaLabel: string;
+    deltaState: "positive" | "negative" | "neutral";
+    href: string;
+  } | null;
   reserve: ReserveBlockProps | null;
   information: InformationBlockProps;
 }

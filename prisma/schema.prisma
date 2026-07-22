@@ -36,6 +36,21 @@ enum UpcomingPaymentStatus {
   PAID
 }
 
+enum InvestmentKind {
+  STOCKS
+  CRYPTO
+  FUND
+  BOND
+  REAL_ESTATE
+  CASH_EQUIVALENT
+  OTHER
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 model Account {
   id                  String        @id @default(cuid())
   name                String
@@ -104,6 +119,23 @@ model LedgerEntry {
 
   @@index([accountId])
   @@index([transactionId])
+}
+
+model Investment {
+  id               String           @id @default(cuid())
+  name             String
+  kind             InvestmentKind
+  symbol           String?
+  currency         String           @default("ARS")
+  investedCents    BigInt
+  currentValueCents BigInt
+  note             String?
+  status           InvestmentStatus @default(ACTIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([status])
+  @@index([kind])
 }
 
 model UpcomingPayment {

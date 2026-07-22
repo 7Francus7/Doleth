@@ -103,6 +103,28 @@ export function NowPage({ model }: NowPageProps) {
           </section>
         ) : null}
 
+        {model.investments ? (
+          <Link className={styles.investmentsEntry} data-empty={!model.investments.hasInvestments} href={model.investments.href}>
+            <div className={styles.investmentsCopy}>
+              <span className={styles.investmentsEyebrow}>Cartera de inversiones</span>
+              {model.investments.hasInvestments ? (
+                <strong className={styles.investmentsValue}>
+                  {model.investments.valuePrefix}{model.investments.value}
+                </strong>
+              ) : (
+                <span className={styles.investmentsCta}>Registrá tu primera inversión</span>
+              )}
+            </div>
+            {model.investments.hasInvestments && model.investments.deltaLabel ? (
+              <span className={styles.investmentsDelta} data-state={model.investments.deltaState}>
+                {model.investments.deltaLabel}
+              </span>
+            ) : (
+              <span aria-hidden="true" className={styles.investmentsChevron}>›</span>
+            )}
+          </Link>
+        ) : null}
+
         <Surface
           border="subtle"
           className={styles.position}
