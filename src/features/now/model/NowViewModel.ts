@@ -32,6 +32,9 @@ export interface NowViewModel {
     label: string;
     income: string;
     expense: string;
+    net: string;
+    netPrefix: string;
+    netState: "positive" | "negative" | "neutral";
     incomePercent: number;
     expensePercent: number;
   }[];

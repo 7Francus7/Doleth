@@ -115,14 +115,20 @@ export async function getNowModel(): Promise<NowViewModel> {
       balancePrefix: account.balanceCents < 0n ? "-$" : "$",
       state: account.balanceCents < 0n ? "attention" : "stable",
     })),
-    trend: data.monthlyHistory.map((point) => ({
-      month: point.month,
-      label: point.label,
-      income: formatCents(point.incomeCents),
-      expense: formatCents(point.expenseCents),
-      incomePercent: trendPercent(point.incomeCents),
-      expensePercent: trendPercent(point.expenseCents),
-    })),
+    trend: data.monthlyHistory.map((point) => {
+      const netCents = point.incomeCents - point.expenseCents;
+      return {
+        month: point.month,
+        label: point.label,
+        income: formatCents(point.incomeCents),
+        expense: formatCents(point.expenseCents),
+        net: formatCents(netCents < 0n ? -netCents : netCents),
+        netPrefix: netCents < 0n ? "-$" : "+$",
+        netState: netCents < 0n ? "negative" as const : netCents > 0n ? "positive" as const : "neutral" as const,
+        incomePercent: trendPercent(point.incomeCents),
+        expensePercent: trendPercent(point.expenseCents),
+      };
+    }),
     operational: [
       {
         title: "Próximos pagos",

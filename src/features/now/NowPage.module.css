@@ -16,8 +16,7 @@
 .topBar,
 .sectionHeader,
 .accountCardTopline,
-.trendHeader,
-.legend {
+.trendHeader {
   display: flex;
   align-items: center;
 }
@@ -197,94 +196,6 @@
   color: var(--color-text-primary);
   font-size: var(--type-label-m-size);
   font-weight: var(--type-label-m-weight);
-}
-
-.legend {
-  gap: var(--space-12);
-}
-
-.legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
-  color: var(--color-text-tertiary);
-  font-size: var(--type-label-s-size);
-}
-
-.legend i {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--color-mineral-600);
-}
-
-.legend i[data-kind="expense"] {
-  background: var(--color-state-attention-border);
-}
-
-.chart {
-  position: relative;
-  display: grid;
-  height: 164px;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--space-8);
-  padding: var(--space-12) var(--space-4) 0;
-  border-bottom: var(--border-width-hairline) solid var(--border-subtle);
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 39px,
-    var(--border-subtle) 40px
-  );
-}
-
-.chart[data-empty="true"] .bars {
-  opacity: .18;
-}
-
-.chartEmpty {
-  position: absolute;
-  inset: var(--space-16) var(--space-20) 24px;
-  display: grid;
-  place-items: center;
-  color: var(--color-text-secondary);
-  font-size: var(--type-body-m-size);
-  line-height: var(--type-body-m-line);
-  text-align: center;
-}
-
-.chartGroup {
-  display: grid;
-  min-width: 0;
-  grid-template-rows: 1fr 18px;
-  gap: var(--space-4);
-}
-
-.bars {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 3px;
-}
-
-.bars span {
-  width: min(10px, 38%);
-  height: var(--income-height);
-  min-height: 4px;
-  border-radius: var(--radius-xs) var(--radius-xs) 2px 2px;
-  background: var(--color-mineral-600);
-  transition: height var(--motion-duration-surface) var(--motion-curve-settle);
-}
-
-.bars span[data-kind="expense"] {
-  height: var(--expense-height);
-  background: var(--color-state-attention-border);
-}
-
-.chartGroup small {
-  color: var(--color-text-tertiary);
-  font-size: var(--type-label-s-size);
-  text-align: center;
 }
 
 .information {
