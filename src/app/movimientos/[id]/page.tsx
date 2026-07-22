@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { voidMovementAction } from "../../actions/finance";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { getDb } from "../../../lib/db";
-import { formatCents } from "../../../lib/finance/domain";
+import { formatCents, formatDateAR } from "../../../lib/finance/domain";
 import styles from "../../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function MovementDetailPage({ params }: { params: Promise<{
         <dl className={styles.detailGrid}>
           <div className={styles.detailRow}><dt>Tipo</dt><dd>{movement.type === "EXPENSE" ? "Gasto" : movement.type === "INCOME" ? "Ingreso" : "Transferencia"}</dd></div>
           <div className={styles.detailRow}><dt>Importe</dt><dd>${formatCents(movement.amountCents)}</dd></div>
-          <div className={styles.detailRow}><dt>Fecha</dt><dd>{movement.occurredOn.toISOString().slice(0, 10)}</dd></div>
+          <div className={styles.detailRow}><dt>Fecha</dt><dd>{formatDateAR(movement.occurredOn)}</dd></div>
           <div className={styles.detailRow}><dt>Origen</dt><dd>{movement.sourceAccount.name}</dd></div>
           {movement.destinationAccount ? <div className={styles.detailRow}><dt>Destino</dt><dd>{movement.destinationAccount.name}</dd></div> : null}
           {movement.category ? <div className={styles.detailRow}><dt>Categoría</dt><dd>{movement.category.name}</dd></div> : null}

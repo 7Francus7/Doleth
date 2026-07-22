@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { OperationalShell } from "../../components/finance/OperationalShell";
 import { getMovements } from "../../lib/finance/data";
-import { todayInArgentina } from "../../lib/finance/domain";
+import { formatDateAR, todayInArgentina } from "../../lib/finance/domain";
 import styles from "../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
       </form>
       {data.movements.length ? <div className={styles.list}>{data.movements.map((movement) => (
         <Link className={`${styles.listItem} ${movement.voided ? styles.voided : ""}`} href={`/movimientos/${movement.id}`} key={movement.id}>
-          <span className={styles.itemCopy}><span className={styles.itemTitle}>{movement.description}</span><span className={styles.itemMeta}>{movement.occurredOn} · {movement.accountName}{movement.voided ? " · Anulado" : ""}</span></span>
+          <span className={styles.itemCopy}><span className={styles.itemTitle}>{movement.description}</span><span className={styles.itemMeta}>{formatDateAR(movement.occurredOn)} · {movement.accountName}{movement.voided ? " · Anulado" : ""}</span></span>
           <span className={styles.itemAmount}>{movement.type === "EXPENSE" ? "-" : movement.type === "INCOME" ? "+" : ""}${movement.amount}</span>
         </Link>
       ))}</div> : <p className={styles.empty}>No hay movimientos para estos filtros.</p>}

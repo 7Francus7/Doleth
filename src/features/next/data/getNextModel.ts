@@ -1,5 +1,5 @@
 import "server-only";
-import { formatCents } from "../../../lib/finance/domain";
+import { formatCents, formatDateAR } from "../../../lib/finance/domain";
 import { getAccountsWithBalances, getUpcomingPayments } from "../../../lib/finance/data";
 import type { NextViewModel } from "../model";
 
@@ -68,7 +68,7 @@ export async function getNextModel(): Promise<NextViewModel> {
       rows: paid.map((payment) => ({
         kind: "navigable" as const,
         label: payment.concept,
-        supportingLabel: `${payment.dueOn.toISOString().slice(0, 10)} · ${payment.plannedAccount.name}`,
+        supportingLabel: `${formatDateAR(payment.dueOn)} · ${payment.plannedAccount.name}`,
         value: formatCents(payment.estimatedCents),
         valuePrefix: "$",
         href: `/proximo/${payment.id}`,
@@ -79,7 +79,7 @@ export async function getNextModel(): Promise<NextViewModel> {
       rows: pending.map((payment) => ({
         kind: "navigable" as const,
         label: payment.concept,
-        supportingLabel: `${payment.dueOn.toISOString().slice(0, 10)} · ${payment.plannedAccount.name}`,
+        supportingLabel: `${formatDateAR(payment.dueOn)} · ${payment.plannedAccount.name}`,
         value: formatCents(payment.estimatedCents),
         valuePrefix: "$",
         href: `/proximo/${payment.id}`,
