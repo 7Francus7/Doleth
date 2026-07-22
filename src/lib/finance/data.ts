@@ -1,7 +1,7 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
-import type { AnalysisMovement } from "./analysis";
+import { resilientList, type AnalysisMovement } from "./analysis";
 
 export async function getAccountsWithBalances() {
   const db = getDb();
@@ -335,7 +335,10 @@ export async function getRealityData(): Promise<{
   const db = getDb();
   const [accounts, investments, pending, movementCount, incomeCount] = await Promise.all([
     getAccountsWithBalances(),
-    getInvestments(),
+    // Inversiones es un dominio secundario: si su lectura falla transitoriamente,
+    // /mi-realidad degrada mostrando 0 inversiones en vez de romper toda la vista
+    // (misma resiliencia que el dashboard de /ahora).
+    resilientList(() => getInvestments()),
     db.upcomingPayment.findMany({ where: { status: "PENDING" }, select: { estimatedCents: true } }),
     db.transaction.count({ where: { voidedAt: null } }),
     db.transaction.count({ where: { voidedAt: null, type: "INCOME" } }),

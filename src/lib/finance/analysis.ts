@@ -437,6 +437,21 @@ export function reconcileCoverage(
   return { coverageCents, missingCents: commitmentCents - coverageCents };
 }
 
+/**
+ * Ejecuta una lectura de lista tolerante a fallos: si la consulta rechaza (por
+ * ejemplo, un corte transitorio de conexión), devuelve una lista vacía en lugar
+ * de propagar el error y romper toda la vista. Reservado para dominios
+ * secundarios (como inversiones) cuya ausencia degrada de forma honesta; nunca
+ * para el patrimonio central. Refleja la resiliencia que ya tiene el dashboard.
+ */
+export async function resilientList<T>(load: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await load();
+  } catch {
+    return [];
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Idempotencia sin cambio de esquema (protección de doble-submit)
 // ---------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import {
   coverageRatio,
   isDuplicateWithinWindow,
   reconcileCoverage,
+  resilientList,
   selectRecommendation,
   signedPatrimonyEffect,
   type AnalysisMovement,
@@ -416,6 +417,19 @@ describe("reconcileCoverage", () => {
   it("siempre reconcilia: compromiso − cobertura = faltante", () => {
     const result = reconcileCoverage(77_777_00n, 12_345_00n);
     expect(77_777_00n - result.coverageCents).toBe(result.missingCents);
+  });
+});
+
+describe("resilientList", () => {
+  it("devuelve los valores cuando la lectura resuelve", async () => {
+    const result = await resilientList(async () => [1, 2, 3]);
+    expect(result).toEqual([1, 2, 3]);
+  });
+  it("degrada a lista vacía cuando la lectura falla (no propaga el error)", async () => {
+    const result = await resilientList<number>(async () => {
+      throw new Error("conexión caída");
+    });
+    expect(result).toEqual([]);
   });
 });
 
