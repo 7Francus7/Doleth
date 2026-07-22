@@ -43,7 +43,7 @@ export function MovementForm({
   const visibleCategories = categories.filter((category) => category.kind === type);
 
   return (
-    <form action={action} className={styles.form}>
+    <form action={action} className={`${styles.form} ${styles.movementForm}`}>
       {defaults ? <input name="originalId" type="hidden" value={defaults.id} /> : null}
       <input name="idempotencyKey" type="hidden" value={idempotencyKey} />
       <label className={`${styles.field} ${styles.amountField}`}>
@@ -92,7 +92,9 @@ export function MovementForm({
         <input defaultValue={defaults?.description} maxLength={160} name="description" placeholder="Detalle breve" />
       </label>
       {state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null}
-      <SubmitButton pendingLabel="Registrando…">{defaults ? "Guardar corrección" : "Registrar movimiento"}</SubmitButton>
+      <div className={styles.movementSubmit}>
+        <SubmitButton pendingLabel="Registrando…">{defaults ? "Guardar corrección" : "Registrar movimiento"}</SubmitButton>
+      </div>
     </form>
   );
 }

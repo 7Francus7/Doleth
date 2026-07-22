@@ -7,6 +7,8 @@
 .headerActions { display: flex; flex-wrap: wrap; gap: var(--space-12); margin-top: var(--space-8); }
 .primaryLink { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 0 var(--space-20); border-radius: var(--radius-sm); background: var(--color-action-primary-bg); color: var(--color-action-primary-text); font-weight: 520; text-decoration: none; }
 .form, .panel { display: flex; flex-direction: column; gap: var(--space-20); padding: var(--space-24); border: var(--border-width-hairline) solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--color-surface-raised); }
+.movementForm { padding-bottom: 92px; }
+.movementSubmit { position: fixed; z-index: 19; right: var(--space-20); bottom: calc(max(var(--space-12), env(safe-area-inset-bottom)) + 74px); left: var(--space-20); max-width: 37.5rem; margin-inline: auto; padding: var(--space-8); border: var(--border-width-hairline) solid var(--border-default); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-surface-raised) 96%, transparent); box-shadow: var(--shadow-soft); backdrop-filter: blur(14px); }
 .field { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: var(--space-8); color: var(--color-text-primary); font-size: var(--type-label-m-size); font-weight: var(--type-label-m-weight); }
 .field small { color: var(--color-text-tertiary); font-size: var(--type-label-s-size); font-weight: 450; }
 .field input, .field select { width: 100%; min-height: 52px; padding: 0 var(--space-16); border: var(--border-width-hairline) solid var(--border-default); border-radius: var(--radius-md); outline: none; background: var(--color-surface-base); color: var(--color-text-strong); }
@@ -52,3 +54,4 @@
 .nav .navAction small { font-size: 11px; font-weight: var(--type-label-s-weight); line-height: 13px; }
 @media (max-width: 520px) { .filters { grid-template-columns: 1fr; } .fieldRow { flex-direction: column; } .form, .panel { padding: var(--space-20); } .segmented span { font-size: 11px; } }
 @media (max-width: 340px) { .navLabel { display: none; } .navLabelCompact { display: inline; } }
+@media (min-width: 720px) { .movementForm { padding-bottom: var(--space-24); } .movementSubmit { position: static; width: 100%; max-width: none; padding: 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; } }
