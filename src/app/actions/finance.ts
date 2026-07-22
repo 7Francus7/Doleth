@@ -24,6 +24,14 @@ const errorState = (error: unknown): FinanceActionState => ({
 
 const value = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
+// Protección de doble-envío sin cambio de esquema: si acaba de crearse una
+// entidad idéntica dentro de esta ventana, se trata como el mismo intento y no
+// se duplica. Cubre el caso real de doble-clic o reenvío del formulario. La
+// robustez frente a concurrencia verdadera requiere una restricción única
+// (migración futura) y queda documentada como deuda.
+const DEDUPE_WINDOW_MS = 60_000;
+const recentThreshold = () => new Date(Date.now() - DEDUPE_WINDOW_MS);
+
 function validMovementType(input: string): input is MovementType {
   return input === "EXPENSE" || input === "INCOME" || input === "TRANSFER";
 }
@@ -70,6 +78,11 @@ export async function createInvestmentAction(
     if (symbol && symbol.length > 20) throw new Error("El símbolo admite hasta 20 caracteres.");
     if (note && note.length > 160) throw new Error("La nota admite hasta 160 caracteres.");
 
+    const recentInvestment = await getDb().investment.findFirst({
+      where: { name, kind, currency, investedCents, currentValueCents, createdAt: { gte: recentThreshold() } },
+    });
+    if (recentInvestment) return { ok: true, message: "Inversión ya registrada. No se creó un duplicado." };
+
     await getDb().investment.create({
       data: {
         name,
@@ -110,6 +123,11 @@ export async function createAccountAction(
       throw new Error("Seleccioná un tipo de cuenta válido.");
     }
     if (currency !== "ARS") throw new Error("Este corte consolida cuentas en ARS. Otras monedas requieren conversión explícita.");
+
+    const recentAccount = await getDb().account.findFirst({
+      where: { name, type: type as "CASH", currency, initialBalanceCents, createdAt: { gte: recentThreshold() } },
+    });
+    if (recentAccount) return { ok: true, message: "Cuenta ya registrada. No se creó un duplicado." };
 
     await getDb().account.create({
       data: { name, type: type as "CASH", currency, initialBalanceCents },
@@ -274,6 +292,12 @@ export async function createUpcomingPaymentAction(
     if (concept.length < 2 || concept.length > 100) throw new Error("El concepto debe tener entre 2 y 100 caracteres.");
     const account = await getDb().account.findFirst({ where: { id: plannedAccountId, status: "ACTIVE" } });
     if (!account) throw new Error("Seleccioná una cuenta activa.");
+
+    const recentPayment = await getDb().upcomingPayment.findFirst({
+      where: { concept, estimatedCents, dueOn, plannedAccountId, status: "PENDING", createdAt: { gte: recentThreshold() } },
+    });
+    if (recentPayment) return { ok: true, message: "Próximo pago ya registrado. No se creó un duplicado." };
+
     await getDb().upcomingPayment.create({
       data: { concept, estimatedCents, dueOn, plannedAccountId, ...(frequency ? { frequency } : {}) },
     });

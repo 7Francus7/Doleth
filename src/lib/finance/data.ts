@@ -1,6 +1,7 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
+import type { AnalysisMovement } from "./analysis";
 
 export async function getAccountsWithBalances() {
   const db = getDb();
@@ -178,4 +179,229 @@ export async function getUpcomingPayments() {
     db.account.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
   ]);
   return { payments, accounts };
+}
+
+// ---------------------------------------------------------------------------
+// Data-access de superficies de análisis. Cada función lee datos reales del
+// ledger y devuelve primitivas listas para el cálculo puro (analysis.ts).
+// No contienen copy de UI.
+// ---------------------------------------------------------------------------
+
+const movementLabel = (input: {
+  description: string | null;
+  category: { name: string } | null;
+  type: "EXPENSE" | "INCOME" | "TRANSFER";
+}): string => {
+  if (input.description) return input.description;
+  if (input.category) return input.category.name;
+  return input.type === "EXPENSE" ? "Gasto" : input.type === "INCOME" ? "Ingreso" : "Transferencia";
+};
+
+const accountLabel = (input: {
+  type: "EXPENSE" | "INCOME" | "TRANSFER";
+  sourceAccount: { name: string };
+  destinationAccount: { name: string } | null;
+}): string =>
+  input.type === "TRANSFER"
+    ? `${input.sourceAccount.name} → ${input.destinationAccount?.name ?? ""}`
+    : input.sourceAccount.name;
+
+function dayString(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftDays(day: string, amount: number): Date {
+  const date = new Date(`${day}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date;
+}
+
+export async function getChangesData(): Promise<{
+  movements: AnalysisMovement[];
+  currentPatrimonyCents: bigint;
+  today: string;
+  windowStart: string;
+  windowDays: number;
+  hasAccounts: boolean;
+}> {
+  const db = getDb();
+  const today = todayInArgentina();
+  const windowDays = 7;
+  const start = shiftDays(today, -(windowDays - 1));
+  const end = shiftDays(today, 1);
+
+  const [transactions, accounts] = await Promise.all([
+    db.transaction.findMany({
+      where: { voidedAt: null, occurredOn: { gte: start, lt: end } },
+      include: { sourceAccount: true, destinationAccount: true, category: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+    }),
+    getAccountsWithBalances(),
+  ]);
+
+  const currentPatrimonyCents = accounts.reduce((sum, account) => sum + account.balanceCents, 0n);
+
+  return {
+    movements: transactions.map((transaction) => ({
+      id: transaction.id,
+      type: transaction.type,
+      amountCents: transaction.amountCents,
+      occurredOn: dayString(transaction.occurredOn),
+      voided: transaction.voidedAt !== null,
+      label: movementLabel(transaction),
+      accountName: accountLabel(transaction),
+    })),
+    currentPatrimonyCents,
+    today,
+    windowStart: dayString(start),
+    windowDays,
+    hasAccounts: accounts.length > 0,
+  };
+}
+
+export async function getProgressData(): Promise<{
+  currentMonthMovements: AnalysisMovement[];
+  previousMonthMovements: AnalysisMovement[];
+  hasPreviousPeriod: boolean;
+  availableCents: bigint;
+  upcomingCents: bigint;
+  daysWithActivity: number;
+  elapsedDays: number;
+  currentMonth: string;
+  previousMonth: string;
+  hasAccounts: boolean;
+}> {
+  const db = getDb();
+  const today = todayInArgentina();
+  const currentMonth = today.slice(0, 7);
+  const currentBounds = monthBounds(currentMonth);
+  const previousMonth = dayString(
+    new Date(Date.UTC(currentBounds.start.getUTCFullYear(), currentBounds.start.getUTCMonth() - 1, 1)),
+  ).slice(0, 7);
+  const previousBounds = monthBounds(previousMonth);
+
+  const [currentRows, previousRows, accounts, upcoming] = await Promise.all([
+    db.transaction.findMany({
+      where: { voidedAt: null, occurredOn: { gte: currentBounds.start, lt: currentBounds.end } },
+      select: { id: true, type: true, amountCents: true, occurredOn: true },
+    }),
+    db.transaction.findMany({
+      where: { voidedAt: null, occurredOn: { gte: previousBounds.start, lt: previousBounds.end } },
+      select: { id: true, type: true, amountCents: true, occurredOn: true },
+    }),
+    getAccountsWithBalances(),
+    db.upcomingPayment.findMany({ where: { status: "PENDING" }, select: { estimatedCents: true } }),
+  ]);
+
+  const toMovement = (row: {
+    id: string;
+    type: "EXPENSE" | "INCOME" | "TRANSFER";
+    amountCents: bigint;
+    occurredOn: Date;
+  }): AnalysisMovement => ({
+    id: row.id,
+    type: row.type,
+    amountCents: row.amountCents,
+    occurredOn: dayString(row.occurredOn),
+    voided: false,
+    label: "",
+    accountName: "",
+  });
+
+  const daysWithActivity = new Set(currentRows.map((row) => dayString(row.occurredOn))).size;
+
+  return {
+    currentMonthMovements: currentRows.map(toMovement),
+    previousMonthMovements: previousRows.map(toMovement),
+    hasPreviousPeriod: previousRows.length > 0,
+    availableCents: accounts.reduce((sum, account) => sum + account.balanceCents, 0n),
+    upcomingCents: upcoming.reduce((sum, payment) => sum + payment.estimatedCents, 0n),
+    daysWithActivity,
+    elapsedDays: Number(today.slice(8, 10)),
+    currentMonth,
+    previousMonth,
+    hasAccounts: accounts.length > 0,
+  };
+}
+
+export async function getRealityData(): Promise<{
+  accounts: { id: string; name: string; type: string; balanceCents: bigint; archived: boolean }[];
+  investments: { id: string; name: string; currentValueCents: bigint }[];
+  committedCents: bigint;
+  upcomingCount: number;
+  hasMovements: boolean;
+  hasIncome: boolean;
+}> {
+  const db = getDb();
+  const [accounts, investments, pending, movementCount, incomeCount] = await Promise.all([
+    getAccountsWithBalances(),
+    getInvestments(),
+    db.upcomingPayment.findMany({ where: { status: "PENDING" }, select: { estimatedCents: true } }),
+    db.transaction.count({ where: { voidedAt: null } }),
+    db.transaction.count({ where: { voidedAt: null, type: "INCOME" } }),
+  ]);
+
+  return {
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      balanceCents: account.balanceCents,
+      archived: account.status === "ARCHIVED",
+    })),
+    investments: investments.map((investment) => ({
+      id: investment.id,
+      name: investment.name,
+      currentValueCents: investment.currentValueCents,
+    })),
+    committedCents: pending.reduce((sum, payment) => sum + payment.estimatedCents, 0n),
+    upcomingCount: pending.length,
+    hasMovements: movementCount > 0,
+    hasIncome: incomeCount > 0,
+  };
+}
+
+export async function getActData(): Promise<{
+  today: string;
+  hasAccounts: boolean;
+  movementCount: number;
+  patrimonyCents: bigint;
+  pendingPayments: {
+    id: string;
+    concept: string;
+    dueOn: string;
+    estimatedCents: bigint;
+    accountName: string;
+    accountBalanceCents: bigint;
+  }[];
+}> {
+  const db = getDb();
+  const today = todayInArgentina();
+  const [accounts, pending, movementCount] = await Promise.all([
+    getAccountsWithBalances(),
+    db.upcomingPayment.findMany({
+      where: { status: "PENDING" },
+      include: { plannedAccount: true },
+      orderBy: { dueOn: "asc" },
+    }),
+    db.transaction.count({ where: { voidedAt: null } }),
+  ]);
+
+  const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
+  const activeAccounts = accounts.filter((account) => account.status === "ACTIVE");
+
+  return {
+    today,
+    hasAccounts: activeAccounts.length > 0,
+    movementCount,
+    patrimonyCents: accounts.reduce((sum, account) => sum + account.balanceCents, 0n),
+    pendingPayments: pending.map((payment) => ({
+      id: payment.id,
+      concept: payment.concept,
+      dueOn: dayString(payment.dueOn),
+      estimatedCents: payment.estimatedCents,
+      accountName: payment.plannedAccount.name,
+      accountBalanceCents: balanceByAccount.get(payment.plannedAccountId) ?? 0n,
+    })),
+  };
 }
