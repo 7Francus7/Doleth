@@ -32,6 +32,9 @@ export interface NowViewModel {
     label: string;
     income: string;
     expense: string;
+    net: string;
+    netPrefix: string;
+    netState: "positive" | "negative" | "neutral";
     incomePercent: number;
     expensePercent: number;
   }[];
@@ -41,6 +44,14 @@ export interface NowViewModel {
     actionHref: string;
     rows: readonly FinancialRowProps[];
   }[];
+  investments?: {
+    hasInvestments: boolean;
+    value: string;
+    valuePrefix: string;
+    deltaLabel: string;
+    deltaState: "positive" | "negative" | "neutral";
+    href: string;
+  } | null;
   reserve: ReserveBlockProps | null;
   information: InformationBlockProps;
 }

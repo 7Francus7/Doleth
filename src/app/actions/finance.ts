@@ -35,6 +35,67 @@ function refreshFinance() {
   revalidatePath("/cuentas");
 }
 
+const INVESTMENT_KINDS = [
+  "STOCKS",
+  "CRYPTO",
+  "FUND",
+  "BOND",
+  "REAL_ESTATE",
+  "CASH_EQUIVALENT",
+  "OTHER",
+] as const;
+
+type InvestmentKind = (typeof INVESTMENT_KINDS)[number];
+
+function validInvestmentKind(input: string): input is InvestmentKind {
+  return (INVESTMENT_KINDS as readonly string[]).includes(input);
+}
+
+export async function createInvestmentAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const name = value(formData, "name");
+    const kind = value(formData, "kind");
+    const symbol = value(formData, "symbol") || undefined;
+    const note = value(formData, "note") || undefined;
+    const currency = (value(formData, "currency") || "ARS").toUpperCase();
+    const investedCents = requirePositiveMoney(value(formData, "invested"));
+    const currentValueCents = parseMoneyToCents(value(formData, "currentValue"));
+    if (name.length < 2 || name.length > 80) throw new Error("El nombre debe tener entre 2 y 80 caracteres.");
+    if (!validInvestmentKind(kind)) throw new Error("Seleccioná un tipo de inversión válido.");
+    if (currency !== "ARS") throw new Error("Esta vista consolida inversiones en ARS.");
+    if (currentValueCents < 0n) throw new Error("El valor actual no puede ser negativo.");
+    if (symbol && symbol.length > 20) throw new Error("El símbolo admite hasta 20 caracteres.");
+    if (note && note.length > 160) throw new Error("La nota admite hasta 160 caracteres.");
+
+    await getDb().investment.create({
+      data: {
+        name,
+        kind,
+        currency,
+        investedCents,
+        currentValueCents,
+        ...(symbol ? { symbol } : {}),
+        ...(note ? { note } : {}),
+      },
+    });
+    revalidatePath("/inversiones");
+    return { ok: true, message: "Inversión registrada. Ya forma parte de tu cartera." };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function archiveInvestmentAction(formData: FormData): Promise<void> {
+  const id = value(formData, "id");
+  const status = value(formData, "status");
+  if (!id || (status !== "ACTIVE" && status !== "ARCHIVED")) throw new Error("Estado de inversión inválido.");
+  await getDb().investment.update({ where: { id }, data: { status } });
+  revalidatePath("/inversiones");
+}
+
 export async function createAccountAction(
   _previous: FinanceActionState,
   formData: FormData,

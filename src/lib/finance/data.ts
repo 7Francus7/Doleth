@@ -160,6 +160,14 @@ export async function getMovements(filters: MovementFilters) {
   };
 }
 
+export async function getInvestments() {
+  const db = getDb();
+  return db.investment.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: [{ currentValueCents: "desc" }, { createdAt: "asc" }],
+  });
+}
+
 export async function getUpcomingPayments() {
   const db = getDb();
   const [payments, accounts] = await Promise.all([

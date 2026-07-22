@@ -1,4 +1,5 @@
 export * from "./ActionStrip";
+export * from "./AllocationChart";
 export * from "./AttentionBanner";
 export * from "./BottomSheet";
 export * from "./CoverageMeter";
@@ -9,3 +10,4 @@ export * from "./InformationBlock";
 export * from "./ReserveBlock";
 export * from "./StabilityStatement";
 export * from "./SystemRail";
+export * from "./TrendChart";

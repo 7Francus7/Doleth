@@ -1,10 +1,35 @@
 import "server-only";
 import { formatCents } from "../../../lib/finance/domain";
-import { getDashboardData } from "../../../lib/finance/data";
+import { getDashboardData, getInvestments } from "../../../lib/finance/data";
 import type { NowViewModel } from "../model";
 
+async function getInvestmentsSummary(): Promise<NonNullable<NowViewModel["investments"]> | null> {
+  try {
+    const investments = await getInvestments();
+    if (!investments.length) {
+      return { hasInvestments: false, value: "0", valuePrefix: "$", deltaLabel: "", deltaState: "neutral", href: "/inversiones" };
+    }
+    const valueCents = investments.reduce((sum, item) => sum + item.currentValueCents, 0n);
+    const investedCents = investments.reduce((sum, item) => sum + item.investedCents, 0n);
+    const deltaCents = valueCents - investedCents;
+    const percent = investedCents === 0n ? 0 : Number((deltaCents * 10000n) / investedCents) / 100;
+    const sign = percent > 0 ? "+" : percent < 0 ? "-" : "";
+    return {
+      hasInvestments: true,
+      value: formatCents(valueCents),
+      valuePrefix: "$",
+      deltaLabel: `${sign}${Math.abs(percent).toLocaleString("es-AR", { maximumFractionDigits: 1 })}%`,
+      deltaState: deltaCents > 0n ? "positive" : deltaCents < 0n ? "negative" : "neutral",
+      href: "/inversiones",
+    };
+  } catch {
+    // Tabla de inversiones aún no migrada: no romper el dashboard.
+    return null;
+  }
+}
+
 export async function getNowModel(): Promise<NowViewModel> {
-  const data = await getDashboardData();
+  const [data, investments] = await Promise.all([getDashboardData(), getInvestmentsSummary()]);
   const hasAccounts = data.accounts.length > 0;
   const coverage = data.upcomingCents > 0n
     ? Math.max(0, Math.min(100, Number((data.totalCents * 100n) / data.upcomingCents)))
@@ -115,14 +140,20 @@ export async function getNowModel(): Promise<NowViewModel> {
       balancePrefix: account.balanceCents < 0n ? "-$" : "$",
       state: account.balanceCents < 0n ? "attention" : "stable",
     })),
-    trend: data.monthlyHistory.map((point) => ({
-      month: point.month,
-      label: point.label,
-      income: formatCents(point.incomeCents),
-      expense: formatCents(point.expenseCents),
-      incomePercent: trendPercent(point.incomeCents),
-      expensePercent: trendPercent(point.expenseCents),
-    })),
+    trend: data.monthlyHistory.map((point) => {
+      const netCents = point.incomeCents - point.expenseCents;
+      return {
+        month: point.month,
+        label: point.label,
+        income: formatCents(point.incomeCents),
+        expense: formatCents(point.expenseCents),
+        net: formatCents(netCents < 0n ? -netCents : netCents),
+        netPrefix: netCents < 0n ? "-$" : "+$",
+        netState: netCents < 0n ? "negative" as const : netCents > 0n ? "positive" as const : "neutral" as const,
+        incomePercent: trendPercent(point.incomeCents),
+        expensePercent: trendPercent(point.expenseCents),
+      };
+    }),
     operational: [
       {
         title: "Próximos pagos",
@@ -156,6 +187,7 @@ export async function getNowModel(): Promise<NowViewModel> {
           : [{ label: "Todavía no hay movimientos", value: "0", valuePrefix: "$" }],
       },
     ],
+    investments,
     reserve: data.upcomingCents > 0n ? {
       title: "Compromisos próximos",
       amount: formatCents(data.upcomingCents),

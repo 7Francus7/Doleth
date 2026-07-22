@@ -2,7 +2,6 @@
 
 import { AnimatePresence, LayoutGroup } from "motion/react";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { DolethBrand } from "../../components/brand/DolethBrand";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
@@ -11,6 +10,7 @@ import { InformationBlock } from "../../design-system/composites/InformationBloc
 import { ReserveBlock } from "../../design-system/composites/ReserveBlock";
 import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
 import { SystemRail } from "../../design-system/composites/SystemRail";
+import { TrendChart } from "../../design-system/composites/TrendChart";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
@@ -28,7 +28,6 @@ export function NowPage({ model }: NowPageProps) {
   const informationProps = styles.information ? { className: styles.information } : {};
   const accounts = model.accounts ?? [];
   const trend = model.trend ?? [];
-  const trendHasActivity = trend.some((point) => point.incomePercent > 4 || point.expensePercent > 4);
   const handleAction = (actionId: string) => {
     if (actionId === "evidence") {
       document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -104,6 +103,28 @@ export function NowPage({ model }: NowPageProps) {
           </section>
         ) : null}
 
+        {model.investments ? (
+          <Link className={styles.investmentsEntry} data-empty={!model.investments.hasInvestments} href={model.investments.href}>
+            <div className={styles.investmentsCopy}>
+              <span className={styles.investmentsEyebrow}>Cartera de inversiones</span>
+              {model.investments.hasInvestments ? (
+                <strong className={styles.investmentsValue}>
+                  {model.investments.valuePrefix}{model.investments.value}
+                </strong>
+              ) : (
+                <span className={styles.investmentsCta}>Registrá tu primera inversión</span>
+              )}
+            </div>
+            {model.investments.hasInvestments && model.investments.deltaLabel ? (
+              <span className={styles.investmentsDelta} data-state={model.investments.deltaState}>
+                {model.investments.deltaLabel}
+              </span>
+            ) : (
+              <span aria-hidden="true" className={styles.investmentsChevron}>›</span>
+            )}
+          </Link>
+        ) : null}
+
         <Surface
           border="subtle"
           className={styles.position}
@@ -114,36 +135,8 @@ export function NowPage({ model }: NowPageProps) {
           <SectionTitle title={model.position.title} />
           <div className={styles.trendHeader}>
             <p>Ingresos y gastos</p>
-            <div aria-label="Leyenda" className={styles.legend}>
-              <span><i data-kind="income" />Ingresos</span>
-              <span><i data-kind="expense" />Gastos</span>
-            </div>
           </div>
-          <div
-            aria-label={trendHasActivity ? "Tendencia financiera de los últimos seis meses" : "Sin movimientos en los últimos seis meses"}
-            className={styles.chart}
-            data-empty={!trendHasActivity}
-            role="img"
-          >
-            {trend.map((point) => (
-              <div
-                aria-label={`${point.label}: ingresos $${point.income}, gastos $${point.expense}`}
-                className={styles.chartGroup}
-                key={point.month}
-                style={{
-                  "--income-height": `${point.incomePercent}%`,
-                  "--expense-height": `${point.expensePercent}%`,
-                } as CSSProperties}
-              >
-                <div className={styles.bars}>
-                  <span data-kind="income" />
-                  <span data-kind="expense" />
-                </div>
-                <small>{point.label}</small>
-              </div>
-            ))}
-            {!trendHasActivity ? <p className={styles.chartEmpty}>Aún no hay movimientos para comparar.</p> : null}
-          </div>
+          <TrendChart points={trend} />
           <div className={styles.positionRows}>
             {model.position.rows.map((row, index) => (
               <div className={styles.positionUnit} key={`${row.label}-${row.value}`}>
