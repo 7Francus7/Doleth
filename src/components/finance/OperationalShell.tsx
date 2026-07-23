@@ -8,12 +8,14 @@ export function OperationalShell({
   title,
   intro,
   actions,
+  back,
   children,
 }: {
   eyebrow: string;
   title: string;
   intro?: string;
   actions?: ReactNode;
+  back?: { href: string; label: string };
   children: ReactNode;
 }) {
   return (
@@ -21,6 +23,7 @@ export function OperationalShell({
       <div className={`app-canvas__content ${styles.page}`}>
         <header className={styles.header}>
           <Link aria-label="Volver a Ahora" className={styles.back} href="/ahora"><DolethBrand compact /></Link>
+          {back ? <Link className={styles.backContext} href={back.href}><span aria-hidden="true">←</span> {back.label}</Link> : null}
           <p className={styles.eyebrow}>{eyebrow}</p>
           <h1 className={styles.title}>{title}</h1>
           {intro ? <p className={styles.intro}>{intro}</p> : null}
