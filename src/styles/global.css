@@ -37,3 +37,17 @@ body {
   letter-spacing: var(--type-heading-l-tracking);
   line-height: var(--type-heading-l-line);
 }
+
+/* Fundación global de reduced motion: neutraliza animaciones, transiciones y
+   desplazamientos para quien lo pide, conservando el cambio (instantáneo) y toda
+   la funcionalidad. Los componentes con motion propio también lo respetan. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

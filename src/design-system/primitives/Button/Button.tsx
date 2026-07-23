@@ -48,9 +48,26 @@ export function Button({
       type={type}
       {...props}
     >
-      {leadingIcon ? <span className={styles.icon}>{leadingIcon}</span> : null}
-      <span>{loading ? loadingLabel : children}</span>
-      {trailingIcon ? <span className={styles.icon}>{trailingIcon}</span> : null}
+      {loading ? (
+        <>
+          {/* Reserva el ancho del contenido real para que el botón no salte. */}
+          <span aria-hidden="true" className={styles.ghost}>
+            {leadingIcon ? <span className={styles.icon}>{leadingIcon}</span> : null}
+            <span>{children}</span>
+            {trailingIcon ? <span className={styles.icon}>{trailingIcon}</span> : null}
+          </span>
+          <span className={styles.loading}>
+            <span aria-hidden="true" className={styles.spinner} />
+            <span>{loadingLabel}</span>
+          </span>
+        </>
+      ) : (
+        <>
+          {leadingIcon ? <span className={styles.icon}>{leadingIcon}</span> : null}
+          <span>{children}</span>
+          {trailingIcon ? <span className={styles.icon}>{trailingIcon}</span> : null}
+        </>
+      )}
     </button>
   );
 }

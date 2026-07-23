@@ -20,4 +20,7 @@ export const Secondary: Story = { args: { kind: "secondary" } };
 export const Ghost: Story = { args: { kind: "ghost" } };
 export const Large: Story = { args: { size: "lg" } };
 export const Disabled: Story = { args: { disabled: true } };
-export const Loading: Story = { args: { loading: true } };
+export const Loading: Story = { args: { loading: true, loadingLabel: "Registrando…" } };
+export const LoadingFill: Story = {
+  args: { loading: true, loadingLabel: "Guardando…", width: "fill", size: "lg" },
+};
