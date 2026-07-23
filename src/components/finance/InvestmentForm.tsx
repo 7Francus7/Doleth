@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createInvestmentAction, type FinanceActionState } from "../../app/actions/finance";
 import { SubmitButton } from "./SubmitButton";
+import { StatusMessage } from "../../design-system/feedback";
 import styles from "./finance.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
@@ -51,8 +52,8 @@ export function InvestmentForm() {
         <input autoComplete="off" maxLength={160} name="note" placeholder="Broker, objetivo, etc." />
       </label>
       <input name="currency" type="hidden" value="ARS" />
-      {state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null}
-      <SubmitButton>Registrar inversión</SubmitButton>
+      {state.message ? <StatusMessage tone={state.ok ? "success" : "error"}>{state.message}</StatusMessage> : null}
+      <SubmitButton pendingLabel="Registrando…">Registrar inversión</SubmitButton>
     </form>
   );
 }

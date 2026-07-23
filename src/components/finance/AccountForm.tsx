@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createAccountAction, type FinanceActionState } from "../../app/actions/finance";
 import { SubmitButton } from "./SubmitButton";
+import { StatusMessage } from "../../design-system/feedback";
 import styles from "./finance.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
@@ -36,8 +37,8 @@ export function AccountForm() {
           <input defaultValue="ARS" maxLength={3} name="currency" readOnly required />
         </label>
       </div>
-      {state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null}
-      <SubmitButton>Crear cuenta</SubmitButton>
+      {state.message ? <StatusMessage tone={state.ok ? "success" : "error"}>{state.message}</StatusMessage> : null}
+      <SubmitButton pendingLabel="Creando cuenta…">Crear cuenta</SubmitButton>
     </form>
   );
 }

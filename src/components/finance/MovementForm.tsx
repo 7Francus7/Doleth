@@ -7,6 +7,7 @@ import {
   type FinanceActionState,
 } from "../../app/actions/finance";
 import { SubmitButton } from "./SubmitButton";
+import { StatusMessage } from "../../design-system/feedback";
 import styles from "./finance.module.css";
 
 interface Option { id: string; name: string; currency?: string; kind?: string }
@@ -91,7 +92,7 @@ export function MovementForm({
         <span>Descripción <small>opcional</small></span>
         <input defaultValue={defaults?.description} maxLength={160} name="description" placeholder="Detalle breve" />
       </label>
-      {state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null}
+      {state.message ? <StatusMessage tone={state.ok ? "success" : "error"}>{state.message}</StatusMessage> : null}
       <div className={styles.movementSubmit}>
         <SubmitButton pendingLabel="Registrando…">{defaults ? "Guardar corrección" : "Registrar movimiento"}</SubmitButton>
       </div>

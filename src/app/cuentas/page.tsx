@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { setAccountStatusAction } from "../actions/finance";
 import { OperationalShell } from "../../components/finance/OperationalShell";
+import { EmptyState } from "../../design-system/feedback";
 import { formatCents } from "../../lib/finance/domain";
 import { getAccountsWithBalances } from "../../lib/finance/data";
 import styles from "../../components/finance/finance.module.css";
@@ -24,7 +25,13 @@ export default async function AccountsPage() {
             </form>
           </div>
         </div>
-      ))}</div> : <p className={styles.empty}>Todavía no hay cuentas. Creá la primera con su saldo real.</p>}
+      ))}</div> : (
+        <EmptyState
+          description="Podés agregar efectivo, banco, billetera virtual u otra cuenta."
+          primaryAction={<Link className={styles.primaryLink} href="/cuentas/nueva">Crear primera cuenta</Link>}
+          title="Empezá por representar dónde está tu dinero."
+        />
+      )}
     </OperationalShell>
   );
 }

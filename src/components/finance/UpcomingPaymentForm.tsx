@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createUpcomingPaymentAction, type FinanceActionState } from "../../app/actions/finance";
 import { SubmitButton } from "./SubmitButton";
+import { StatusMessage } from "../../design-system/feedback";
 import styles from "./finance.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
@@ -18,8 +19,8 @@ export function UpcomingPaymentForm({ accounts, today }: { accounts: { id: strin
       <label className={styles.field}><span>Vencimiento</span><input defaultValue={today} name="dueOn" required type="date" /></label>
       <label className={styles.field}><span>Cuenta prevista</span><select defaultValue="" name="plannedAccountId" required><option disabled value="">Seleccionar cuenta</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
       <label className={styles.field}><span>Frecuencia <small>opcional</small></span><input maxLength={60} name="frequency" placeholder="Mensual" /></label>
-      {state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null}
-      <SubmitButton>Registrar próximo pago</SubmitButton>
+      {state.message ? <StatusMessage tone={state.ok ? "success" : "error"}>{state.message}</StatusMessage> : null}
+      <SubmitButton pendingLabel="Registrando…">Registrar próximo pago</SubmitButton>
     </form>
   );
 }
