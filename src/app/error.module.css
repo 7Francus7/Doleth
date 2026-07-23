@@ -1,0 +1,34 @@
+.canvas {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding:
+    max(var(--space-24), env(safe-area-inset-top))
+    max(var(--space-20), env(safe-area-inset-right))
+    calc(7rem + env(safe-area-inset-bottom))
+    max(var(--space-20), env(safe-area-inset-left));
+}
+
+.content {
+  width: min(100%, 34rem);
+}
+
+.secondary {
+  display: inline-flex;
+  min-height: var(--space-56);
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-20);
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text-accent);
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+  text-decoration: none;
+}
+
+.secondary:focus-visible {
+  outline: var(--border-width-hairline) solid var(--border-accent);
+  outline-offset: var(--space-2);
+}
