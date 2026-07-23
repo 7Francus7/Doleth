@@ -1,0 +1,55 @@
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin: 0;
+  padding: var(--space-12) var(--space-16);
+  border: var(--border-width-hairline) solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.05rem;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.action {
+  flex: 0 0 auto;
+}
+
+.success {
+  border-color: var(--color-stable-border);
+  background: var(--color-stable-bg);
+  color: var(--color-stable-text);
+}
+
+.error {
+  border-color: var(--color-critical-border);
+  background: var(--color-critical-bg);
+  color: var(--color-critical-text);
+}
+
+.info {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.warning {
+  border-color: var(--color-attention-border);
+  background: var(--color-attention-bg);
+  color: var(--color-attention-text);
+}

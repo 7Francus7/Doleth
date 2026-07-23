@@ -1,0 +1,65 @@
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    100deg,
+    var(--color-surface-subtle) 30%,
+    color-mix(in srgb, var(--color-surface-subtle) 55%, var(--color-surface-raised)) 50%,
+    var(--color-surface-subtle) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s var(--motion-curve-settle) infinite;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.line {
+  height: 0.75rem;
+  width: 100%;
+}
+
+.block {
+  height: 4rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+}
+
+.circle {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-full);
+}
+
+.value {
+  height: 2.25rem;
+  width: 8rem;
+  border-radius: var(--radius-sm);
+}
+
+.card {
+  height: 7rem;
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+
+.row {
+  height: 4.75rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--color-surface-subtle);
+  }
+}
