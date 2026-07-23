@@ -7,6 +7,7 @@ import { getAccountsWithBalances } from "../../lib/finance/data";
 import styles from "../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Cuentas" };
 
 const typeLabel: Record<string, string> = { CASH: "Efectivo", BANK: "Banco", WALLET: "Billetera virtual", SAVINGS: "Ahorro", OTHER: "Otra" };
 

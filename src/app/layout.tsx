@@ -22,7 +22,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Doleth",
+  title: { default: "Doleth", template: "%s · Doleth" },
   description: "Claridad financiera para entender dónde estás hoy.",
   icons: {
     icon: "/brand/doleth-mark.svg",
