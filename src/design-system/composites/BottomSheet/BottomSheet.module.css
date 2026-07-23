@@ -1,13 +1,15 @@
+/* Por encima de la navegación fija (z-index 20) y del footer de formularios (19):
+   un sheet modal nunca debe quedar tapado por la barra que lo abrió. */
 .overlay {
   position: fixed;
-  z-index: 10;
+  z-index: 30;
   inset: 0;
   background: color-mix(in srgb, var(--color-surface-inverse) 40%, transparent);
 }
 
 .sheet {
   position: fixed;
-  z-index: 11;
+  z-index: 31;
   right: 0;
   bottom: 0;
   left: 0;
