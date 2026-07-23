@@ -1,18 +1,30 @@
-import { loginAction } from "./actions";
-import { OperationalShell } from "../../components/finance/OperationalShell";
+import { LoginForm } from "./LoginForm";
+import { DolethBrand } from "../../components/brand/DolethBrand";
 import styles from "../../components/finance/finance.module.css";
 
-const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
+export const metadata = { title: "Ingresar" };
+
+const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+
+const errorCopy: Record<string, string> = {
+  invalid: "La clave no coincide. Revisala e intentá nuevamente.",
+  config: "No pudimos verificar el acceso en este momento. Intentá de nuevo en unos minutos.",
+};
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const error = first((await searchParams).error);
+  const code = first((await searchParams).error);
+  const error = code ? (errorCopy[code] ?? errorCopy.invalid) : undefined;
   return (
-    <OperationalShell eyebrow="Acceso personal" title="Entrar a Doleth" intro="Tus datos financieros están protegidos por la clave personal configurada en el entorno.">
-      <form action={loginAction} className={styles.form}>
-        <label className={styles.field}><span>Clave personal</span><input autoComplete="current-password" autoFocus minLength={12} name="password" required type="password" /></label>
-        {error ? <p className={styles.error} role="alert">{error === "config" ? "Faltan DOLETH_ACCESS_PASSWORD o DOLETH_SESSION_SECRET seguros en el entorno." : "Clave incorrecta."}</p> : null}
-        <button className={styles.filterButton} type="submit">Entrar</button>
-      </form>
-    </OperationalShell>
+    <main className={`app-canvas ${styles.loginCanvas}`}>
+      <div className={styles.loginShell}>
+        <DolethBrand />
+        <header className={styles.loginHeader}>
+          <h1 className={styles.loginTitle}>Entrá a Doleth</h1>
+          <p className={styles.loginLede}>Accedé a tu espacio financiero privado.</p>
+        </header>
+        <LoginForm {...(error ? { error } : {})} />
+        <p className={styles.loginFootnote}>Tus datos se usan únicamente para mostrarte tu situación financiera.</p>
+      </div>
+    </main>
   );
 }
