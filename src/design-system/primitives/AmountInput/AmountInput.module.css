@@ -1,0 +1,72 @@
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.label {
+  color: var(--color-text-primary);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+}
+
+.control {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 0 var(--space-16);
+  border: var(--border-width-hairline) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-base);
+}
+
+.control:focus-within {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--color-mineral-100);
+}
+
+.currency {
+  flex: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-data-m-size);
+  font-weight: var(--type-data-m-weight);
+}
+
+/* 72px de alto y tipografía grande: cómodo con una mano y sin zoom automático en iOS. */
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-heading-l-size);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: var(--type-data-l-weight);
+}
+
+.input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.hint {
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+.error {
+  padding: var(--space-8) var(--space-12);
+  border: 1px solid var(--color-state-critical-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-state-critical-bg);
+  color: var(--color-critical-text);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
