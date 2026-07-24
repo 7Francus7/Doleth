@@ -1,12 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { DolethBrand } from "../../components/brand/DolethBrand";
+import { RestorableList } from "../../components/finance/RestorableList";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
+import { CoverageMeter } from "../../design-system/composites/CoverageMeter";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { InformationBlock } from "../../design-system/composites/InformationBlock";
 import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
 import { SystemRail } from "../../design-system/composites/SystemRail";
+import { EmptyState } from "../../design-system/feedback";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
@@ -21,22 +25,15 @@ export interface NextPageProps {
 export function NextPage({ model }: NextPageProps) {
   const actionProps = styles.actions ? { className: styles.actions } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
-  const riskProps = styles.risk ? { className: styles.risk } : {};
 
   const handleAction = (actionId: string) => {
-    if (actionId === "evidence") {
-      document.getElementById("next-evidence")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
     const routes: Record<string, string> = {
       register: "/proximo/nuevo",
+      resolve: "/proximo",
+      overdue: "/proximo",
       "add-first-account": "/cuentas/nueva",
+      now: "/ahora",
       history: "/movimientos",
-      accounts: "/cuentas",
     };
     window.location.assign(routes[actionId] ?? "/proximo/nuevo");
   };
@@ -53,17 +50,81 @@ export function NextPage({ model }: NextPageProps) {
         <EvidenceBreakdownExperience
           evidence={model.evidence}
           hero={model.hero}
-          valueActionLabel="Ver evidencia de la cobertura proxima"
+          valueActionLabel="Ver el detalle de los pagos pendientes"
         />
         <StabilityStatement {...model.stability} />
         {model.actions ? <ActionStrip {...model.actions} {...actionProps} onAction={handleAction} /> : null}
 
+        {model.coverage ? (
+          <section aria-labelledby="coverage-title">
+            <Surface border="subtle" className={styles.coverage} padding="md" radius="lg" tone="base">
+              <h2 className={styles.sectionHeading} id="coverage-title">Cobertura</h2>
+              <p className={styles.coverageHeadline}>{model.coverage.headline}</p>
+              <p className={styles.coverageDetail}>{model.coverage.detail}</p>
+              <CoverageMeter {...model.coverage.meter} />
+              {model.coverage.note ? <p className={styles.coverageNote}>{model.coverage.note}</p> : null}
+            </Surface>
+          </section>
+        ) : null}
+
+        {model.timeline.length ? (
+          <section aria-labelledby="timeline-title" className={styles.timeline}>
+            <h2 className={styles.sectionHeading} id="timeline-title">Línea de pagos</h2>
+            <RestorableList className={styles.timelineGroups} restorationKey={model.restorationKey}>
+              {model.timeline.map((group) => (
+                <section aria-labelledby={`group-${group.id}`} className={styles.group} key={group.id}>
+                  <div className={styles.groupHeader} data-tone={group.tone}>
+                    <h3 id={`group-${group.id}`}>{group.title}</h3>
+                    <p>{group.summary}</p>
+                  </div>
+                  <ol className={styles.payments}>
+                    {group.payments.map((payment) => (
+                      <li key={payment.id}>
+                        <Link className={styles.payment} data-state={payment.state} href={payment.href}>
+                          <span className={styles.paymentCopy}>
+                            <span className={styles.paymentConcept}>{payment.concept}</span>
+                            <span className={styles.paymentMeta}>
+                              {payment.dateLabel} · {payment.accountName}
+                            </span>
+                            <span className={styles.paymentState} data-state={payment.state}>
+                              {payment.stateLabel}
+                            </span>
+                          </span>
+                          <span className={styles.paymentAmount}>
+                            {payment.amountPrefix}{payment.amount}
+                          </span>
+                        </Link>
+                        <p className={styles.paymentAfter} data-state={payment.balanceAfterState}>
+                          {payment.balanceAfterLabel}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+            </RestorableList>
+          </section>
+        ) : null}
+
+        {model.empty ? (
+          <EmptyState
+            description={model.empty.description}
+            primaryAction={
+              <Link className={styles.emptyAction} href={model.empty.actionHref}>
+                {model.empty.actionLabel}
+              </Link>
+            }
+            title={model.empty.title}
+          />
+        ) : null}
+
         {model.confirmed ? (
           <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
             <SectionTitle title={model.confirmed.title} />
+            <p className={styles.coverageNote}>{model.confirmed.caption}</p>
             <div className={styles.rows}>
               {model.confirmed.rows.map((row, index) => (
-                <div className={styles.unit} key={`${row.label}-${row.value}`}>
+                <div className={styles.unit} key={`${row.label}-${row.value}-${index}`}>
                   {index > 0 ? <Divider /> : null}
                   <FinancialRow {...row} />
                 </div>
@@ -72,25 +133,7 @@ export function NextPage({ model }: NextPageProps) {
           </Surface>
         ) : null}
 
-        {model.expected ? (
-          <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
-            <SectionTitle title={model.expected.title} />
-            <div className={styles.rows}>
-              {model.expected.rows.map((row, index) => (
-                <div className={styles.unit} key={`${row.label}-${row.value}`}>
-                  {index > 0 ? <Divider /> : null}
-                  <FinancialRow {...row} />
-                </div>
-              ))}
-            </div>
-          </Surface>
-        ) : null}
-
-        {model.risk ? <InformationBlock {...model.risk} {...riskProps} /> : null}
-
-        <div id="next-evidence">
-          <InformationBlock {...model.information} {...informationProps} />
-        </div>
+        <InformationBlock {...model.information} {...informationProps} />
       </div>
     </main>
   );

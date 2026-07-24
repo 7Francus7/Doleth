@@ -37,6 +37,179 @@
   margin-top: calc(var(--space-8) * -1);
 }
 
-.risk {
-  margin-top: calc(var(--space-8) * -1);
+.sectionHeading {
+  color: var(--color-text-strong);
+  font-size: var(--type-heading-m-size);
+  font-weight: var(--type-heading-m-weight);
+  letter-spacing: var(--type-heading-m-tracking);
+  line-height: var(--type-heading-m-line);
+}
+
+/* Cobertura ------------------------------------------------------------- */
+
+.coverage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.coverageHeadline {
+  color: var(--color-text-strong);
+  font-size: var(--type-body-l-size);
+  line-height: var(--type-body-l-line);
+  text-wrap: pretty;
+}
+
+.coverageDetail,
+.coverageNote {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
+}
+
+/* Línea temporal -------------------------------------------------------- */
+
+.timeline,
+.timelineGroups,
+.group,
+.payments {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.timeline {
+  gap: var(--space-16);
+}
+
+.timelineGroups {
+  gap: var(--space-24);
+}
+
+.group {
+  gap: var(--space-8);
+}
+
+.groupHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding-bottom: var(--space-8);
+  border-bottom: var(--border-width-hairline) solid var(--border-subtle);
+}
+
+.groupHeader h3 {
+  color: var(--color-text-strong);
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+}
+
+.groupHeader p {
+  flex: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* El tramo urgente se marca con estructura antes que con color. */
+.groupHeader[data-tone="overdue"] {
+  border-bottom-color: var(--color-state-attention-border);
+}
+
+.groupHeader[data-tone="overdue"] h3 {
+  color: var(--color-attention-text);
+}
+
+.payments {
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.payment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  min-height: 76px;
+  padding: var(--space-12) var(--space-16);
+  border: var(--border-width-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-base);
+  color: inherit;
+  text-decoration: none;
+}
+
+.payment[data-state="overdue"] {
+  border-color: var(--color-state-attention-border);
+  background: var(--color-state-attention-bg);
+}
+
+.paymentCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.paymentConcept {
+  color: var(--color-text-strong);
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+  overflow-wrap: anywhere;
+}
+
+.paymentMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+}
+
+.paymentState {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.paymentState[data-state="overdue"],
+.paymentState[data-state="due-today"] {
+  color: var(--color-attention-text);
+}
+
+.paymentAmount {
+  flex: none;
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-data-m-size);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: var(--type-data-m-weight);
+}
+
+.paymentAfter {
+  padding: var(--space-8) var(--space-16) 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
+}
+
+.paymentAfter[data-state="attention"] {
+  color: var(--color-attention-text);
+}
+
+.emptyAction {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-20);
+  border-radius: var(--radius-sm);
+  background: var(--color-action-primary-bg);
+  color: var(--color-action-primary-text);
+  font-weight: 520;
+  text-decoration: none;
 }

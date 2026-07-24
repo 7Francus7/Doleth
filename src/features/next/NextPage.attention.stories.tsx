@@ -3,7 +3,7 @@ import { attentionNextFixture } from "./fixtures";
 import { NextPage } from "./NextPage";
 
 const meta = {
-  title: "Features/Next/Attention",
+  title: "Features/Next/Vencidos y cobertura parcial",
   component: NextPage,
   args: { model: attentionNextFixture },
   parameters: { layout: "fullscreen" },

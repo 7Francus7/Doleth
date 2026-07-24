@@ -1,44 +1,51 @@
 import type { NextViewModel } from "../model";
-import { emptyHorizonEvidenceFixture } from "../evidence";
 
+// Sin pagos cargados no hay error ni alarma: la proyección coincide con lo que
+// ya hay, y la acción secundaria invita a anticiparse.
 export const emptyNextFixture = {
   rail: {
-    items: ["Proximos 7 dias", "ARS", "Personal", "Informacion completa"],
+    items: ["Próximos pagos", "ARS", "Personal", "Información completa"],
     state: "complete",
     wrap: "truncate",
   },
   banner: null,
   hero: {
-    scenario: "stable",
-    stateText: "No aparece nada material en este horizonte.",
-    value: "0",
-    valuePrefix: "$",
-    valueLabel: "Por cubrir en 7 dias",
-    inlineNote: "La ausencia de compromisos tambien es una respuesta valida.",
-    coverage: {
-      title: "Cobertura conocida",
-      value: 0,
-      leftSummary: "Sin hechos materiales",
-      rightSummary: "Nada por cubrir",
-      state: "empty",
-    },
+    scenario: "new",
+    stateText: "No hay pagos próximos cargados.",
+    valueLabel: "Cargá un pago previsto para verlo con anticipación.",
   },
-  evidence: emptyHorizonEvidenceFixture,
+  evidence: null,
+  coverage: null,
   stability: {
-    children: "No hay nada cercano que exija preparacion o corra tu tranquilidad.",
+    children: "Sin pagos cargados, tu proyección coincide con el dinero que ya tenés.",
     container: "none",
-    kind: "neutral",
+    kind: "stable",
   },
-  actions: null,
+  actions: {
+    primary: "register",
+    primaryLabel: "Agregar pago previsto",
+    secondaryActions: [
+      { id: "now", label: "Volver a Ahora" },
+      { id: "history", label: "Ver movimientos" },
+    ],
+    state: "default",
+  },
+  timeline: [],
+  empty: {
+    title: "No hay pagos próximos cargados.",
+    description: "Tu proyección coincide con el dinero actual. Agregá un pago previsto para anticiparte.",
+    actionLabel: "Agregar pago previsto",
+    actionHref: "/proximo/nuevo",
+  },
   confirmed: null,
-  expected: null,
-  risk: null,
   information: {
-    title: "Confianza de esta lectura",
-    primaryLine: "No aparecen compromisos ni riesgos materiales en los proximos 7 dias.",
-    causalLine: "La ausencia es consistente con el horizonte actual y no necesita compensarse con mas modulos.",
-    linkLabel: "Ver evidencia",
-    linkHref: "#next-evidence",
+    title: "Qué muestra esta pantalla",
+    primaryLine: "0 pagos pendientes; 0 confirmados.",
+    causalLine:
+      "El saldo posterior descuenta solamente pagos pendientes, en orden de vencimiento. Confirmar un pago crea el movimiento una sola vez.",
+    linkLabel: "Agregar pago previsto",
+    linkHref: "/proximo/nuevo",
     state: "complete",
   },
+  restorationKey: "/proximo",
 } satisfies NextViewModel;

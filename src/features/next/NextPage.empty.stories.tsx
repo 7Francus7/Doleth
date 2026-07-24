@@ -3,7 +3,7 @@ import { emptyNextFixture } from "./fixtures";
 import { NextPage } from "./NextPage";
 
 const meta = {
-  title: "Features/Next/Empty",
+  title: "Features/Next/Sin pagos",
   component: NextPage,
   args: { model: emptyNextFixture },
   parameters: { layout: "fullscreen" },

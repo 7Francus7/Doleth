@@ -276,19 +276,6 @@ export async function getUpcomingData(): Promise<UpcomingData> {
   };
 }
 
-/** Lectura previa de /proximo. La reemplaza `getUpcomingData` en el corte siguiente. */
-export async function getUpcomingPayments() {
-  const db = getDb();
-  const [payments, accounts] = await Promise.all([
-    db.upcomingPayment.findMany({
-      include: { plannedAccount: true },
-      orderBy: [{ status: "asc" }, { dueOn: "asc" }],
-    }),
-    db.account.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
-  ]);
-  return { payments, accounts };
-}
-
 // ---------------------------------------------------------------------------
 // Data-access de superficies de análisis. Cada función lee datos reales del
 // ledger y devuelve primitivas listas para el cálculo puro (analysis.ts).

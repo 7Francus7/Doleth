@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { stableNextFixture } from "./fixtures";
+import { longNextFixture } from "./fixtures";
 import { NextPage } from "./NextPage";
 
 const meta = {
-  title: "Features/Next/Cobertura completa",
+  title: "Features/Next/Timeline largo",
   component: NextPage,
-  args: { model: stableNextFixture },
+  args: { model: longNextFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof NextPage>;
 
@@ -14,7 +14,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Screen: Story = {};
 
-/** 320 px: importes, estados y saldo posterior sin desborde horizontal. */
 export const Mobile320: Story = {
   decorators: [
     (Story) => (

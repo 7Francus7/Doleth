@@ -1,45 +1,51 @@
 import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
+// Con un pago vencido a la cabeza: sigue siendo un compromiso y encabeza el orden.
 const attentionHorizonEvidence = {
   status: "complete",
-  title: "Cobertura de los proximos 7 dias",
-  subtitle: "La prioridad principal esta aca",
+  title: "Pagos pendientes",
+  subtitle: "En orden de vencimiento",
+  summary: "Con $80.000 en tus cuentas: después de estos pagos faltarían $16.000.",
   lines: [
     {
-      id: "confirmed-income",
-      label: "Cobro confirmado del miercoles",
-      amount: 24_000,
-      displayValue: "24.000",
+      id: "internet",
+      label: "Internet · Ayer",
+      amount: 18_500,
+      displayValue: "18.500",
       valuePrefix: "$",
-      sign: "+",
     },
     {
-      id: "rent",
-      label: "Alquiler del jueves",
-      amount: -96_000,
-      displayValue: "96.000",
+      id: "gimnasio",
+      label: "Gimnasio · Hoy",
+      amount: 19_500,
+      displayValue: "19.500",
       valuePrefix: "$",
-      sign: "-",
     },
     {
-      id: "card-minimum",
-      label: "Pago minimo de tarjeta",
-      amount: -28_000,
-      displayValue: "28.000",
+      id: "visa",
+      label: "Tarjeta Visa · Viernes 31 de julio",
+      amount: 46_000,
+      displayValue: "46.000",
       valuePrefix: "$",
-      sign: "-",
+    },
+    {
+      id: "alquiler",
+      label: "Alquiler · Sábado 1 de agosto",
+      amount: 12_000,
+      displayValue: "12.000",
+      valuePrefix: "$",
     },
   ],
   total: {
-    label: "Por cubrir en 7 dias",
-    amount: -100_000,
-    displayValue: "100.000",
+    label: "Pendiente",
+    amount: 96_000,
+    displayValue: "96.000",
     valuePrefix: "$",
   },
-  metadata: ["Proximos 7 dias", "ARS", "Personal", "Informacion completa"],
+  metadata: ["Próximos pagos", "ARS", "Personal", "Información completa"],
 } satisfies EvidenceBreakdown;
 
 export const attentionHorizonEvidenceFixture = validateEvidenceBreakdown(
   attentionHorizonEvidence,
-  "100.000",
+  "96.000",
 );

@@ -1,45 +1,52 @@
 import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
+// El desglose son los pagos pendientes en orden de vencimiento: el mismo orden
+// con el que se calcula el saldo posterior de cada uno.
 const stableHorizonEvidence = {
   status: "complete",
-  title: "Cobertura de los proximos 7 dias",
-  subtitle: "Se calcula asi",
+  title: "Pagos pendientes",
+  subtitle: "En orden de vencimiento",
+  summary: "Con $428.500 en tus cuentas: después de estos pagos quedarían aproximadamente $332.500.",
   lines: [
     {
-      id: "confirmed-income",
-      label: "Cobro confirmado",
-      amount: 18_000,
-      displayValue: "18.000",
+      id: "gimnasio",
+      label: "Gimnasio · Hoy",
+      amount: 19_500,
+      displayValue: "19.500",
       valuePrefix: "$",
-      sign: "+",
     },
     {
-      id: "card-payment",
-      label: "Pago de tarjeta del jueves",
-      amount: -31_500,
-      displayValue: "31.500",
+      id: "internet",
+      label: "Internet · Mañana",
+      amount: 18_500,
+      displayValue: "18.500",
       valuePrefix: "$",
-      sign: "-",
     },
     {
-      id: "loan-fee",
-      label: "Cuota automatica del sabado",
-      amount: -26_320,
-      displayValue: "26.320",
+      id: "visa",
+      label: "Tarjeta Visa · Viernes 31 de julio",
+      amount: 46_000,
+      displayValue: "46.000",
       valuePrefix: "$",
-      sign: "-",
+    },
+    {
+      id: "alquiler",
+      label: "Alquiler · Sábado 1 de agosto",
+      amount: 12_000,
+      displayValue: "12.000",
+      valuePrefix: "$",
     },
   ],
   total: {
-    label: "Por cubrir en 7 dias",
-    amount: -39_820,
-    displayValue: "39.820",
+    label: "Pendiente",
+    amount: 96_000,
+    displayValue: "96.000",
     valuePrefix: "$",
   },
-  metadata: ["Proximos 7 dias", "ARS", "Personal", "Informacion completa"],
+  metadata: ["Próximos pagos", "ARS", "Personal", "Información completa"],
 } satisfies EvidenceBreakdown;
 
 export const stableHorizonEvidenceFixture = validateEvidenceBreakdown(
   stableHorizonEvidence,
-  "39.820",
+  "96.000",
 );
