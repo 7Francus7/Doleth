@@ -35,25 +35,38 @@ describe("capas: un sheet modal nunca queda bajo la navegación fija", () => {
   });
 });
 
-describe("scroll restoration: la posición se captura antes de navegar", () => {
-  const src = read("src/components/finance/ScrollRestorer.tsx");
+describe("scroll restoration: cableado del contenedor de la lista", () => {
+  const list = read("src/components/finance/MovementList.tsx");
+  const page = read("src/app/movimientos/page.tsx");
 
-  it("escucha el click en fase de captura, antes de que el router resetee el scroll", () => {
-    expect(src).toContain('document.addEventListener("click", save, true)');
-    expect(src).toContain('document.removeEventListener("click", save, true)');
+  it("el contenedor client renderiza DOM propio: sin nodo no hay hidratación ni efecto", () => {
+    expect(list).toContain('"use client"');
+    expect(list).toContain("<div className={className}");
+    expect(list).toContain("ref={containerRef}");
   });
 
-  it("no depende de leer window.scrollY al desmontar (ahí ya vale 0)", () => {
-    const cleanup = src.slice(src.indexOf("return () => {"));
-    expect(cleanup).not.toContain("save()");
-    expect(cleanup).not.toContain("scrollY");
+  it("guarda en fase de captura sobre sus propias filas, sin listeners globales", () => {
+    expect(list).toContain("onClickCapture={handleClickCapture}");
+    expect(list).not.toContain('document.addEventListener("click"');
   });
 
-  it("persiste con clave por URL completa, de modo que otro filtro no reusa la posición", () => {
-    expect(src).toContain("doleth:scroll:${storageKey}");
+  it("la lista de movimientos usa el contenedor con su ruta normalizada", () => {
+    expect(page).toContain("<MovementList className={styles.list} restorationKey={listPath}>");
+    expect(page).toContain("normalizeListPath(\"/movimientos\"");
   });
 
-  it("tolera sessionStorage no disponible sin romper la lista", () => {
-    expect(src.match(/catch/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  it("la restauración está acotada en tiempo: no queda observando indefinidamente", () => {
+    expect(list).toContain("SETTLE_BUDGET_MS");
+    expect(list).toContain("performance.now() < deadline");
+  });
+
+  it("descarta la posición después de restaurarla, para no reaplicar una vieja", () => {
+    expect(list).toContain("sessionStorage.removeItem(key)");
+  });
+
+  it("no reubica a quien ya empezó a desplazarse por su cuenta", () => {
+    expect(list).toContain('window.addEventListener("wheel", cancel');
+    expect(list).toContain('window.addEventListener("touchstart", cancel');
+    expect(list).toContain('window.addEventListener("keydown", cancel)');
   });
 });

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { OperationalShell } from "../../components/finance/OperationalShell";
-import { ScrollRestorer } from "../../components/finance/ScrollRestorer";
+import { MovementList } from "../../components/finance/MovementList";
 import { EmptyState } from "../../design-system/feedback";
+import { normalizeListPath } from "../../lib/navigation/scrollRestoration";
 import { getMovements } from "../../lib/finance/data";
 import { formatDateAR, todayInArgentina } from "../../lib/finance/domain";
 import styles from "../../components/finance/finance.module.css";
@@ -20,28 +21,26 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
   const accountId = first(query.accountId) || undefined;
   const hasActiveFilters = month !== currentMonth || Boolean(type) || Boolean(accountId);
   const data = await getMovements({ month, ...(type ? { type } : {}), ...(accountId ? { accountId } : {}) });
-  const returnParams = new URLSearchParams();
-  if (month !== currentMonth) returnParams.set("month", month);
-  if (type) returnParams.set("type", type);
-  if (accountId) returnParams.set("accountId", accountId);
-  const returnQuery = returnParams.toString();
-  const listPath = returnQuery ? `/movimientos?${returnQuery}` : "/movimientos";
+  const listPath = normalizeListPath("/movimientos", {
+    ...(month !== currentMonth ? { month } : {}),
+    ...(type ? { type } : {}),
+    ...(accountId ? { accountId } : {}),
+  });
   const detailHref = (id: string) => `/movimientos/${id}?volver=${encodeURIComponent(listPath)}`;
   return (
     <OperationalShell eyebrow="Registro auditable" title="Movimientos" intro="Los anulados siguen visibles y no participan de saldos ni totales." actions={<Link className={styles.primaryLink} href="/movimientos/nuevo">Registrar movimiento</Link>}>
-      <ScrollRestorer storageKey={listPath} />
       <form className={styles.filters}>
         <label className={styles.field}><span>Mes</span><input defaultValue={month} name="month" type="month" /></label>
         <label className={styles.field}><span>Tipo</span><select defaultValue={type ?? ""} name="type"><option value="">Todos</option><option value="EXPENSE">Gastos</option><option value="INCOME">Ingresos</option><option value="TRANSFER">Transferencias</option></select></label>
         <label className={styles.field}><span>Cuenta</span><select defaultValue={accountId ?? ""} name="accountId"><option value="">Todas</option>{data.accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
         <button className={styles.filterButton} type="submit">Aplicar filtros</button>
       </form>
-      {data.movements.length ? <div className={styles.list}>{data.movements.map((movement) => (
+      {data.movements.length ? <MovementList className={styles.list} restorationKey={listPath}>{data.movements.map((movement) => (
         <Link className={`${styles.listItem} ${movement.voided ? styles.voided : ""}`} href={detailHref(movement.id)} key={movement.id}>
           <span className={styles.itemCopy}><span className={styles.itemTitle}>{movement.description}</span><span className={styles.itemMeta}>{formatDateAR(movement.occurredOn)} · {movement.accountName}{movement.voided ? " · Anulado" : ""}</span></span>
           <span className={styles.itemAmount}>{movement.type === "EXPENSE" ? "-" : movement.type === "INCOME" ? "+" : ""}${movement.amount}</span>
         </Link>
-      ))}</div> : hasActiveFilters ? (
+      ))}</MovementList> : hasActiveFilters ? (
         <EmptyState
           description="Probá con otro mes, tipo o cuenta, o volvé al historial completo."
           primaryAction={<Link className={styles.primaryLink} href="/movimientos">Limpiar filtros</Link>}

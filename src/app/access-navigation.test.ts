@@ -101,17 +101,17 @@ describe("sesión: cierre seguro", () => {
 describe("continuidad: retorno y scroll", () => {
   const list = read("src/app/movimientos/page.tsx");
   const detail = read("src/app/movimientos/[id]/page.tsx");
-  const restorer = read("src/components/finance/ScrollRestorer.tsx");
+  const restorer = read("src/components/finance/MovementList.tsx");
 
   it("la lista propaga el contexto de retorno en cada enlace de detalle", () => {
     expect(list).toContain("volver=${encodeURIComponent(listPath)}");
-    expect(list).toContain("if (month !== currentMonth) returnParams.set(\"month\", month);");
+    expect(list).toContain("...(month !== currentMonth ? { month } : {})");
   });
 
-  it("la lista restaura scroll con clave por URL completa", () => {
-    expect(list).toContain("<ScrollRestorer storageKey={listPath} />");
-    expect(restorer).toContain("doleth:scroll:${storageKey}");
-    expect(restorer).toContain('window.addEventListener("pagehide", save)');
+  it("la lista restaura scroll con clave por URL normalizada", () => {
+    expect(list).toContain("<MovementList className={styles.list} restorationKey={listPath}>");
+    expect(restorer).toContain("scrollStorageKey(restorationKey)");
+    expect(restorer).toContain('window.addEventListener("pagehide", onPageHide)');
   });
 
   it("el detalle sanea el retorno y ofrece volver a la lista", () => {
