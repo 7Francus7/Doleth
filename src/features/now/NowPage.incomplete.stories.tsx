@@ -3,7 +3,7 @@ import { incompleteNowFixture } from "./fixtures";
 import { NowPage } from "./NowPage";
 
 const meta = {
-  title: "Now/Incomplete",
+  title: "Features/Now/Sin pagos próximos",
   component: NowPage,
   args: { model: incompleteNowFixture },
   parameters: { layout: "fullscreen" },

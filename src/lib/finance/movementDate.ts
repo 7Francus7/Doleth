@@ -4,7 +4,7 @@
  * Trabaja sobre fechas civiles `YYYY-MM-DD` ya resueltas en Argentina por
  * `todayInArgentina`, así que el resultado no depende del huso del navegador.
  */
-const MONTHS = [
+export const MONTHS = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ] as const;

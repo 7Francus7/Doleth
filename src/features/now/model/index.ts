@@ -1,1 +1,1 @@
-export type { NowViewModel } from "./NowViewModel";
+export type { NowProjection, NowViewModel } from "./NowViewModel";

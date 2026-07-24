@@ -1,3 +1,5 @@
+import { formatCentsAR } from "./amount";
+
 export type MovementType = "EXPENSE" | "INCOME" | "TRANSFER";
 
 export interface LedgerPosting {
@@ -138,9 +140,12 @@ export function dateOnly(value: string): Date {
   return date;
 }
 
+/**
+ * Lectura argentina de un importe. Delega en el formateador consolidado de
+ * `amount.ts` para que todo el producto muestre el mismo número: la versión
+ * anterior pasaba por `Number`, que pierde precisión con importes grandes y
+ * mostraba "12.500,5" donde el resto de la app muestra "12.500,50".
+ */
 export function formatCents(cents: bigint): string {
-  return new Intl.NumberFormat("es-AR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(Number(cents) / 100);
+  return formatCentsAR(cents);
 }

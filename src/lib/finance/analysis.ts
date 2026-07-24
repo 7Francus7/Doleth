@@ -452,6 +452,19 @@ export async function resilientList<T>(load: () => Promise<T[]>): Promise<T[]> {
   }
 }
 
+/**
+ * Igual que `resilientList`, pero distingue "falló" de "está vacío": devuelve
+ * `null` ante un error para que la pantalla pueda decir qué no pudo cargar en
+ * lugar de mostrar un vacío que el usuario leería como "no hay nada".
+ */
+export async function resilientRead<T>(load: () => Promise<T>): Promise<T | null> {
+  try {
+    return await load();
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Idempotencia sin cambio de esquema (protección de doble-submit)
 // ---------------------------------------------------------------------------

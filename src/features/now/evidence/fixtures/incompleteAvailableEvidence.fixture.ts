@@ -1,47 +1,48 @@
 import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
+// Lectura incompleta: una cuenta no pudo leerse. El total sigue visible, pero se
+// declara parcial en vez de presentarse como cifra cerrada.
 const incompleteAvailableEvidence = {
   status: "partial",
-  title: "Disponible",
-  subtitle: "Último valor conocido · faltan datos para recalcular",
+  title: "Cómo se calculó",
+  subtitle: "Saldos de tus cuentas activas, hoy",
+  summary: "No hay pagos próximos cargados, así que la proyección coincide con el dinero actual.",
   lines: [
     {
-      id: "main-balance",
-      label: "Saldo principal",
+      id: "banco",
+      label: "Banco principal",
+      amount: 300_000,
+      displayValue: "300.000",
+      valuePrefix: "$",
+      status: "confirmed",
+    },
+    {
+      id: "billetera",
+      label: "Billetera virtual",
+      amount: 128_500,
+      displayValue: "128.500",
+      valuePrefix: "$",
+      status: "confirmed",
+    },
+    {
+      id: "efectivo",
+      label: "Efectivo",
       amount: null,
       displayValue: "Sin confirmar",
       valuePrefix: "",
       status: "missing",
     },
-    {
-      id: "reserves",
-      label: "Reservas confirmadas",
-      amount: -120_000,
-      displayValue: "120.000",
-      valuePrefix: "$",
-      sign: "-",
-      status: "confirmed",
-    },
-    {
-      id: "upcoming-payments",
-      label: "Pagos próximos confirmados",
-      amount: -57_820,
-      displayValue: "57.820",
-      valuePrefix: "$",
-      sign: "-",
-      status: "confirmed",
-    },
   ],
   total: {
-    label: "Disponible · valor parcial",
-    amount: 432_180,
-    displayValue: "432.180",
+    label: "Dinero en tus cuentas",
+    amount: 428_500,
+    displayValue: "428.500",
     valuePrefix: "$",
   },
-  metadata: ["Último valor hace 19 h", "ARS", "Personal", "Información parcial"],
+  metadata: ["Dinero en cuentas", "ARS", "Personal", "Información incompleta"],
 } satisfies EvidenceBreakdown;
 
 export const incompleteAvailableEvidenceFixture = validateEvidenceBreakdown(
   incompleteAvailableEvidence,
-  "432.180",
+  "428.500",
 );

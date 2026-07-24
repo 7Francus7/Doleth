@@ -1,44 +1,45 @@
 import { validateEvidenceBreakdown, type EvidenceBreakdown } from "../../../evidence/model";
 
+// El desglose reconcilia con el número visible del Hero: son las cuentas activas
+// y nada más. Los compromisos no se restan acá porque todavía no salieron.
 const availableEvidence = {
   status: "complete",
-  title: "Disponible",
-  subtitle: "Se calcula así",
+  title: "Cómo se calculó",
+  subtitle: "Saldos de tus cuentas activas, hoy",
+  summary: "Hay $96.000 comprometidos hasta el domingo 23 de agosto. La proyección resta esos compromisos del dinero en tus cuentas.",
   lines: [
     {
-      id: "liquid",
-      label: "Saldo líquido confirmado",
-      amount: 610_000,
-      displayValue: "610.000",
+      id: "banco",
+      label: "Banco principal",
+      amount: 300_000,
+      displayValue: "300.000",
       valuePrefix: "$",
     },
     {
-      id: "reserves",
-      label: "Reservas",
-      amount: -120_000,
-      displayValue: "120.000",
+      id: "billetera",
+      label: "Billetera virtual",
+      amount: 96_500,
+      displayValue: "96.500",
       valuePrefix: "$",
-      sign: "-",
     },
     {
-      id: "upcoming-payments",
-      label: "Pagos próximos",
-      amount: -57_820,
-      displayValue: "57.820",
+      id: "efectivo",
+      label: "Efectivo",
+      amount: 32_000,
+      displayValue: "32.000",
       valuePrefix: "$",
-      sign: "-",
     },
   ],
   total: {
-    label: "Disponible",
-    amount: 432_180,
-    displayValue: "432.180",
+    label: "Dinero en tus cuentas",
+    amount: 428_500,
+    displayValue: "428.500",
     valuePrefix: "$",
   },
-  metadata: ["Actualizado hace 2 min", "ARS", "Personal", "Información completa"],
+  metadata: ["Dinero en cuentas", "ARS", "Personal", "Información completa"],
 } satisfies EvidenceBreakdown;
 
 export const availableEvidenceFixture = validateEvidenceBreakdown(
   availableEvidence,
-  "432.180",
+  "428.500",
 );

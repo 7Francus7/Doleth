@@ -1,7 +1,39 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
-import { resilientList, type AnalysisMovement } from "./analysis";
+import { resilientList, resilientRead, type AnalysisMovement } from "./analysis";
+import type { UpcomingCommitment } from "./projection";
+
+/**
+ * Traduce un `UpcomingPayment` de Prisma al compromiso puro que consume
+ * `projection.ts`. El saldo de la cuenta prevista viaja con el pago para que la
+ * confirmación pueda mostrar el saldo antes y después sin otra consulta.
+ */
+function toCommitment(
+  payment: {
+    id: string;
+    concept: string;
+    dueOn: Date;
+    estimatedCents: bigint;
+    frequency: string | null;
+    plannedAccountId: string;
+    plannedAccount: { name: string };
+    createdAt: Date;
+  },
+  balanceByAccount: ReadonlyMap<string, bigint>,
+): UpcomingCommitment {
+  return {
+    id: payment.id,
+    concept: payment.concept,
+    dueOn: payment.dueOn.toISOString().slice(0, 10),
+    amountCents: payment.estimatedCents,
+    accountId: payment.plannedAccountId,
+    accountName: payment.plannedAccount.name,
+    accountBalanceCents: balanceByAccount.get(payment.plannedAccountId) ?? 0n,
+    frequency: payment.frequency,
+    createdAtMs: payment.createdAt.getTime(),
+  };
+}
 
 export async function getAccountsWithBalances() {
   const db = getDb();
@@ -39,84 +71,97 @@ export async function getMovementFormData() {
   };
 }
 
-export async function getDashboardData() {
+export interface RecentMovement {
+  id: string;
+  type: "EXPENSE" | "INCOME" | "TRANSFER";
+  description: string;
+  amountCents: bigint;
+  occurredOn: string;
+  accountName: string;
+  voided: boolean;
+  /** El original de una corrección: sigue en el historial, sin efecto vigente. */
+  corrected: boolean;
+}
+
+export interface NowData {
+  today: string;
+  accounts: {
+    id: string;
+    name: string;
+    type: string;
+    balanceCents: bigint;
+    archived: boolean;
+  }[];
+  /** Todos los próximos pagos PENDING: el horizonte se decide en el cálculo puro. */
+  pending: UpcomingCommitment[];
+  /** `null` cuando la lectura secundaria falló: la pantalla lo dice, no lo oculta. */
+  recent: RecentMovement[] | null;
+  movementCount: number;
+  incomeCents: bigint;
+  expenseCents: bigint;
+  monthlyBalanceCents: bigint;
+}
+
+/**
+ * Lectura de /ahora. El patrimonio, las cuentas y los compromisos son datos
+ * centrales: si fallan, la pantalla debe romper y mostrar su error boundary.
+ * Los movimientos recientes son secundarios y degradan a `null` para que la
+ * pantalla pueda decir qué no pudo cargar sin perder el saldo principal.
+ */
+export async function getNowData(): Promise<NowData> {
   const db = getDb();
   const today = todayInArgentina();
-  const month = today.slice(0, 7);
-  const { start, end } = monthBounds(month);
-  const historyStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 5, 1));
-  const inSevenDays = new Date(`${today}T00:00:00.000Z`);
-  inSevenDays.setUTCDate(inSevenDays.getUTCDate() + 7);
+  const { start, end } = monthBounds(today.slice(0, 7));
 
-  const [accounts, monthMovements, historyMovements, upcoming, recent] = await Promise.all([
+  const [accounts, monthMovements, pending, movementCount, recent] = await Promise.all([
     getAccountsWithBalances(),
     db.transaction.findMany({
       where: { occurredOn: { gte: start, lt: end } },
       select: { type: true, amountCents: true, voidedAt: true },
     }),
-    db.transaction.findMany({
-      where: { occurredOn: { gte: historyStart, lt: end } },
-      select: { type: true, amountCents: true, occurredOn: true, voidedAt: true },
-      orderBy: { occurredOn: "asc" },
-    }),
     db.upcomingPayment.findMany({
-      where: { status: "PENDING", dueOn: { lte: inSevenDays } },
+      where: { status: "PENDING" },
       include: { plannedAccount: true },
       orderBy: { dueOn: "asc" },
-      take: 5,
     }),
-    db.transaction.findMany({
-      include: { sourceAccount: true, destinationAccount: true, category: true },
-      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
-      take: 5,
-    }),
+    db.transaction.count({ where: { voidedAt: null } }),
+    resilientRead(() =>
+      db.transaction.findMany({
+        include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
+        orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+        take: 5,
+      }),
+    ),
   ]);
 
+  const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
   const { incomeCents, expenseCents, balanceCents } = summarizeMonth(monthMovements);
-  const totalCents = accounts.reduce((sum, account) => sum + account.balanceCents, 0n);
-  const upcomingCents = upcoming.reduce((sum, payment) => sum + payment.estimatedCents, 0n);
-  const monthLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const monthlyHistory = Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - (5 - index), 1));
-    const key = date.toISOString().slice(0, 7);
-    const movements = historyMovements.filter((movement) => movement.occurredOn.toISOString().slice(0, 7) === key);
-    const totals = summarizeMonth(movements);
-    return {
-      month: key,
-      label: monthLabels[date.getUTCMonth()] ?? key.slice(5),
-      incomeCents: totals.incomeCents,
-      expenseCents: totals.expenseCents,
-    };
-  });
 
   return {
-    accounts,
-    totalCents,
+    today,
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      balanceCents: account.balanceCents,
+      archived: account.status === "ARCHIVED",
+    })),
+    pending: pending.map((payment) => toCommitment(payment, balanceByAccount)),
+    recent:
+      recent?.map((movement) => ({
+        id: movement.id,
+        type: movement.type,
+        description: movementLabel(movement),
+        amountCents: movement.amountCents,
+        occurredOn: dayString(movement.occurredOn),
+        accountName: accountLabel(movement),
+        voided: movement.voidedAt !== null,
+        corrected: movement.correction !== null,
+      })) ?? null,
+    movementCount,
     incomeCents,
     expenseCents,
     monthlyBalanceCents: balanceCents,
-    monthlyHistory,
-    upcomingCents,
-    upcoming: upcoming.map((payment) => ({
-      id: payment.id,
-      concept: payment.concept,
-      amount: formatCents(payment.estimatedCents),
-      dueOn: payment.dueOn.toISOString().slice(0, 10),
-      accountName: payment.plannedAccount.name,
-    })),
-    recent: recent.map((movement) => ({
-      id: movement.id,
-      type: movement.type,
-      description: movement.description || movement.category?.name || movement.type,
-      amount: formatCents(movement.amountCents),
-      occurredOn: movement.occurredOn.toISOString().slice(0, 10),
-      accountName:
-        movement.type === "TRANSFER"
-          ? `${movement.sourceAccount.name} → ${movement.destinationAccount?.name ?? ""}`
-          : movement.sourceAccount.name,
-      voided: movement.voidedAt !== null,
-    })),
-    today,
   };
 }
 
@@ -169,6 +214,69 @@ export async function getInvestments() {
   });
 }
 
+export interface ConfirmedPayment {
+  id: string;
+  concept: string;
+  dueOn: string;
+  amountCents: bigint;
+  accountName: string;
+  transactionId: string | null;
+}
+
+export interface UpcomingData {
+  today: string;
+  accounts: { id: string; name: string; balanceCents: bigint; archived: boolean }[];
+  pending: UpcomingCommitment[];
+  /** Últimos pagos ya confirmados. No participan de compromiso ni proyección. */
+  paid: ConfirmedPayment[];
+  paidCount: number;
+  hasActiveAccounts: boolean;
+}
+
+/** Lectura de /proximo: pendientes para la línea temporal y confirmados como historia. */
+export async function getUpcomingData(): Promise<UpcomingData> {
+  const db = getDb();
+  const today = todayInArgentina();
+  const [accounts, pending, paid, paidCount] = await Promise.all([
+    getAccountsWithBalances(),
+    db.upcomingPayment.findMany({
+      where: { status: "PENDING" },
+      include: { plannedAccount: true },
+      orderBy: { dueOn: "asc" },
+    }),
+    db.upcomingPayment.findMany({
+      where: { status: "PAID" },
+      include: { plannedAccount: true },
+      orderBy: [{ dueOn: "desc" }, { updatedAt: "desc" }],
+      take: 5,
+    }),
+    db.upcomingPayment.count({ where: { status: "PAID" } }),
+  ]);
+  const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
+
+  return {
+    today,
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      balanceCents: account.balanceCents,
+      archived: account.status === "ARCHIVED",
+    })),
+    pending: pending.map((payment) => toCommitment(payment, balanceByAccount)),
+    paid: paid.map((payment) => ({
+      id: payment.id,
+      concept: payment.concept,
+      dueOn: dayString(payment.dueOn),
+      amountCents: payment.estimatedCents,
+      accountName: payment.plannedAccount.name,
+      transactionId: payment.transactionId,
+    })),
+    paidCount,
+    hasActiveAccounts: accounts.some((account) => account.status === "ACTIVE"),
+  };
+}
+
+/** Lectura previa de /proximo. La reemplaza `getUpcomingData` en el corte siguiente. */
 export async function getUpcomingPayments() {
   const db = getDb();
   const [payments, accounts] = await Promise.all([

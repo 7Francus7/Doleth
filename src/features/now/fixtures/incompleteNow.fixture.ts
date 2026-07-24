@@ -1,71 +1,96 @@
 import { incompleteAvailableEvidenceFixture } from "../evidence/fixtures";
 import type { NowViewModel } from "../model";
 
+// Información incompleta: hay cuentas, pero todavía no hay pagos cargados. La
+// proyección no afirma que esté todo cubierto: dice qué está usando.
 export const incompleteNowFixture = {
   rail: {
-    items: ["Última actualización hace 19 h", "ARS", "Personal", "Información parcial"],
+    items: ["Dinero en cuentas", "ARS", "Personal", "Información incompleta"],
     state: "partial",
     wrap: "truncate",
   },
   banner: null,
   hero: {
-    scenario: "incomplete",
-    stateText: "Hace falta confirmar saldo principal",
-    value: "432.180",
+    scenario: "stable",
+    stateText: "Esta lectura usa solamente lo que cargaste.",
+    value: "428.500",
     valuePrefix: "$",
-    valueLabel: "Lectura todavía no confirmada",
-    inlineNote: "Último valor hace 19 h",
+    valueLabel: "Dinero en tus cuentas",
+    inlineNote: "No hay pagos próximos cargados.",
     coverage: {
-      title: "Cobertura estimada",
-      value: 64,
-      leftSummary: "Datos parciales",
-      rightSummary: "$57.820 conocidos",
-      state: "partial",
+      title: "Cobertura de lo comprometido",
+      value: 100,
+      leftSummary: "Sin pagos cargados",
+      rightSummary: "$0",
+      state: "stable",
+      accessibleLabel: "Sin pagos próximos cargados.",
     },
   },
   evidence: incompleteAvailableEvidenceFixture,
+  projection: {
+    title: "Después de pagar",
+    headline: "Sin pagos cargados, tu proyección coincide con el dinero actual.",
+    amount: "428.500",
+    amountPrefix: "$",
+    amountState: "default",
+    rows: [
+      { label: "Dinero en tus cuentas", value: "428.500", valuePrefix: "$" },
+      { label: "Comprometido", value: "0", valuePrefix: "$" },
+      { label: "Quedarían", value: "428.500", valuePrefix: "$" },
+    ],
+    note: "Sin próximos pagos cargados hasta el domingo 23 de agosto.",
+    linkLabel: "Ver próximos pagos",
+    linkHref: "/proximo",
+  },
   stability: {
-    children: "Podés orientarte, pero conviene revisar esto antes de decidir.",
+    children:
+      "Cada importe sale de tus saldos iniciales y de los movimientos no anulados. Los próximos pagos no descuentan nada hasta que los confirmes.",
     container: "none",
-    kind: "caution",
+    kind: "neutral",
   },
   actions: {
-    primary: "update",
-    primaryLabel: "Revisar antes de actuar",
+    primary: "register",
+    primaryLabel: "Registrar un movimiento",
     secondaryActions: [
-      { id: "evidence", label: "Ver evidencia" },
-      { id: "update", label: "Actualizar lectura" },
+      { id: "upcoming", label: "Ver próximos pagos" },
+      { id: "history", label: "Ver movimientos" },
     ],
-    state: "reduced",
+    state: "default",
   },
   position: {
-    title: "Posición actual",
+    title: "Este mes",
     rows: [
-      {
-        label: "Saldo principal",
-        supportingLabel: "Último valor hace 19 h",
-        value: "610.000",
-        valuePrefix: "$",
-        state: "partial",
-      },
-      { label: "Invertido", value: "1.240.000", valuePrefix: "$" },
-      { label: "No disponible", value: "430.000", valuePrefix: "$" },
+      { label: "Ingresos", value: "0", valuePrefix: "$" },
+      { label: "Gastos", value: "0", valuePrefix: "$" },
+      { label: "Diferencia", value: "0", valuePrefix: "$" },
     ],
   },
+  accounts: [
+    { id: "banco", name: "Banco principal", type: "Banco", balance: "300.000", balancePrefix: "$", state: "stable" },
+    { id: "billetera", name: "Billetera virtual", type: "Billetera", balance: "128.500", balancePrefix: "$", state: "stable" },
+  ],
+  operational: [
+    {
+      title: "Próximos pagos",
+      actionLabel: "Ver todos",
+      actionHref: "/proximo",
+      rows: [{ label: "No hay pagos próximos cargados", value: "0", valuePrefix: "$" }],
+    },
+    {
+      title: "Movimientos recientes",
+      actionLabel: "Ver historial",
+      actionHref: "/movimientos",
+      rows: [{ label: "Todavía no registraste movimientos", value: "0", valuePrefix: "$" }],
+    },
+  ],
+  investments: null,
   information: {
-    title: "Confianza de esta lectura",
-    primaryLine: "Cuenta principal sin confirmar.",
-    causalLine: "El disponible puede variar cuando se actualice el saldo.",
-    linkLabel: "Ver evidencia",
-    linkHref: "#evidence",
+    title: "De dónde sale esta lectura",
+    primaryLine: "2 cuentas registradas; 0 pagos próximos considerados.",
+    causalLine:
+      "Los saldos se derivan del saldo inicial y del ledger, excluyendo movimientos anulados. Las transferencias entre tus cuentas no alteran el total.",
+    linkLabel: "Ver movimientos",
+    linkHref: "/movimientos",
     state: "partial",
-  },
-  reserve: {
-    title: "Puede esperar hoy",
-    amount: "120.000",
-    amountPrefix: "$",
-    purposeLine: "No hace falta tocarlo hasta confirmar el saldo principal.",
-    priority: "normal",
-    state: "active",
   },
 } satisfies NowViewModel;

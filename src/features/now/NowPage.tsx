@@ -7,13 +7,13 @@ import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { InformationBlock } from "../../design-system/composites/InformationBlock";
-import { ReserveBlock } from "../../design-system/composites/ReserveBlock";
 import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
 import { SystemRail } from "../../design-system/composites/SystemRail";
-import { TrendChart } from "../../design-system/composites/TrendChart";
 import { Divider } from "../../design-system/primitives/Divider";
+import { NumericValue } from "../../design-system/primitives/NumericValue";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
+import { TextLink } from "../../design-system/primitives/TextLink";
 import { EvidenceBreakdownExperience } from "../evidence";
 import type { NowViewModel } from "./model";
 import styles from "./NowPage.module.css";
@@ -24,18 +24,13 @@ export interface NowPageProps {
 
 export function NowPage({ model }: NowPageProps) {
   const actionStripProps = styles.actions ? { className: styles.actions } : {};
-  const reserveProps = styles.reserve ? { className: styles.reserve } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
   const accounts = model.accounts ?? [];
-  const trend = model.trend ?? [];
   const handleAction = (actionId: string) => {
-    if (actionId === "evidence") {
-      document.getElementById("evidence")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-
     const routes: Record<string, string> = {
       register: "/movimientos/nuevo",
+      resolve: "/proximo",
+      overdue: "/proximo",
       "add-first-account": "/cuentas/nueva",
       history: "/movimientos",
       accounts: "/cuentas",
@@ -68,12 +63,48 @@ export function NowPage({ model }: NowPageProps) {
           <EvidenceBreakdownExperience
             evidence={model.evidence}
             hero={model.hero}
-            valueActionLabel="Ver evidencia del disponible"
+            valueActionLabel="Ver cómo se calculó"
           />
         </LayoutGroup>
         <StabilityStatement {...model.stability} />
         <ActionStrip {...model.actions} {...actionStripProps} onAction={handleAction} />
-        {model.reserve ? <ReserveBlock {...model.reserve} {...reserveProps} /> : null}
+
+        {model.projection ? (
+          <section aria-labelledby="projection-title">
+          <Surface
+            border="subtle"
+            className={styles.projection}
+            padding="md"
+            radius="lg"
+            tone="base"
+          >
+            <h2 className={styles.projectionEyebrow} id="projection-title">{model.projection.title}</h2>
+            <NumericValue
+              prefix={model.projection.amountPrefix}
+              size="lg"
+              state="confirmed"
+              tone={model.projection.amountState === "attention" ? "attention" : "neutral"}
+              value={model.projection.amount}
+            />
+            <p className={styles.projectionHeadline}>{model.projection.headline}</p>
+            <div className={styles.projectionRows}>
+              {model.projection.rows.map((row, index) => (
+                <div className={styles.projectionUnit} key={row.label}>
+                  {index > 0 ? <Divider /> : null}
+                  <FinancialRow {...row} density="compact" />
+                </div>
+              ))}
+            </div>
+            <p className={styles.projectionNote}>{model.projection.note}</p>
+            {model.projection.excludedNote ? (
+              <p className={styles.projectionNote}>{model.projection.excludedNote}</p>
+            ) : null}
+            <TextLink href={model.projection.linkHref} kind="standalone" showChevron>
+              {model.projection.linkLabel}
+            </TextLink>
+          </Surface>
+          </section>
+        ) : null}
 
         {accounts.length > 0 ? (
           <section aria-labelledby="accounts-title" className={styles.accountsSection}>
@@ -103,6 +134,21 @@ export function NowPage({ model }: NowPageProps) {
           </section>
         ) : null}
 
+        {model.operational?.map((section) => (
+          <Surface border="subtle" className={styles.position} key={section.title} padding="md" radius="lg" tone="base">
+            <SectionTitle action="link" actionHref={section.actionHref} actionLabel={section.actionLabel} title={section.title} />
+            {section.notice ? <p className={styles.degradedNotice}>{section.notice}</p> : null}
+            <div className={styles.positionRows}>
+              {section.rows.map((row, index) => (
+                <div className={styles.positionUnit} key={`${row.label}-${row.value}-${index}`}>
+                  {index > 0 ? <Divider /> : null}
+                  <FinancialRow {...row} />
+                </div>
+              ))}
+            </div>
+          </Surface>
+        ))}
+
         {model.investments ? (
           <Link className={styles.investmentsEntry} data-empty={!model.investments.hasInvestments} href={model.investments.href}>
             <div className={styles.investmentsCopy}>
@@ -125,18 +171,8 @@ export function NowPage({ model }: NowPageProps) {
           </Link>
         ) : null}
 
-        <Surface
-          border="subtle"
-          className={styles.position}
-          padding="md"
-          radius="lg"
-          tone="base"
-        >
+        <Surface border="subtle" className={styles.position} padding="md" radius="lg" tone="base">
           <SectionTitle title={model.position.title} />
-          <div className={styles.trendHeader}>
-            <p>Ingresos y gastos</p>
-          </div>
-          <TrendChart points={trend} />
           <div className={styles.positionRows}>
             {model.position.rows.map((row, index) => (
               <div className={styles.positionUnit} key={`${row.label}-${row.value}`}>
@@ -147,23 +183,7 @@ export function NowPage({ model }: NowPageProps) {
           </div>
         </Surface>
 
-        {model.operational?.map((section) => (
-          <Surface border="subtle" className={styles.position} key={section.title} padding="md" radius="lg" tone="base">
-            <SectionTitle action="link" actionHref={section.actionHref} actionLabel={section.actionLabel} title={section.title} />
-            <div className={styles.positionRows}>
-              {section.rows.map((row, index) => (
-                <div className={styles.positionUnit} key={`${row.label}-${row.value}-${index}`}>
-                  {index > 0 ? <Divider /> : null}
-                  <FinancialRow {...row} />
-                </div>
-              ))}
-            </div>
-          </Surface>
-        ))}
-
-        <div id="evidence">
-          <InformationBlock {...model.information} {...informationProps} />
-        </div>
+        <InformationBlock {...model.information} {...informationProps} />
       </div>
     </main>
   );

@@ -1,23 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { stableNowFixture } from "./fixtures";
+import { uncoveredNowFixture } from "./fixtures";
 import { NowPage } from "./NowPage";
 
 const meta = {
-  title: "Features/Now/Stable",
+  title: "Features/Now/Cobertura insuficiente",
   component: NowPage,
-  args: { model: stableNowFixture },
+  args: { model: uncoveredNowFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof NowPage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Screen: Story = {};
+/** Importes largos y faltante: el número principal no se corta ni desborda. */
+export const ImporteGrande: Story = {};
 
-/**
- * 320 px: el ancho se fija en el propio story para que la verificación no
- * dependa de qué viewport tenga seleccionado quien mira.
- */
 export const Mobile320: Story = {
   decorators: [
     (Story) => (

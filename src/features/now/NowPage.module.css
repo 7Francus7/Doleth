@@ -267,10 +267,52 @@
 }
 
 .positionRows,
-.positionUnit {
+.positionUnit,
+.projectionRows,
+.projectionUnit {
   display: flex;
   width: 100%;
   flex-direction: column;
+}
+
+.projection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.projectionEyebrow {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  font-weight: var(--type-label-s-weight);
+  letter-spacing: var(--type-label-s-tracking);
+  text-transform: uppercase;
+}
+
+.projectionHeadline {
+  color: var(--color-text-primary);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+  text-wrap: pretty;
+}
+
+.projectionRows {
+  margin-top: var(--space-8);
+}
+
+.projectionNote {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
+}
+
+.degradedNotice {
+  padding: var(--space-12) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
 }
 
 @media (min-width: 640px) {

@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { attentionNowFixture } from "./fixtures";
+import { emptyNowFixture } from "./fixtures";
 import { NowPage } from "./NowPage";
 
 const meta = {
-  title: "Features/Now/Atención",
+  title: "Features/Now/Sin cuentas",
   component: NowPage,
-  args: { model: attentionNowFixture },
+  args: { model: emptyNowFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof NowPage>;
 
