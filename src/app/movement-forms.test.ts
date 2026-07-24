@@ -107,6 +107,13 @@ describe("cableado de formularios", () => {
     expect(form).toContain("setFormKey(crypto.randomUUID())");
   });
 
+  // Regresión: useActionState conserva el resultado, así que mostrar el éxito solo
+  // con state.ok dejaba "Registrar otro" sin efecto y el formulario inalcanzable.
+  it("Registrar otro devuelve el formulario en vez de dejar el éxito fijo", () => {
+    expect(form).toContain("state.ok && state !== dismissedResult");
+    expect(form).toContain("setDismissedResult(state)");
+  });
+
   it("el doble submit está frenado en cliente y el servidor sigue mandando", () => {
     expect(read("src/components/finance/SubmitButton.tsx")).toContain("useFormStatus");
     expect(actions).toContain("idempotencyDecision");

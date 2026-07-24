@@ -110,6 +110,9 @@ export function MovementForm({
   const [rememberedAccount, setRememberedAccount] = useState<string | null>(null);
   const [pendingDraft, setPendingDraft] = useState<MovementDraftValues | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
+  // useActionState conserva el resultado: sin esto, "Registrar otro" dejaba la
+  // pantalla de exito fija y no habia forma de volver al formulario.
+  const [dismissedResult, setDismissedResult] = useState<FinanceActionState | null>(null);
   const [typeNotice, setTypeNotice] = useState<string | null>(null);
   // Tras un éxito la intención cambia: el próximo movimiento necesita su propia key.
   const [formKey, setFormKey] = useState(idempotencyKey);
@@ -217,7 +220,8 @@ export function MovementForm({
   const cta = ctaLabels[values.type];
   const amountFieldError = state.error?.field === "amount" ? state.message : undefined;
 
-  if (state.ok) {
+  // Un envío nuevo produce un objeto de estado nuevo, así que el éxito vuelve a mostrarse.
+  if (state.ok && state !== dismissedResult) {
     const detailHref = state.data?.transactionId
       ? `/movimientos/${state.data.transactionId}?volver=${encodeURIComponent(returnTo)}`
       : returnTo;
@@ -238,6 +242,7 @@ export function MovementForm({
                 const next = { ...initialValues, sourceAccountId, type: values.type };
                 setValues(next);
                 setBaseline(next);
+                setDismissedResult(state);
                 setFormKey(crypto.randomUUID());
               }}
               type="button"
