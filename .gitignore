@@ -43,3 +43,6 @@ yarn-error.log*
 next-env.d.ts
 .gstack/
 /src/generated/prisma/
+
+# base descartable y scripts de QA local
+/.qa-tmp/
