@@ -8,5 +8,5 @@ export const dynamic = "force-dynamic";
 
 export default async function NewUpcomingPaymentPage() {
   const data = await getMovementFormData();
-  return <OperationalShell eyebrow="Compromiso futuro" title="Registrar próximo pago" intro="El importe puede ser estimado. Se volverá gasto real recién cuando lo marques como pagado.">{data.accounts.length ? <UpcomingPaymentForm accounts={data.accounts} today={data.today} /> : <p className={styles.empty}>Necesitás una cuenta activa. <Link className={styles.textLink} href="/cuentas/nueva">Crear cuenta</Link></p>}</OperationalShell>;
+  return <OperationalShell eyebrow="Compromiso futuro" title="Registrar próximo pago" intro="El importe es el que vos preveas. Recién se convierte en un gasto real cuando confirmás el pago.">{data.accounts.length ? <UpcomingPaymentForm accounts={data.accounts} today={data.today} /> : <p className={styles.empty}>Necesitás una cuenta activa. <Link className={styles.textLink} href="/cuentas/nueva">Crear cuenta</Link></p>}</OperationalShell>;
 }

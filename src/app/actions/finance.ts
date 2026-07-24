@@ -9,12 +9,15 @@ import { sanitizeReturnPath } from "../../lib/navigation/returnPath";
 import {
   createPostings,
   dateOnly,
+  formatDateAR,
   idempotencyDecision,
   parseMoneyToCents,
   paymentConversionDecision,
   requirePositiveMoney,
+  todayInArgentina,
   type MovementType,
 } from "../../lib/finance/domain";
+import { nextMonthSameDay } from "../../lib/finance/projection";
 
 export interface FinanceActionData {
   transactionId?: string;
@@ -436,6 +439,19 @@ export async function createUpcomingPaymentAction(
   }
 }
 
+/**
+ * Confirma un próximo pago: crea el gasto real y marca el pago como pagado en la
+ * misma transacción.
+ *
+ * La idempotencia es real y no depende del formulario: la clave
+ * `upcoming-payment:<id>` es única en el ledger, así que un reintento —o dos
+ * envíos en paralelo— nunca crean un segundo gasto. Reintentar devuelve el mismo
+ * resultado enriquecido en vez de un mensaje genérico.
+ *
+ * El importe se puede ajustar al confirmar: `estimatedCents` guarda lo que se
+ * había previsto y el movimiento guarda lo que realmente salió. El pago previsto
+ * nunca se convierte solo; siempre hace falta esta confirmación humana.
+ */
 export async function payUpcomingPaymentAction(
   _previous: FinanceActionState,
   formData: FormData,
@@ -443,33 +459,161 @@ export async function payUpcomingPaymentAction(
   try {
     const paymentId = value(formData, "paymentId");
     const occurredOn = dateOnly(value(formData, "occurredOn"));
+    const rawAmount = value(formData, "amount");
+    const redirectTo = sanitizeReturnPath(value(formData, "volver") || null, "/proximo");
+    if (!paymentId) throw financeError("payment-invalid", "Próximo pago inválido.");
+    if (occurredOn.toISOString().slice(0, 10) > todayInArgentina()) {
+      throw financeError("future-date", "No se puede confirmar un pago con fecha futura.", "occurredOn");
+    }
+
     const db = getDb();
+    let outcome: { transactionId: string; amountCents: bigint; accountName: string; alreadyPaid: boolean } | null = null;
+
     await db.$transaction(async (tx) => {
-      const payment = await tx.upcomingPayment.findUnique({ where: { id: paymentId } });
-      if (!payment) throw new Error("Próximo pago inexistente.");
-      if (paymentConversionDecision(payment.status, payment.transactionId) === "RETURN_EXISTING") return;
+      const payment = await tx.upcomingPayment.findUnique({
+        where: { id: paymentId },
+        include: { plannedAccount: true, transaction: true },
+      });
+      if (!payment) throw financeError("payment-missing", "Próximo pago inexistente.");
+
+      if (paymentConversionDecision(payment.status, payment.transactionId) === "RETURN_EXISTING") {
+        outcome = {
+          transactionId: payment.transactionId!,
+          amountCents: payment.transaction?.amountCents ?? payment.estimatedCents,
+          accountName: payment.plannedAccount.name,
+          alreadyPaid: true,
+        };
+        return;
+      }
+
+      const amountCents = rawAmount ? requirePositiveMoney(rawAmount) : payment.estimatedCents;
+      const account = await tx.account.findFirst({ where: { id: payment.plannedAccountId, status: "ACTIVE" } });
+      if (!account) throw financeError("account-unavailable", "La cuenta prevista ya no está activa.");
+
       const category = await tx.category.findUnique({ where: { slug: "other-expense" } });
-      if (!category) throw new Error("Ejecutá el seed de categorías antes de registrar pagos.");
+      if (!category) throw financeError("seed-missing", "Ejecutá el seed de categorías antes de registrar pagos.");
+
       const movement = await tx.transaction.create({
         data: {
           type: "EXPENSE",
-          amountCents: payment.estimatedCents,
+          amountCents,
           occurredOn,
           sourceAccountId: payment.plannedAccountId,
           categoryId: category.id,
           description: payment.concept,
           idempotencyKey: `upcoming-payment:${payment.id}`,
-          entries: { create: createPostings("EXPENSE", payment.estimatedCents, payment.plannedAccountId) },
+          entries: { create: createPostings("EXPENSE", amountCents, payment.plannedAccountId) },
         },
       });
-      await tx.upcomingPayment.update({ where: { id: payment.id }, data: { status: "PAID", transactionId: movement.id } });
+      await tx.upcomingPayment.update({
+        where: { id: payment.id },
+        data: { status: "PAID", transactionId: movement.id },
+      });
+      outcome = {
+        transactionId: movement.id,
+        amountCents,
+        accountName: payment.plannedAccount.name,
+        alreadyPaid: false,
+      };
     });
+
     refreshFinance();
-    return { ok: true, message: "Pago convertido en gasto. No se generarán duplicados." };
+    const result = outcome as { transactionId: string; amountCents: bigint; accountName: string; alreadyPaid: boolean } | null;
+    if (!result) throw financeError("payment-missing", "Próximo pago inexistente.");
+
+    return {
+      ok: true,
+      message: "Pago confirmado.",
+      detail: result.alreadyPaid
+        ? `Salieron $${formatCentsAR(result.amountCents)} de ${result.accountName}. Ya estaba confirmado: no se creó otro gasto.`
+        : `Salieron $${formatCentsAR(result.amountCents)} de ${result.accountName}.`,
+      data: {
+        transactionId: result.transactionId,
+        transactionType: "EXPENSE",
+        amount: formatCentsAR(result.amountCents),
+        sourceAccountName: result.accountName,
+        effectiveDate: occurredOn.toISOString().slice(0, 10),
+        redirectTo,
+      },
+    };
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
-      return { ok: true, message: "El pago ya estaba convertido. No se creó otro gasto." };
+      // Otro envío del mismo intento ganó la carrera: el gasto ya existe.
+      const existing = await getDb().upcomingPayment.findUnique({
+        where: { id: value(formData, "paymentId") },
+        include: { plannedAccount: true, transaction: true },
+      });
+      return {
+        ok: true,
+        message: "Pago confirmado.",
+        detail: existing?.transaction
+          ? `Salieron $${formatCentsAR(existing.transaction.amountCents)} de ${existing.plannedAccount.name}. Ya estaba confirmado: no se creó otro gasto.`
+          : "Ya estaba confirmado: no se creó otro gasto.",
+        ...(existing?.transactionId
+          ? { data: { transactionId: existing.transactionId, transactionType: "EXPENSE" as const } }
+          : {}),
+      };
     }
+    return errorState(error);
+  }
+}
+
+/**
+ * Duplica un pago previsto un mes más adelante. Es una acción humana explícita:
+ * el dominio no modela recurrencia, así que nada se crea solo. El día se acota
+ * al último día del mes destino para no inventar un 31 de febrero.
+ */
+export async function repeatUpcomingPaymentAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const paymentId = value(formData, "paymentId");
+    const db = getDb();
+    const source = await db.upcomingPayment.findUnique({
+      where: { id: paymentId },
+      include: { plannedAccount: true },
+    });
+    if (!source) throw financeError("payment-missing", "Próximo pago inexistente.");
+    if (source.plannedAccount.status !== "ACTIVE") {
+      throw financeError("account-unavailable", "La cuenta prevista ya no está activa.");
+    }
+
+    const dueOn = dateOnly(nextMonthSameDay(source.dueOn.toISOString().slice(0, 10)));
+    const existing = await db.upcomingPayment.findFirst({
+      where: {
+        concept: source.concept,
+        dueOn,
+        plannedAccountId: source.plannedAccountId,
+        status: "PENDING",
+      },
+    });
+    if (existing) {
+      return {
+        ok: true,
+        message: "Ya existe ese pago previsto.",
+        detail: `${source.concept} ya figura para el ${formatDateAR(dueOn)}. No se creó un duplicado.`,
+        data: { redirectTo: `/proximo/${existing.id}` },
+      };
+    }
+
+    const created = await db.upcomingPayment.create({
+      data: {
+        concept: source.concept,
+        estimatedCents: source.estimatedCents,
+        dueOn,
+        plannedAccountId: source.plannedAccountId,
+        ...(source.frequency ? { frequency: source.frequency } : {}),
+      },
+    });
+    refreshFinance();
+    return {
+      ok: true,
+      message: "Pago previsto creado.",
+      detail: `${source.concept} quedó cargado para el ${formatDateAR(dueOn)}. Vas a tener que confirmarlo cuando lo pagues.`,
+      data: { redirectTo: `/proximo/${created.id}` },
+    };
+  } catch (error) {
     return errorState(error);
   }
 }

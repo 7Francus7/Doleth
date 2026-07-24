@@ -36,13 +36,20 @@ describe("capas: un sheet modal nunca queda bajo la navegación fija", () => {
 });
 
 describe("scroll restoration: cableado del contenedor de la lista", () => {
-  const list = read("src/components/finance/MovementList.tsx");
+  const list = read("src/components/finance/RestorableList.tsx");
   const page = read("src/app/movimientos/page.tsx");
+  const upcoming = read("src/features/next/NextPage.tsx");
+  const upcomingModel = read("src/features/next/data/getNextModel.ts");
 
   it("el contenedor client renderiza DOM propio: sin nodo no hay hidratación ni efecto", () => {
     expect(list).toContain('"use client"');
-    expect(list).toContain("<div className={className}");
+    expect(list).toContain("<div");
+    expect(list).toContain("className={className}");
     expect(list).toContain("ref={containerRef}");
+  });
+
+  it("deja el guardrail escrito donde se podría romper", () => {
+    expect(list).toContain("debe renderizar un nodo DOM para hidratar");
   });
 
   it("guarda en fase de captura sobre sus propias filas, sin listeners globales", () => {
@@ -50,9 +57,24 @@ describe("scroll restoration: cableado del contenedor de la lista", () => {
     expect(list).not.toContain('document.addEventListener("click"');
   });
 
+  it("también guarda cuando se navega con teclado", () => {
+    expect(list).toContain("onKeyDownCapture={handleKeyDownCapture}");
+    expect(list).toContain('event.key !== "Enter"');
+  });
+
   it("la lista de movimientos usa el contenedor con su ruta normalizada", () => {
-    expect(page).toContain("<MovementList className={styles.list} restorationKey={listPath}>");
+    expect(page).toContain("<RestorableList className={styles.list} restorationKey={listPath}>");
     expect(page).toContain("normalizeListPath(\"/movimientos\"");
+  });
+
+  it("la línea temporal de próximo usa el mismo contenedor", () => {
+    expect(upcoming).toContain("RestorableList");
+    expect(upcoming).toContain("restorationKey={model.restorationKey}");
+    expect(upcomingModel).toContain("normalizeListPath(\"/proximo\"");
+  });
+
+  it("cada pago vuelve a la lista con su contexto de retorno", () => {
+    expect(upcomingModel).toContain("volver=${encodeURIComponent(restorationKey)}");
   });
 
   it("la restauración está acotada en tiempo: no queda observando indefinidamente", () => {

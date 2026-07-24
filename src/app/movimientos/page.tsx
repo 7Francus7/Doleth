@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { OperationalShell } from "../../components/finance/OperationalShell";
-import { MovementList } from "../../components/finance/MovementList";
+import { RestorableList } from "../../components/finance/RestorableList";
 import { EmptyState } from "../../design-system/feedback";
 import { normalizeListPath } from "../../lib/navigation/scrollRestoration";
 import { getMovements } from "../../lib/finance/data";
@@ -35,12 +35,12 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
         <label className={styles.field}><span>Cuenta</span><select defaultValue={accountId ?? ""} name="accountId"><option value="">Todas</option>{data.accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
         <button className={styles.filterButton} type="submit">Aplicar filtros</button>
       </form>
-      {data.movements.length ? <MovementList className={styles.list} restorationKey={listPath}>{data.movements.map((movement) => (
+      {data.movements.length ? <RestorableList className={styles.list} restorationKey={listPath}>{data.movements.map((movement) => (
         <Link className={`${styles.listItem} ${movement.voided ? styles.voided : ""}`} href={detailHref(movement.id)} key={movement.id}>
           <span className={styles.itemCopy}><span className={styles.itemTitle}>{movement.description}</span><span className={styles.itemMeta}>{formatDateAR(movement.occurredOn)} · {movement.accountName}{movement.voided ? " · Anulado" : ""}</span></span>
           <span className={styles.itemAmount}>{movement.type === "EXPENSE" ? "-" : movement.type === "INCOME" ? "+" : ""}${movement.amount}</span>
         </Link>
-      ))}</MovementList> : hasActiveFilters ? (
+      ))}</RestorableList> : hasActiveFilters ? (
         <EmptyState
           description="Probá con otro mes, tipo o cuenta, o volvé al historial completo."
           primaryAction={<Link className={styles.primaryLink} href="/movimientos">Limpiar filtros</Link>}

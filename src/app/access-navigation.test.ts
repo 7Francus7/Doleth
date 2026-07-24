@@ -101,7 +101,7 @@ describe("sesión: cierre seguro", () => {
 describe("continuidad: retorno y scroll", () => {
   const list = read("src/app/movimientos/page.tsx");
   const detail = read("src/app/movimientos/[id]/page.tsx");
-  const restorer = read("src/components/finance/MovementList.tsx");
+  const restorer = read("src/components/finance/RestorableList.tsx");
 
   it("la lista propaga el contexto de retorno en cada enlace de detalle", () => {
     expect(list).toContain("volver=${encodeURIComponent(listPath)}");
@@ -109,7 +109,7 @@ describe("continuidad: retorno y scroll", () => {
   });
 
   it("la lista restaura scroll con clave por URL normalizada", () => {
-    expect(list).toContain("<MovementList className={styles.list} restorationKey={listPath}>");
+    expect(list).toContain("<RestorableList className={styles.list} restorationKey={listPath}>");
     expect(restorer).toContain("scrollStorageKey(restorationKey)");
     expect(restorer).toContain('window.addEventListener("pagehide", onPageHide)');
   });
