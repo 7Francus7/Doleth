@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { getDb } from "../../lib/db";
+import { successForCorrection, successForMovement, successForVoid } from "../../lib/finance/actionFeedback";
+import { formatCentsAR } from "../../lib/finance/amount";
+import { financeError, toSafeError } from "../../lib/finance/errors";
+import { sanitizeReturnPath } from "../../lib/navigation/returnPath";
 import {
   createPostings,
   dateOnly,
@@ -12,15 +16,38 @@ import {
   type MovementType,
 } from "../../lib/finance/domain";
 
+export interface FinanceActionData {
+  transactionId?: string;
+  transactionType?: MovementType;
+  /** Importe ya formateado en lectura argentina; el dominio guarda centavos. */
+  amount?: string;
+  sourceAccountName?: string;
+  destinationAccountName?: string;
+  effectiveDate?: string;
+  redirectTo?: string;
+}
+
 export interface FinanceActionState {
   ok: boolean;
   message: string;
+  /** Segunda línea del resultado: qué cambió, con importe y cuentas reales. */
+  detail?: string;
+  error?: { code: string; field?: string };
+  data?: FinanceActionData;
 }
 
-const errorState = (error: unknown): FinanceActionState => ({
-  ok: false,
-  message: error instanceof Error ? error.message : "No pudimos guardar el cambio.",
-});
+/**
+ * Nunca devuelve el mensaje de una excepción desconocida: Prisma, SQL o red se
+ * traducen a copy humano. Solo los errores propios llegan tal cual.
+ */
+const errorState = (error: unknown): FinanceActionState => {
+  const safe = toSafeError(error);
+  return {
+    ok: false,
+    message: safe.message,
+    error: { code: safe.code, ...(safe.field ? { field: safe.field } : {}) },
+  };
+};
 
 const value = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
@@ -154,7 +181,7 @@ export async function createMovementAction(
   try {
     const db = getDb();
     const type = value(formData, "type");
-    if (!validMovementType(type)) throw new Error("Seleccioná un tipo de movimiento.");
+    if (!validMovementType(type)) throw financeError("type-invalid", "Seleccioná un tipo de movimiento.", "type");
     const amountCents = requirePositiveMoney(value(formData, "amount"));
     const occurredOn = dateOnly(value(formData, "occurredOn"));
     const sourceAccountId = value(formData, "sourceAccountId");
@@ -162,28 +189,53 @@ export async function createMovementAction(
     const categoryId = value(formData, "categoryId") || undefined;
     const description = value(formData, "description") || undefined;
     const idempotencyKey = value(formData, "idempotencyKey");
-    if (idempotencyKey.length < 8) throw new Error("Recargá el formulario antes de guardar.");
-    if (description && description.length > 160) throw new Error("La descripción admite hasta 160 caracteres.");
+    const redirectTo = sanitizeReturnPath(value(formData, "volver") || null, "/movimientos");
+    if (idempotencyKey.length < 8) throw financeError("stale-form", "Recargá el formulario antes de guardar.");
+    if (description && description.length > 160) {
+      throw financeError("description-too-long", "La descripción admite hasta 160 caracteres.", "description");
+    }
 
-    const existing = await db.transaction.findUnique({ where: { idempotencyKey } });
+    const existing = await db.transaction.findUnique({
+      where: { idempotencyKey },
+      include: { sourceAccount: true, destinationAccount: true },
+    });
     if (idempotencyDecision(existing?.id ?? null) === "RETURN_EXISTING") {
-      return { ok: true, message: "Movimiento ya registrado. No se creó un duplicado." };
+      const feedback = successForMovement({
+        type: existing!.type,
+        amountCents: existing!.amountCents,
+        sourceAccountName: existing!.sourceAccount.name,
+        destinationAccountName: existing!.destinationAccount?.name,
+      });
+      return {
+        ok: true,
+        message: feedback.message,
+        detail: `${feedback.detail} Ya estaba registrado: no se creó un duplicado.`,
+        data: { transactionId: existing!.id, transactionType: existing!.type, redirectTo },
+      };
     }
 
     const accountIds = [sourceAccountId, destinationAccountId].filter(Boolean) as string[];
     const accounts = await db.account.findMany({ where: { id: { in: accountIds }, status: "ACTIVE" } });
-    if (accounts.length !== new Set(accountIds).size) throw new Error("Una de las cuentas no está activa.");
-    if (accounts.some((account) => account.currency !== "ARS")) throw new Error("El resumen actual solo admite cuentas en ARS.");
-
-    if (type !== "TRANSFER") {
-      if (!categoryId) throw new Error("Seleccioná una categoría.");
-      const category = await db.category.findUnique({ where: { id: categoryId } });
-      if (!category || category.kind !== type) throw new Error("La categoría no corresponde al tipo de movimiento.");
+    if (accounts.length !== new Set(accountIds).size) {
+      throw financeError("account-unavailable", "Una de las cuentas no está activa.", "sourceAccountId");
+    }
+    if (accounts.some((account) => account.currency !== "ARS")) {
+      throw financeError("currency-unsupported", "El resumen actual solo admite cuentas en ARS.", "sourceAccountId");
     }
 
+    if (type !== "TRANSFER") {
+      if (!categoryId) throw financeError("category-required", "Seleccioná una categoría.", "categoryId");
+      const category = await db.category.findUnique({ where: { id: categoryId } });
+      if (!category || category.kind !== type) {
+        throw financeError("category-mismatch", "La categoría no corresponde al tipo de movimiento.", "categoryId");
+      }
+    }
+
+    const byId = new Map(accounts.map((account) => [account.id, account.name]));
     const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId);
+    let createdId: string;
     try {
-      await db.transaction.create({
+      const created = await db.transaction.create({
         data: {
           type,
           amountCents,
@@ -196,30 +248,82 @@ export async function createMovementAction(
           entries: { create: postings },
         },
       });
+      createdId = created.id;
     } catch (error) {
       if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
-        return { ok: true, message: "Movimiento ya registrado. No se creó un duplicado." };
+        // Otro envío del mismo intento ganó la carrera: no se duplica nada.
+        const duplicate = await db.transaction.findUnique({
+          where: { idempotencyKey },
+          include: { sourceAccount: true, destinationAccount: true },
+        });
+        const feedback = successForMovement({
+          type,
+          amountCents,
+          sourceAccountName: duplicate?.sourceAccount.name ?? byId.get(sourceAccountId) ?? "",
+          destinationAccountName: duplicate?.destinationAccount?.name,
+        });
+        return {
+          ok: true,
+          message: feedback.message,
+          detail: `${feedback.detail} Ya estaba registrado: no se creó un duplicado.`,
+          ...(duplicate ? { data: { transactionId: duplicate.id, transactionType: type, redirectTo } } : {}),
+        };
       }
       throw error;
     }
 
     refreshFinance();
-    return { ok: true, message: "Movimiento registrado. Saldos y resumen ya están actualizados." };
+    const feedback = successForMovement({
+      type,
+      amountCents,
+      sourceAccountName: byId.get(sourceAccountId) ?? "",
+      ...(destinationAccountId ? { destinationAccountName: byId.get(destinationAccountId) ?? "" } : {}),
+    });
+    return {
+      ok: true,
+      message: feedback.message,
+      detail: feedback.detail,
+      data: {
+        transactionId: createdId,
+        transactionType: type,
+        amount: formatCentsAR(amountCents),
+        sourceAccountName: byId.get(sourceAccountId) ?? "",
+        ...(destinationAccountId ? { destinationAccountName: byId.get(destinationAccountId) ?? "" } : {}),
+        effectiveDate: occurredOn.toISOString().slice(0, 10),
+        redirectTo,
+      },
+    };
   } catch (error) {
     return errorState(error);
   }
 }
 
-export async function voidMovementAction(formData: FormData): Promise<void> {
-  const id = value(formData, "id");
-  const reason = value(formData, "reason");
-  if (!id) throw new Error("Movimiento inválido.");
-  if (reason.length < 4) throw new Error("Indicá brevemente el motivo de la anulación.");
-  await getDb().transaction.updateMany({
-    where: { id, voidedAt: null },
-    data: { voidedAt: new Date(), voidReason: reason },
-  });
-  refreshFinance();
+export async function voidMovementAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const id = value(formData, "id");
+    const reason = value(formData, "reason");
+    const redirectTo = sanitizeReturnPath(value(formData, "volver") || null, "/movimientos");
+    if (!id) throw financeError("movement-invalid", "Movimiento inválido.");
+    if (reason.length < 4) throw financeError("reason-required", "Indicá brevemente el motivo de la anulación.", "reason");
+
+    const updated = await getDb().transaction.updateMany({
+      where: { id, voidedAt: null },
+      data: { voidedAt: new Date(), voidReason: reason },
+    });
+    refreshFinance();
+
+    const feedback = successForVoid();
+    // Reintentar una anulación ya aplicada es seguro: el estado final es el mismo.
+    if (updated.count === 0) {
+      return { ok: true, message: feedback.message, detail: feedback.detail, data: { transactionId: id, redirectTo } };
+    }
+    return { ok: true, message: feedback.message, detail: feedback.detail, data: { transactionId: id, redirectTo } };
+  } catch (error) {
+    return errorState(error);
+  }
 }
 
 export async function correctMovementAction(
@@ -238,26 +342,36 @@ export async function correctMovementAction(
     const categoryId = value(formData, "categoryId") || undefined;
     const description = value(formData, "description") || undefined;
     const idempotencyKey = value(formData, "idempotencyKey");
-    if (idempotencyKey.length < 8) throw new Error("Recargá el formulario antes de guardar.");
-    if (description && description.length > 160) throw new Error("La descripción admite hasta 160 caracteres.");
+    const redirectTo = sanitizeReturnPath(value(formData, "volver") || null, "/movimientos");
+    if (idempotencyKey.length < 8) throw financeError("stale-form", "Recargá el formulario antes de guardar.");
+    if (description && description.length > 160) {
+      throw financeError("description-too-long", "La descripción admite hasta 160 caracteres.", "description");
+    }
     const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId);
 
+    let replacementId = "";
     await db.$transaction(async (tx) => {
       const original = await tx.transaction.findUnique({ where: { id: originalId } });
-      if (!original || original.voidedAt) throw new Error("El movimiento ya fue anulado o no existe.");
+      if (!original || original.voidedAt) {
+        throw financeError("already-void", "El movimiento ya fue anulado o no existe.");
+      }
       const accountIds = [sourceAccountId, destinationAccountId].filter(Boolean) as string[];
       const accounts = await tx.account.findMany({ where: { id: { in: accountIds }, status: "ACTIVE", currency: "ARS" } });
-      if (accounts.length !== new Set(accountIds).size) throw new Error("Una de las cuentas no está activa o no usa ARS.");
+      if (accounts.length !== new Set(accountIds).size) {
+        throw financeError("account-unavailable", "Una de las cuentas no está activa o no usa ARS.", "sourceAccountId");
+      }
       if (type !== "TRANSFER") {
-        if (!categoryId) throw new Error("Seleccioná una categoría.");
+        if (!categoryId) throw financeError("category-required", "Seleccioná una categoría.", "categoryId");
         const category = await tx.category.findUnique({ where: { id: categoryId } });
-        if (!category || category.kind !== type) throw new Error("La categoría no corresponde al tipo de movimiento.");
+        if (!category || category.kind !== type) {
+          throw financeError("category-mismatch", "La categoría no corresponde al tipo de movimiento.", "categoryId");
+        }
       }
       await tx.transaction.update({
         where: { id: originalId },
         data: { voidedAt: new Date(), voidReason: "Corregido por un movimiento reemplazante" },
       });
-      await tx.transaction.create({
+      const replacement = await tx.transaction.create({
         data: {
           type,
           amountCents,
@@ -271,9 +385,23 @@ export async function correctMovementAction(
           entries: { create: postings },
         },
       });
+      replacementId = replacement.id;
     });
     refreshFinance();
-    return { ok: true, message: "Corrección guardada. El original quedó anulado y auditable." };
+    const feedback = successForCorrection();
+    return {
+      ok: true,
+      message: feedback.message,
+      detail: feedback.detail,
+      data: {
+        transactionId: replacementId,
+        transactionType: type,
+        amount: formatCentsAR(amountCents),
+        effectiveDate: occurredOn.toISOString().slice(0, 10),
+        // Tras corregir, el contexto natural es el movimiento vigente.
+        redirectTo: `/movimientos/${replacementId}?volver=${encodeURIComponent(redirectTo)}`,
+      },
+    };
   } catch (error) {
     return errorState(error);
   }

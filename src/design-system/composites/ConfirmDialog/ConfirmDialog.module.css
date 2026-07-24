@@ -1,0 +1,76 @@
+/* Por encima de la navegación fija (20) y del footer de formularios (19). */
+.overlay {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-surface-inverse) 40%, transparent);
+}
+
+.dialog {
+  position: fixed;
+  z-index: 31;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  width: min(30rem, calc(100vw - 2 * var(--space-16)));
+  max-height: calc(100dvh - 2 * var(--space-24));
+  flex-direction: column;
+  gap: var(--space-12);
+  overflow-y: auto;
+  padding: var(--space-24);
+  border: var(--border-width-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-sheet);
+  transform: translate(-50%, -50%);
+}
+
+.title {
+  color: var(--color-text-strong);
+  font-size: var(--type-heading-s-size);
+  font-weight: var(--type-heading-s-weight);
+  line-height: var(--type-heading-s-line);
+}
+
+.description {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  margin-top: var(--space-4);
+}
+
+.footer > * {
+  min-width: 0;
+  flex: 1 1 8rem;
+}
+
+.overlay[data-state="open"] { animation: confirm-overlay-in var(--motion-duration-surface) var(--motion-curve-settle); }
+.overlay[data-state="closed"] { animation: confirm-overlay-out var(--motion-duration-surface) var(--motion-curve-exit); }
+.dialog[data-state="open"] { animation: confirm-in var(--motion-duration-surface) var(--motion-curve-settle); }
+.dialog[data-state="closed"] { animation: confirm-out var(--motion-duration-surface) var(--motion-curve-exit); }
+
+@keyframes confirm-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes confirm-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes confirm-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes confirm-out { from { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay[data-state="open"], .dialog[data-state="open"] {
+    animation: confirm-overlay-in var(--motion-duration-micro) var(--motion-curve-snap);
+  }
+  .overlay[data-state="closed"], .dialog[data-state="closed"] {
+    animation: confirm-overlay-out var(--motion-duration-micro) var(--motion-curve-exit);
+  }
+}

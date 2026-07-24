@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import styles from "./Button.module.css";
 
 export type ButtonKind = "primary" | "secondary" | "ghost";
@@ -13,6 +13,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   trailingIcon?: ReactNode;
   loading?: boolean;
   loadingLabel?: string;
+  /** React 19 pasa la ref como prop normal; sirve para devolver el foco al disparador. */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({
