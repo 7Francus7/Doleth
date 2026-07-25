@@ -47,6 +47,108 @@
   color: var(--color-text-attention);
 }
 
+.indicators,
+.milestones {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-16);
+  list-style: none;
+}
+
+.indicator {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.indicatorTitle {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  font-weight: 600;
+  line-height: var(--type-body-m-line);
+}
+
+.indicatorReading {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+  text-wrap: pretty;
+}
+
+.indicatorReading[data-state="attention"] {
+  color: var(--color-text-attention);
+}
+
+.indicatorMeta,
+.notice {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
+}
+
+.notice {
+  color: var(--color-text-attention);
+}
+
+.milestones {
+  gap: var(--space-12);
+}
+
+.milestone {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+}
+
+.milestoneMark {
+  flex-shrink: 0;
+  width: var(--space-20);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.milestone[data-achieved="true"] .milestoneMark {
+  color: var(--color-text-accent);
+}
+
+.milestoneCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.milestoneLabel {
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+}
+
+.milestoneStatus,
+.milestoneDetail {
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+.milestoneDetail {
+  overflow-wrap: anywhere;
+}
+
 .actions {
   margin-top: calc(var(--space-8) * -1);
 }

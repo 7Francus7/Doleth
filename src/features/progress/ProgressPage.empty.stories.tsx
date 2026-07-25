@@ -3,7 +3,7 @@ import { emptyProgressFixture } from "./fixtures";
 import { ProgressPage } from "./ProgressPage";
 
 const meta = {
-  title: "Features/Progress/Empty",
+  title: "Features/Progress/Sin base",
   component: ProgressPage,
   args: { model: emptyProgressFixture },
   parameters: { layout: "fullscreen" },

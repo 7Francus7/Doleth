@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { improvedProgressFixture } from "./fixtures";
+import { declinedProgressFixture } from "./fixtures";
 import { ProgressPage } from "./ProgressPage";
 
 const meta = {
-  title: "Features/Progress/Mejora",
+  title: "Features/Progress/Retroceso",
   component: ProgressPage,
-  args: { model: improvedProgressFixture },
+  args: { model: declinedProgressFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ProgressPage>;
 
@@ -14,10 +14,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Screen: Story = {};
 
-/**
- * 320 px: el ancho se fija en el propio story para que la verificación no
- * dependa de qué viewport tenga seleccionado quien mira.
- */
+/** Cobertura parcial y vencidos en 320 px. */
 export const Mobile320: Story = {
   decorators: [
     (Story) => (

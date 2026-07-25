@@ -3,12 +3,17 @@ import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
 import { resilientList, resilientRead, type AnalysisMovement } from "./analysis";
 import {
+  equivalentMonthPeriods,
   precedingPeriod,
   recentPeriod,
   type CategorizedMovement,
   type Period,
 } from "./comparison";
-import type { UpcomingCommitment } from "./projection";
+import {
+  accountsMoneyCents,
+  selectCommitments,
+  type UpcomingCommitment,
+} from "./projection";
 
 /**
  * Traduce un `UpcomingPayment` de Prisma al compromiso puro que consume
@@ -389,69 +394,87 @@ export async function getChangesData(windowDays = 7): Promise<ChangesData> {
   };
 }
 
-/** Lectura previa de /progreso. La reemplaza la comparación por tramos en el corte siguiente. */
-export async function getProgressData(): Promise<{
-  currentMonthMovements: AnalysisMovement[];
-  previousMonthMovements: AnalysisMovement[];
-  hasPreviousPeriod: boolean;
-  availableCents: bigint;
-  upcomingCents: bigint;
-  daysWithActivity: number;
-  elapsedDays: number;
-  currentMonth: string;
-  previousMonth: string;
+export interface ProgressData {
+  /** Movimientos de los dos tramos equivalentes, ya listos para comparar. */
+  movements: AnalysisMovement[];
+  current: Period;
+  previous: Period;
+  /** `false` cuando el mes anterior es más corto y el tramo se tuvo que acotar. */
+  equivalent: boolean;
+  today: string;
   hasAccounts: boolean;
-}> {
+  patrimonyCents: bigint;
+  /** Base de la cobertura: cuentas activas, igual que /ahora. */
+  baseCents: bigint;
+  committedCents: bigint;
+  overdueCount: number;
+  /** `false` cuando los compromisos no pudieron leerse: la cobertura se omite. */
+  commitmentsAvailable: boolean;
+}
+
+/**
+ * Lectura de /progreso. Compara tramos equivalentes —días 1 a hoy contra los
+ * mismos días del mes anterior— porque un mes parcial contra un mes completo no
+ * es una comparación. La cobertura usa la misma definición que /ahora: cuentas
+ * activas contra los compromisos del horizonte, para que las dos pantallas no
+ * digan números distintos de lo mismo.
+ */
+export async function getProgressData(): Promise<ProgressData> {
   const db = getDb();
   const today = todayInArgentina();
-  const currentMonth = today.slice(0, 7);
-  const currentBounds = monthBounds(currentMonth);
-  const previousMonth = dayString(
-    new Date(Date.UTC(currentBounds.start.getUTCFullYear(), currentBounds.start.getUTCMonth() - 1, 1)),
-  ).slice(0, 7);
-  const previousBounds = monthBounds(previousMonth);
+  const { current, previous, equivalent } = equivalentMonthPeriods(today);
 
-  const [currentRows, previousRows, accounts, upcoming] = await Promise.all([
-    db.transaction.findMany({
-      where: { voidedAt: null, occurredOn: { gte: currentBounds.start, lt: currentBounds.end } },
-      select: { id: true, type: true, amountCents: true, occurredOn: true },
-    }),
-    db.transaction.findMany({
-      where: { voidedAt: null, occurredOn: { gte: previousBounds.start, lt: previousBounds.end } },
-      select: { id: true, type: true, amountCents: true, occurredOn: true },
-    }),
+  const [accounts, rows, pending] = await Promise.all([
     getAccountsWithBalances(),
-    db.upcomingPayment.findMany({ where: { status: "PENDING" }, select: { estimatedCents: true } }),
+    db.transaction.findMany({
+      where: {
+        voidedAt: null,
+        occurredOn: {
+          gte: new Date(`${previous.start}T00:00:00.000Z`),
+          lt: shiftDays(current.end, 1),
+        },
+      },
+      select: { id: true, type: true, amountCents: true, occurredOn: true },
+    }),
+    resilientRead(() =>
+      db.upcomingPayment.findMany({
+        where: { status: "PENDING" },
+        include: { plannedAccount: true },
+        orderBy: { dueOn: "asc" },
+      }),
+    ),
   ]);
 
-  const toMovement = (row: {
-    id: string;
-    type: "EXPENSE" | "INCOME" | "TRANSFER";
-    amountCents: bigint;
-    occurredOn: Date;
-  }): AnalysisMovement => ({
-    id: row.id,
-    type: row.type,
-    amountCents: row.amountCents,
-    occurredOn: dayString(row.occurredOn),
-    voided: false,
-    label: "",
-    accountName: "",
-  });
-
-  const daysWithActivity = new Set(currentRows.map((row) => dayString(row.occurredOn))).size;
+  const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
+  const commitments = (pending ?? []).map((payment) => toCommitment(payment, balanceByAccount));
+  const selection = selectCommitments(commitments, today);
+  const projectionAccounts = accounts.map((account) => ({
+    id: account.id,
+    name: account.name,
+    balanceCents: account.balanceCents,
+    archived: account.status === "ARCHIVED",
+  }));
 
   return {
-    currentMonthMovements: currentRows.map(toMovement),
-    previousMonthMovements: previousRows.map(toMovement),
-    hasPreviousPeriod: previousRows.length > 0,
-    availableCents: accounts.reduce((sum, account) => sum + account.balanceCents, 0n),
-    upcomingCents: upcoming.reduce((sum, payment) => sum + payment.estimatedCents, 0n),
-    daysWithActivity,
-    elapsedDays: Number(today.slice(8, 10)),
-    currentMonth,
-    previousMonth,
+    movements: rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      amountCents: row.amountCents,
+      occurredOn: dayString(row.occurredOn),
+      voided: false,
+      label: "",
+      accountName: "",
+    })),
+    current,
+    previous,
+    equivalent,
+    today,
     hasAccounts: accounts.length > 0,
+    patrimonyCents: accounts.reduce((sum, account) => sum + account.balanceCents, 0n),
+    baseCents: accountsMoneyCents(projectionAccounts),
+    committedCents: selection.committedCents,
+    overdueCount: selection.overdue.length,
+    commitmentsAvailable: pending !== null,
   };
 }
 

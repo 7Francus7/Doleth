@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { attentionProgressFixture } from "./fixtures";
+import { firstPeriodProgressFixture } from "./fixtures";
 import { ProgressPage } from "./ProgressPage";
 
 const meta = {
-  title: "Features/Progress/Attention",
+  title: "Features/Progress/Primer período",
   component: ProgressPage,
-  args: { model: attentionProgressFixture },
+  args: { model: firstPeriodProgressFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ProgressPage>;
 

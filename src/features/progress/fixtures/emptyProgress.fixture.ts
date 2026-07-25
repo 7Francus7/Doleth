@@ -1,56 +1,77 @@
 import type { ProgressViewModel } from "../model";
 
+/** Sin cuentas no hay resultado ni progreso que medir. */
 export const emptyProgressFixture = {
-  rail: {
-    items: ["Primer periodo en curso", "ARS", "Personal", "Sin cierre anterior"],
-    state: "complete",
-    wrap: "truncate",
-  },
+  rail: { items: ["Días 1 a 24", "ARS", "Personal", "Primer período"], state: "partial", wrap: "truncate" },
   banner: null,
   hero: {
     scenario: "new",
-    stateText: "Tu trayectoria todavia no tiene un periodo anterior comparable.",
-    valueLabel: "Todavia no hay un cierre anterior para comparar",
+    stateText: "Empecemos por tu base real.",
+    valueLabel: "Creá tu primera cuenta para empezar a medir progreso.",
   },
   evidence: null,
   comparison: {
-    title: "Comparacion de cierres",
-    supportingLine: "Inicio del periodo y lectura actual de la misma base",
+    title: "Tramos equivalentes",
+    supportingLine:
+      "del miércoles 1 al viernes 24 de julio contra del lunes 1 al miércoles 24 de junio",
     rows: [
       {
-        label: "Inicio del periodo",
-        supportingLabel: "Primera lectura registrada",
-        value: "647.500",
+        label: "Resultado del tramo anterior",
+        supportingLabel: "Sin movimientos registrados",
+        value: "0",
         valuePrefix: "$",
       },
       {
-        label: "Lectura actual",
-        supportingLabel: "Hoy - Misma base patrimonial",
-        value: "647.500",
+        kind: "with-status",
+        label: "Resultado de este tramo",
+        supportingLabel: "24 días · 0 con registro",
+        status: "Sin referencia todavía",
+        value: "0",
+        valuePrefix: "$",
+        state: "default",
+      },
+      {
+        label: "Diferencia entre tramos",
+        supportingLabel: "Misma cantidad de días en los dos tramos",
+        value: "0",
         valuePrefix: "$",
       },
     ],
-    summary:
-      "El primer periodo sigue en curso: la trayectoria empieza a existir cuando haya dos lecturas comparables.",
+    summary: "Sin cuentas registradas no hay resultado ni progreso para medir.",
     summaryKind: "neutral",
   },
+  indicators: null,
+  milestones: null,
+  notice: null,
   stability: {
-    children:
-      "No hay direccion que leer todavia. La primera comparacion llega con el primer cierre de periodo.",
+    children: "Creá tu primera cuenta para empezar a medir tu progreso.",
     container: "none",
     kind: "neutral",
   },
-  actions: null,
-  goals: null,
-  missing: null,
+  actions: {
+    primary: "add-first-account",
+    primaryLabel: "Crear una cuenta",
+    secondaryActions: [
+      { id: "changes", label: "Ver qué cambió" },
+      { id: "history", label: "Ver movimientos" },
+    ],
+    state: "default",
+  },
+  missing: {
+    title: "Falta tu base financiera",
+    primaryLine: "Sin cuentas registradas no hay resultado ni progreso para medir.",
+    causalLine: "Creá al menos una cuenta con su saldo inicial para habilitar esta pantalla.",
+    linkLabel: "Crear cuenta",
+    linkHref: "/cuentas/nueva",
+    state: "partial",
+  },
   information: {
-    title: "Evidencia de esta trayectoria",
-    primaryLine:
-      "No hay un periodo anterior cerrado que permita comprobar una trayectoria.",
+    title: "De dónde salen estos indicadores",
+    primaryLine: "No usa metas inventadas ni presupuestos inexistentes.",
     causalLine:
-      "La ausencia de trayectoria tambien puede comprobarse: falta un segundo cierre comparable, no informacion perdida.",
-    linkLabel: "Ver evidencia",
-    linkHref: "#progress-evidence",
-    state: "complete",
+      "Cada indicador se deriva del ledger real y compara tramos equivalentes, excluyendo movimientos anulados y transferencias entre tus cuentas.",
+    linkLabel: "Ver movimientos",
+    linkHref: "/movimientos",
+    state: "partial",
   },
 } satisfies ProgressViewModel;

@@ -1,1 +1,5 @@
-export type { ProgressViewModel } from "./ProgressViewModel";
+export type {
+  ProgressIndicator,
+  ProgressMilestone,
+  ProgressViewModel,
+} from "./ProgressViewModel";

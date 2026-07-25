@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { CoverageMeter } from "../../design-system/composites/CoverageMeter";
@@ -18,29 +19,24 @@ export interface ProgressPageProps {
   model: ProgressViewModel;
 }
 
+/** Rutas de cada acción. Navegación interna: la app no se recarga. */
+const ACTION_ROUTES: Record<string, string> = {
+  resolve: "/proximo",
+  register: "/movimientos/nuevo",
+  update: "/movimientos",
+  "add-first-account": "/cuentas/nueva",
+  changes: "/cambios",
+  history: "/movimientos",
+};
+
 export function ProgressPage({ model }: ProgressPageProps) {
+  const router = useRouter();
   const actionProps = styles.actions ? { className: styles.actions } : {};
   const missingProps = styles.missing ? { className: styles.missing } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
 
   const handleAction = (actionId: string) => {
-    if (actionId === "evidence") {
-      document.getElementById("progress-evidence")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
-    if (actionId === "goals") {
-      document.getElementById("progress-goals")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
-    window.location.assign("/actuar");
+    router.push(ACTION_ROUTES[actionId] ?? "/progreso");
   };
 
   return (
@@ -52,75 +48,100 @@ export function ProgressPage({ model }: ProgressPageProps) {
         <EvidenceBreakdownExperience
           evidence={model.evidence}
           hero={model.hero}
-          valueActionLabel="Ver evidencia de la trayectoria"
+          valueActionLabel="Ver cómo se calculó este resultado"
         />
 
-        <Surface
-          border="subtle"
-          className={styles.comparison}
-          padding="md"
-          radius="lg"
-          tone="base"
-        >
-          {model.comparison.actionHref && model.comparison.actionLabel ? (
-            <SectionTitle
-              action="link"
-              actionHref={model.comparison.actionHref}
-              actionLabel={model.comparison.actionLabel}
-              support="line"
-              supportingLine={model.comparison.supportingLine}
-              title={model.comparison.title}
-            />
-          ) : (
+        {model.notice ? (
+          <p className={styles.notice} role="status">
+            {model.notice}
+          </p>
+        ) : null}
+
+        <section aria-label={model.comparison.title}>
+          <Surface border="subtle" className={styles.comparison} padding="md" radius="lg" tone="base">
             <SectionTitle
               action="none"
               support="line"
               supportingLine={model.comparison.supportingLine}
               title={model.comparison.title}
             />
-          )}
-          <div className={styles.rows}>
-            {model.comparison.rows.map((row, index) => (
-              <div className={styles.unit} key={`${row.label}-${row.value}`}>
-                {index > 0 ? <Divider /> : null}
-                <FinancialRow {...row} />
-              </div>
-            ))}
-          </div>
-          <p
-            className={styles.comparisonSummary}
-            data-kind={model.comparison.summaryKind}
-          >
-            {model.comparison.summary}
-          </p>
-        </Surface>
+            <div className={styles.rows}>
+              {model.comparison.rows.map((row, index) => (
+                <div className={styles.unit} key={`${row.label}-${row.value}`}>
+                  {index > 0 ? <Divider /> : null}
+                  <FinancialRow {...row} />
+                </div>
+              ))}
+            </div>
+            <p className={styles.comparisonSummary} data-kind={model.comparison.summaryKind}>
+              {model.comparison.summary}
+            </p>
+          </Surface>
+        </section>
 
         <StabilityStatement {...model.stability} />
         {model.actions ? <ActionStrip {...model.actions} {...actionProps} onAction={handleAction} /> : null}
 
-        {model.goals ? (
-          <Surface
-            border="subtle"
-            className={styles.section}
-            id="progress-goals"
-            padding="md"
-            radius="lg"
-            tone="base"
-          >
-            <SectionTitle
-              support="line"
-              supportingLine={model.goals.supportingLine}
-              title={model.goals.title}
-            />
-            <div className={styles.rows}>
-              {model.goals.meters.map((meter, index) => (
-                <div className={styles.unit} key={meter.title}>
-                  {index > 0 ? <Divider /> : null}
-                  <CoverageMeter {...meter} />
-                </div>
-              ))}
-            </div>
-          </Surface>
+        {model.indicators ? (
+          <section aria-label={model.indicators.title} id="progress-indicators">
+            <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
+              <SectionTitle
+                action="none"
+                support="line"
+                supportingLine={model.indicators.supportingLine}
+                title={model.indicators.title}
+              />
+              <ul className={styles.indicators}>
+                {model.indicators.items.map((indicator, index) => (
+                  <li className={styles.indicator} key={indicator.id}>
+                    {index > 0 ? <Divider /> : null}
+                    <h3 className={styles.indicatorTitle}>{indicator.label}</h3>
+                    <p className={styles.indicatorReading} data-state={indicator.state}>
+                      {indicator.reading}
+                    </p>
+                    {indicator.meter ? <CoverageMeter {...indicator.meter} /> : null}
+                    <p className={styles.indicatorMeta}>{indicator.reference}</p>
+                    <p className={styles.indicatorMeta}>{indicator.formula}</p>
+                  </li>
+                ))}
+              </ul>
+            </Surface>
+          </section>
+        ) : null}
+
+        {model.milestones ? (
+          <section aria-label={model.milestones.title} id="progress-milestones">
+            <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
+              <SectionTitle
+                action="none"
+                support="line"
+                supportingLine={model.milestones.supportingLine}
+                title={model.milestones.title}
+              />
+              <ul className={styles.milestones}>
+                {model.milestones.items.map((milestone) => (
+                  <li
+                    className={styles.milestone}
+                    data-achieved={milestone.achieved ? "true" : "false"}
+                    key={milestone.id}
+                  >
+                    <span aria-hidden="true" className={styles.milestoneMark}>
+                      {milestone.achieved ? "✓" : "·"}
+                    </span>
+                    <span className={styles.milestoneCopy}>
+                      <span className={styles.milestoneLabel}>
+                        {milestone.label}
+                        <span className={styles.milestoneStatus}>
+                          {milestone.achieved ? " · alcanzado" : " · todavía no"}
+                        </span>
+                      </span>
+                      <span className={styles.milestoneDetail}>{milestone.detail}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Surface>
+          </section>
         ) : null}
 
         {model.missing ? <InformationBlock {...model.missing} {...missingProps} /> : null}

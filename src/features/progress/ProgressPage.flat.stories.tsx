@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { incompleteProgressFixture } from "./fixtures";
+import { flatProgressFixture } from "./fixtures";
 import { ProgressPage } from "./ProgressPage";
 
 const meta = {
-  title: "Features/Progress/Incomplete",
+  title: "Features/Progress/Neutral",
   component: ProgressPage,
-  args: { model: incompleteProgressFixture },
+  args: { model: flatProgressFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ProgressPage>;
 

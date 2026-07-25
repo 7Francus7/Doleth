@@ -1,4 +1,5 @@
-export { attentionProgressFixture } from "./attentionProgress.fixture";
+export { declinedProgressFixture } from "./declinedProgress.fixture";
 export { emptyProgressFixture } from "./emptyProgress.fixture";
-export { incompleteProgressFixture } from "./incompleteProgress.fixture";
-export { stableProgressFixture } from "./stableProgress.fixture";
+export { firstPeriodProgressFixture } from "./firstPeriodProgress.fixture";
+export { flatProgressFixture } from "./flatProgress.fixture";
+export { improvedProgressFixture } from "./improvedProgress.fixture";
