@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { InformationBlock } from "../../design-system/composites/InformationBlock";
@@ -10,6 +10,7 @@ import { SystemRail } from "../../design-system/composites/SystemRail";
 import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
+import { TextLink } from "../../design-system/primitives/TextLink";
 import { EvidenceBreakdownExperience } from "../evidence";
 import type { RealityViewModel } from "./model";
 import styles from "./RealityPage.module.css";
@@ -30,27 +31,10 @@ const ACTION_ROUTES: Record<string, string> = {
 
 export function RealityPage({ model }: RealityPageProps) {
   const router = useRouter();
-  const actionProps = styles.actions ? { className: styles.actions } : {};
   const missingProps = styles.missing ? { className: styles.missing } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
 
   const handleAction = (actionId: string) => {
-    if (actionId === "evidence") {
-      document.getElementById("reality-evidence")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
-    if (actionId === "domains") {
-      document.getElementById("reality-domains")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
     router.push(ACTION_ROUTES[actionId] ?? "/movimientos");
   };
 
@@ -63,71 +47,115 @@ export function RealityPage({ model }: RealityPageProps) {
         <EvidenceBreakdownExperience
           evidence={model.evidence}
           hero={model.hero}
-          valueActionLabel="Ver evidencia de la base patrimonial"
+          valueActionLabel="Ver cómo se calculó tu patrimonio"
         />
 
-        <Surface
-          border="subtle"
-          className={styles.composition}
-          padding="md"
-          radius="lg"
-          tone="base"
-        >
-          {model.composition.actionHref && model.composition.actionLabel ? (
-            <SectionTitle
-              action="link"
-              actionHref={model.composition.actionHref}
-              actionLabel={model.composition.actionLabel}
-              support="line"
-              supportingLine={model.composition.supportingLine}
-              title={model.composition.title}
-            />
-          ) : (
-            <SectionTitle
-              action="none"
-              support="line"
-              supportingLine={model.composition.supportingLine}
-              title={model.composition.title}
-            />
-          )}
-          <div className={styles.rows}>
-            {model.composition.rows.map((row, index) => (
-              <div className={styles.unit} key={`${row.label}-${row.value}`}>
-                {index > 0 ? <Divider /> : null}
-                <FinancialRow {...row} />
-              </div>
-            ))}
-          </div>
-          <p
-            className={styles.compositionSummary}
-            data-kind={model.composition.summaryKind}
-          >
-            {model.composition.summary}
-          </p>
-        </Surface>
+        <p className={styles.synthesis}>{model.synthesis}</p>
 
         <StabilityStatement {...model.stability} />
-        {model.actions ? <ActionStrip {...model.actions} {...actionProps} onAction={handleAction} /> : null}
 
-        {model.domains ? (
+        {model.primaryAction ? (
           <Surface
             border="subtle"
-            className={styles.section}
-            id="reality-domains"
+            className={styles.primaryAction}
             padding="md"
             radius="lg"
             tone="base"
           >
-            <SectionTitle title={model.domains.title} />
-            <div className={styles.rows}>
-              {model.domains.rows.map((row, index) => (
-                <div className={styles.unit} key={`${row.label}-${row.value}`}>
-                  {index > 0 ? <Divider /> : null}
-                  <FinancialRow {...row} />
-                </div>
-              ))}
-            </div>
+            <p className={styles.primaryActionLine}>{model.primaryAction.supportingLine}</p>
+            <Link className={styles.primaryActionLink} href={model.primaryAction.href}>
+              {model.primaryAction.label}
+            </Link>
           </Surface>
+        ) : null}
+
+        {model.sections.map((section) => (
+          <section aria-label={section.title} id={`reality-${section.id}`} key={section.id}>
+            <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
+              {section.actionHref && section.actionLabel ? (
+                <SectionTitle
+                  action="link"
+                  actionHref={section.actionHref}
+                  actionLabel={section.actionLabel}
+                  support="line"
+                  supportingLine={section.supportingLine}
+                  title={section.title}
+                />
+              ) : (
+                <SectionTitle
+                  action="none"
+                  support="line"
+                  supportingLine={section.supportingLine}
+                  title={section.title}
+                />
+              )}
+              {section.notice ? (
+                <p className={styles.notice} role="status">
+                  {section.notice}
+                </p>
+              ) : null}
+              {section.rows.length > 0 ? (
+                <div className={styles.rows}>
+                  {section.rows.map((row, index) => (
+                    <div className={styles.unit} key={`${row.label}-${row.value}`}>
+                      {index > 0 ? <Divider /> : null}
+                      <FinancialRow {...row} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <p className={styles.sectionNote} data-kind={section.noteKind ?? "neutral"}>
+                {section.note}
+              </p>
+            </Surface>
+          </section>
+        ))}
+
+        {model.quality ? (
+          <section aria-label={model.quality.title} id="reality-quality">
+            <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
+              <SectionTitle
+                action="none"
+                support="line"
+                supportingLine={model.quality.supportingLine}
+                title={model.quality.title}
+              />
+              <p className={styles.qualityState}>
+                <span className={styles.qualityLabel}>{model.quality.stateLabel}</span>
+                <span className={styles.qualityRatio}>{model.quality.ratioLabel}</span>
+              </p>
+              <p className={styles.sectionNote} data-kind="neutral">
+                {model.quality.summary}
+              </p>
+              {model.quality.notice ? (
+                <p className={styles.notice} role="status">
+                  {model.quality.notice}
+                </p>
+              ) : null}
+              <ul className={styles.signals}>
+                {model.quality.signals.map((signal) => (
+                  <li className={styles.signal} data-state={signal.state} key={signal.id}>
+                    <p className={styles.signalHead}>
+                      <span aria-hidden="true" className={styles.signalMark} />
+                      <span className={styles.signalLabel}>
+                        {signal.label}
+                        <span className={styles.signalStateText}>
+                          {signal.state === "met" ? " · cumplida" : " · falta"}
+                        </span>
+                      </span>
+                    </p>
+                    <p className={styles.signalReading}>{signal.reading}</p>
+                    <p className={styles.signalMatters}>{signal.matters}</p>
+                    {signal.actionHref && signal.actionLabel ? (
+                      <TextLink href={signal.actionHref} kind="standalone" showChevron>
+                        {signal.actionLabel}
+                      </TextLink>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </Surface>
+          </section>
         ) : null}
 
         {model.missing ? <InformationBlock {...model.missing} {...missingProps} /> : null}

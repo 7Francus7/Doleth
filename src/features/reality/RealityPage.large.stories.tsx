@@ -1,18 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { sufficientRealityFixture } from "./fixtures";
+import { largeRealityFixture } from "./fixtures";
 import { RealityPage } from "./RealityPage";
 
 const meta = {
-  title: "Features/Reality/Suficiente",
+  title: "Features/Reality/Importes grandes",
   component: RealityPage,
-  args: { model: sufficientRealityFixture },
+  args: { model: largeRealityFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof RealityPage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Activas, archivada, inversiones y compromisos, cada dominio en su lugar. */
+/** Ocho cifras y compromisos caídos: nada se desborda y la degradación se dice. */
 export const Screen: Story = {};
 
 export const Mobile320: Story = {

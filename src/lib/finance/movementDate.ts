@@ -49,6 +49,19 @@ export function describePlainDateAR(iso: string, todayIso: string): string {
   return sameYear ? dayAndMonth : `${dayAndMonth} de ${year}`;
 }
 
+/**
+ * "julio" · "julio de 2025". Nombre del mes civil `YYYY-MM`; el año aparece solo
+ * cuando el período no cae en el año en curso, para que "enero" no se confunda
+ * con el de hace doce meses.
+ */
+export function describeMonthAR(month: string, todayIso: string): string {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return month;
+  const [year, monthNumber] = month.split("-").map(Number) as [number, number];
+  const name = MONTHS[monthNumber - 1] ?? "";
+  const sameYear = ISO_DATE.test(todayIso) && todayIso.slice(0, 4) === month.slice(0, 4);
+  return sameYear ? name : `${name} de ${year}`;
+}
+
 /** ¿La fecha cae después de hoy? El dominio no acepta movimientos futuros. */
 export function isFutureDate(iso: string, todayIso: string): boolean {
   if (!ISO_DATE.test(iso) || !ISO_DATE.test(todayIso)) return false;

@@ -1,18 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { sufficientRealityFixture } from "./fixtures";
+import { partialRealityFixture } from "./fixtures";
 import { RealityPage } from "./RealityPage";
 
 const meta = {
-  title: "Features/Reality/Suficiente",
+  title: "Features/Reality/Parcial",
   component: RealityPage,
-  args: { model: sufficientRealityFixture },
+  args: { model: partialRealityFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof RealityPage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Activas, archivada, inversiones y compromisos, cada dominio en su lugar. */
+/** Sin ingresos y con un vencido: dos señales sin cumplir, ninguna inventada. */
 export const Screen: Story = {};
 
 export const Mobile320: Story = {

@@ -1,3 +1,3 @@
-export { attentionRealityEvidenceFixture } from "./attentionRealityEvidence.fixture";
-export { incompleteRealityEvidenceFixture } from "./incompleteRealityEvidence.fixture";
-export { stableRealityEvidenceFixture } from "./stableRealityEvidence.fixture";
+export { largeRealityEvidenceFixture } from "./largeRealityEvidence.fixture";
+export { partialRealityEvidenceFixture } from "./partialRealityEvidence.fixture";
+export { sufficientRealityEvidenceFixture } from "./sufficientRealityEvidence.fixture";

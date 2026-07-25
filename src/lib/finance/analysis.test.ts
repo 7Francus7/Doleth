@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  computeReality,
   coverageRatio,
   isDuplicateWithinWindow,
   reconcileCoverage,
@@ -10,6 +9,9 @@ import {
   type AnalysisMovement,
   type ActPayment,
 } from "./analysis";
+
+// La composición de /mi-realidad se prueba en `reality.test.ts`, y el cierre
+// mensual en `close.test.ts`: acá quedan las reglas compartidas del ledger.
 
 const movement = (over: Partial<AnalysisMovement> & { id: string }): AnalysisMovement => ({
   type: "EXPENSE",
@@ -31,116 +33,6 @@ describe("coverageRatio", () => {
   it("nunca supera 100 ni baja de 0", () => {
     expect(coverageRatio(300_000_00n, 100_000_00n)).toBe(100);
     expect(coverageRatio(-5_000_00n, 100_000_00n)).toBe(0);
-  });
-});
-
-describe("computeReality", () => {
-  const account = (over: Partial<import("./analysis").RealityAccount> & { id: string }) => ({
-    name: "Cuenta",
-    type: "BANK",
-    balanceCents: 0n,
-    archived: false,
-    ...over,
-  });
-
-  it("sin cuentas: completitud vacía", () => {
-    const result = computeReality({
-      accounts: [],
-      investments: [],
-      committedCents: 0n,
-      upcomingCount: 0,
-      hasMovements: false,
-      hasIncome: false,
-    });
-    expect(result.patrimonyCents).toBe(0n);
-    expect(result.completeness).toBe("empty");
-  });
-
-  it("una cuenta: información inicial", () => {
-    const result = computeReality({
-      accounts: [account({ id: "a", balanceCents: 100_000_00n })],
-      investments: [],
-      committedCents: 0n,
-      upcomingCount: 0,
-      hasMovements: false,
-      hasIncome: false,
-    });
-    expect(result.patrimonyCents).toBe(100_000_00n);
-    expect(result.activeCount).toBe(1);
-    expect(result.completeness).toBe("initial");
-  });
-
-  it("cuenta archivada conserva su saldo dentro del patrimonio total", () => {
-    const result = computeReality({
-      accounts: [
-        account({ id: "a", balanceCents: 100_000_00n }),
-        account({ id: "b", balanceCents: 40_000_00n, archived: true }),
-      ],
-      investments: [],
-      committedCents: 0n,
-      upcomingCount: 0,
-      hasMovements: true,
-      hasIncome: true,
-    });
-    expect(result.patrimonyCents).toBe(140_000_00n);
-    expect(result.activeCents).toBe(100_000_00n);
-    expect(result.archivedCents).toBe(40_000_00n);
-    expect(result.archivedCount).toBe(1);
-  });
-
-  it("inversiones se contabilizan como dominio separado, no dentro del patrimonio", () => {
-    const result = computeReality({
-      accounts: [account({ id: "a", balanceCents: 100_000_00n })],
-      investments: [{ id: "i", name: "Fondo", currentValueCents: 305_000_00n }],
-      committedCents: 0n,
-      upcomingCount: 0,
-      hasMovements: true,
-      hasIncome: true,
-    });
-    expect(result.patrimonyCents).toBe(100_000_00n);
-    expect(result.investedCents).toBe(305_000_00n);
-  });
-
-  it("compromisos no se restan del patrimonio", () => {
-    const result = computeReality({
-      accounts: [account({ id: "a", balanceCents: 100_000_00n })],
-      investments: [],
-      committedCents: 96_000_00n,
-      upcomingCount: 2,
-      hasMovements: true,
-      hasIncome: true,
-    });
-    expect(result.patrimonyCents).toBe(100_000_00n);
-    expect(result.committedCents).toBe(96_000_00n);
-  });
-
-  it("todas las señales cumplidas: información suficiente", () => {
-    const result = computeReality({
-      accounts: [account({ id: "a", balanceCents: 100_000_00n })],
-      investments: [{ id: "i", name: "Fondo", currentValueCents: 10_000_00n }],
-      committedCents: 5_000_00n,
-      upcomingCount: 1,
-      hasMovements: true,
-      hasIncome: true,
-    });
-    expect(result.metSignals).toBe(5);
-    expect(result.completeness).toBe("sufficient");
-  });
-
-  it("reconciliación: patrimonio = activo + archivado", () => {
-    const result = computeReality({
-      accounts: [
-        account({ id: "a", balanceCents: 33_000_00n }),
-        account({ id: "b", balanceCents: -7_000_00n }),
-        account({ id: "c", balanceCents: 12_000_00n, archived: true }),
-      ],
-      investments: [],
-      committedCents: 0n,
-      upcomingCount: 0,
-      hasMovements: true,
-      hasIncome: false,
-    });
-    expect(result.activeCents + result.archivedCents).toBe(result.patrimonyCents);
   });
 });
 

@@ -1,56 +1,43 @@
 import type { RealityViewModel } from "../model";
 
+/** Sin cuentas: no hay patrimonio ni composición que mostrar. */
 export const emptyRealityFixture = {
   rail: {
-    items: ["Corte de hoy", "ARS", "Personal", "Sin objetos registrados"],
-    state: "complete",
+    items: ["Corte del 24 de julio", "ARS", "Personal", "Sin base registrada"],
+    state: "partial",
     wrap: "truncate",
   },
   banner: null,
   hero: {
     scenario: "new",
-    stateText: "Tu situacion todavia no tiene composicion visible en Doleth.",
-    valueLabel: "Todavia no hay objetos registrados en tu estructura",
+    stateText: "Tu realidad financiera todavía está vacía.",
+    valueLabel: "Creá una cuenta para empezar a representar dónde está tu dinero.",
   },
   evidence: null,
-  composition: {
-    title: "Composicion por dominio",
-    supportingLine: "Lo que aporta y lo que compromete valor",
-    rows: [
-      {
-        label: "Lo que aporta valor",
-        supportingLabel: "Sin cuentas, inversiones ni reservas",
-        value: "0",
-        valuePrefix: "$",
-      },
-      {
-        label: "Lo que compromete valor",
-        supportingLabel: "Sin tarjetas ni deudas",
-        value: "0",
-        valuePrefix: "$",
-      },
-    ],
-    summary:
-      "Todavia no hay objetos que aporten o comprometan valor. El punto de partida tambien es una estructura valida.",
-    summaryKind: "neutral",
-  },
+  synthesis: "Creá una cuenta para empezar a representar dónde está tu dinero.",
+  sections: [],
   stability: {
-    children:
-      "No hay composicion que comprobar hasta registrar el primer objeto de tu situacion.",
+    children: "Creá tu primera cuenta para empezar a representar tu realidad.",
     container: "none",
     kind: "neutral",
   },
-  actions: null,
-  domains: null,
-  missing: null,
+  primaryAction: null,
+  quality: null,
+  missing: {
+    title: "Falta tu base financiera",
+    primaryLine: "Sin cuentas registradas no hay patrimonio ni composición para mostrar.",
+    causalLine: "Creá al menos una cuenta con su saldo inicial para habilitar esta pantalla.",
+    linkLabel: "Crear cuenta",
+    linkHref: "/cuentas/nueva",
+    state: "partial",
+  },
   information: {
-    title: "Evidencia de esta composicion",
-    primaryLine:
-      "No hay objetos estructurales registrados que compongan una base patrimonial visible.",
+    title: "De dónde sale esta composición",
+    primaryLine: "No usa saldos editables, estimaciones ni cifras simuladas.",
     causalLine:
-      "La ausencia de estructura tambien puede comprobarse: no hay dominios con valores que reconciliar.",
-    linkLabel: "Ver evidencia",
-    linkHref: "#reality-evidence",
-    state: "complete",
+      "El patrimonio se deriva del saldo inicial de cada cuenta y del ledger, excluyendo movimientos anulados. Las inversiones y los compromisos se contabilizan por separado y se declaran como tales.",
+    linkLabel: "Ver cuentas",
+    linkHref: "/cuentas",
+    state: "partial",
   },
 } satisfies RealityViewModel;

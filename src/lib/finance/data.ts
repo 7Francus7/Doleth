@@ -1,7 +1,7 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
-import { resilientList, resilientRead, type AnalysisMovement } from "./analysis";
+import { resilientRead, type AnalysisMovement } from "./analysis";
 import {
   equivalentMonthPeriods,
   precedingPeriod,
@@ -14,6 +14,14 @@ import {
   selectCommitments,
   type UpcomingCommitment,
 } from "./projection";
+import type { RealityAccount, RealityInvestment, RealityMovement } from "./reality";
+import {
+  monthPeriod,
+  resolvePeriod,
+  type CloseAccount,
+  type ClosePayment,
+  type ClosePeriod,
+} from "./close";
 
 /**
  * Traduce un `UpcomingPayment` de Prisma al compromiso puro que consume
@@ -325,6 +333,42 @@ function shiftDays(day: string, amount: number): Date {
   return date;
 }
 
+/** Mes civil en curso: /mi-realidad describe la actividad del mes, no de 7 días. */
+function monthPeriodDays(today: string): Period {
+  return monthPeriod(today.slice(0, 7), today);
+}
+
+/**
+ * Traduce una transacción de Prisma al movimiento puro que consumen `reality.ts`
+ * y `close.ts`. `corrected` marca el original de una corrección: sigue en el
+ * historial y ya está anulado, así que no vuelve a pesar.
+ */
+function toRealityMovement(transaction: {
+  id: string;
+  type: "EXPENSE" | "INCOME" | "TRANSFER";
+  amountCents: bigint;
+  occurredOn: Date;
+  voidedAt: Date | null;
+  description: string | null;
+  categoryId: string | null;
+  category: { name: string } | null;
+  sourceAccount: { name: string };
+  destinationAccount: { name: string } | null;
+  correction: { id: string } | null;
+}): RealityMovement {
+  return {
+    id: transaction.id,
+    type: transaction.type,
+    amountCents: transaction.amountCents,
+    occurredOn: dayString(transaction.occurredOn),
+    voided: transaction.voidedAt !== null,
+    label: movementLabel(transaction),
+    accountName: accountLabel(transaction),
+    categoryId: transaction.categoryId,
+    corrected: transaction.correction !== null,
+  };
+}
+
 export interface ChangesData {
   /** Movimientos de la ventana observada **y** de la anterior, para comparar. */
   movements: CategorizedMovement[];
@@ -478,43 +522,205 @@ export async function getProgressData(): Promise<ProgressData> {
   };
 }
 
-export async function getRealityData(): Promise<{
-  accounts: { id: string; name: string; type: string; balanceCents: bigint; archived: boolean }[];
-  investments: { id: string; name: string; currentValueCents: bigint }[];
-  committedCents: bigint;
-  upcomingCount: number;
-  hasMovements: boolean;
-  hasIncome: boolean;
-}> {
+/**
+ * Actividad por cuenta derivada del ledger: último día con movimiento no anulado
+ * y cuántos movimientos la tocaron. Sirve para decir "sin actividad registrada"
+ * con evidencia, en vez de afirmar que una cuenta está desactualizada sin regla.
+ */
+async function getAccountActivity(): Promise<
+  Map<string, { lastActivityOn: string | null; movementCount: number }>
+> {
   const db = getDb();
-  const [accounts, investments, pending, movementCount, incomeCount] = await Promise.all([
+  const entries = await db.ledgerEntry.findMany({
+    where: { transaction: { voidedAt: null } },
+    select: { accountId: true, transaction: { select: { occurredOn: true } } },
+  });
+
+  const activity = new Map<string, { lastActivityOn: string | null; movementCount: number }>();
+  for (const entry of entries) {
+    const day = dayString(entry.transaction.occurredOn);
+    const current = activity.get(entry.accountId) ?? { lastActivityOn: null, movementCount: 0 };
+    activity.set(entry.accountId, {
+      lastActivityOn:
+        current.lastActivityOn === null || day > current.lastActivityOn ? day : current.lastActivityOn,
+      movementCount: current.movementCount + 1,
+    });
+  }
+  return activity;
+}
+
+export interface RealityData {
+  today: string;
+  period: Period;
+  accounts: RealityAccount[];
+  /** `null` cuando la lectura falló: no es lo mismo que "no hay inversiones". */
+  investments: RealityInvestment[] | null;
+  /** `null` cuando la lectura falló. */
+  commitments: UpcomingCommitment[] | null;
+  movements: RealityMovement[];
+}
+
+/**
+ * Lectura de /mi-realidad. Las cuentas y sus saldos son datos centrales: si
+ * fallan, la pantalla rompe y muestra su error boundary, porque sin base no hay
+ * composición que contar. Las inversiones y los compromisos son dominios
+ * secundarios: degradan a `null` para que la pantalla diga qué no pudo leer en
+ * vez de mostrar un cero que se leería como "no tenés".
+ */
+export async function getRealityData(): Promise<RealityData> {
+  const db = getDb();
+  const today = todayInArgentina();
+  const period = monthPeriodDays(today);
+
+  const [accounts, activity, investments, pending, movements] = await Promise.all([
     getAccountsWithBalances(),
-    // Inversiones es un dominio secundario: si su lectura falla transitoriamente,
-    // /mi-realidad degrada mostrando 0 inversiones en vez de romper toda la vista
-    // (misma resiliencia que el dashboard de /ahora).
-    resilientList(() => getInvestments()),
-    db.upcomingPayment.findMany({ where: { status: "PENDING" }, select: { estimatedCents: true } }),
-    db.transaction.count({ where: { voidedAt: null } }),
-    db.transaction.count({ where: { voidedAt: null, type: "INCOME" } }),
+    getAccountActivity(),
+    resilientRead(() => getInvestments()),
+    resilientRead(() =>
+      db.upcomingPayment.findMany({
+        where: { status: "PENDING" },
+        include: { plannedAccount: true },
+        orderBy: { dueOn: "asc" },
+      }),
+    ),
+    db.transaction.findMany({
+      where: {
+        occurredOn: {
+          gte: new Date(`${period.start}T00:00:00.000Z`),
+          lt: shiftDays(period.end, 1),
+        },
+      },
+      include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+    }),
   ]);
 
+  const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
+
   return {
+    today,
+    period,
+    accounts: accounts.map((account) => {
+      const stats = activity.get(account.id) ?? { lastActivityOn: null, movementCount: 0 };
+      return {
+        id: account.id,
+        name: account.name,
+        type: account.type,
+        balanceCents: account.balanceCents,
+        initialBalanceCents: account.initialBalanceCents,
+        archived: account.status === "ARCHIVED",
+        lastActivityOn: stats.lastActivityOn,
+        movementCount: stats.movementCount,
+      };
+    }),
+    investments:
+      investments?.map((investment) => ({
+        id: investment.id,
+        name: investment.name,
+        currentValueCents: investment.currentValueCents,
+      })) ?? null,
+    commitments: pending?.map((payment) => toCommitment(payment, balanceByAccount)) ?? null,
+    movements: movements.map(toRealityMovement),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Revisión mensual (/mi-realidad/cierre). Solo lee: no escribe nada.
+// ---------------------------------------------------------------------------
+
+export interface CloseData {
+  today: string;
+  period: ClosePeriod;
+  patrimonyNowCents: bigint;
+  accounts: CloseAccount[];
+  movements: RealityMovement[];
+  payments: ClosePayment[];
+  paymentsAvailable: boolean;
+}
+
+/**
+ * Lectura de la revisión mensual. Trae los movimientos del período **y** los
+ * posteriores: sin los posteriores no se puede saber con qué terminó el mes,
+ * porque el saldo de hoy ya los tiene adentro. Los asientos se agrupan por
+ * cuenta para poder mostrar saldo inicial y final por cuenta sin recalcular
+ * nada en la vista.
+ */
+export async function getCloseData(month: string | undefined): Promise<CloseData> {
+  const db = getDb();
+  const today = todayInArgentina();
+  const period = resolvePeriod(month, today);
+  const periodStart = new Date(`${period.start}T00:00:00.000Z`);
+
+  const [accounts, movements, entries, payments] = await Promise.all([
+    getAccountsWithBalances(),
+    db.transaction.findMany({
+      where: { occurredOn: { gte: periodStart } },
+      include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+    }),
+    db.ledgerEntry.findMany({
+      where: {
+        transaction: { voidedAt: null, occurredOn: { gte: periodStart } },
+      },
+      select: {
+        accountId: true,
+        amountCents: true,
+        transaction: { select: { occurredOn: true } },
+      },
+    }),
+    resilientRead(() =>
+      db.upcomingPayment.findMany({
+        where: {
+          OR: [
+            { status: "PENDING" },
+            {
+              status: "PAID",
+              dueOn: {
+                gte: periodStart,
+                lt: shiftDays(period.end, 1),
+              },
+            },
+          ],
+        },
+        include: { plannedAccount: true },
+        orderBy: { dueOn: "asc" },
+      }),
+    ),
+  ]);
+
+  const activity = await getAccountActivity();
+  const within = new Map<string, bigint>();
+  const after = new Map<string, bigint>();
+  for (const entry of entries) {
+    const day = dayString(entry.transaction.occurredOn);
+    const bucket = day > period.end ? after : within;
+    bucket.set(entry.accountId, (bucket.get(entry.accountId) ?? 0n) + entry.amountCents);
+  }
+
+  return {
+    today,
+    period,
+    patrimonyNowCents: accounts.reduce((sum, account) => sum + account.balanceCents, 0n),
     accounts: accounts.map((account) => ({
       id: account.id,
       name: account.name,
       type: account.type,
-      balanceCents: account.balanceCents,
       archived: account.status === "ARCHIVED",
+      balanceCents: account.balanceCents,
+      withinCents: within.get(account.id) ?? 0n,
+      afterCents: after.get(account.id) ?? 0n,
+      lastActivityOn: activity.get(account.id)?.lastActivityOn ?? null,
     })),
-    investments: investments.map((investment) => ({
-      id: investment.id,
-      name: investment.name,
-      currentValueCents: investment.currentValueCents,
+    movements: movements.map(toRealityMovement),
+    payments: (payments ?? []).map((payment) => ({
+      id: payment.id,
+      concept: payment.concept,
+      dueOn: dayString(payment.dueOn),
+      amountCents: payment.estimatedCents,
+      accountName: payment.plannedAccount.name,
+      status: payment.status,
     })),
-    committedCents: pending.reduce((sum, payment) => sum + payment.estimatedCents, 0n),
-    upcomingCount: pending.length,
-    hasMovements: movementCount > 0,
-    hasIncome: incomeCount > 0,
+    paymentsAvailable: payments !== null,
   };
 }
 

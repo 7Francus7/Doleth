@@ -14,7 +14,6 @@
   padding-bottom: var(--space-72);
 }
 
-.composition,
 .section,
 .rows,
 .unit {
@@ -23,12 +22,21 @@
   flex-direction: column;
 }
 
-.composition,
 .section {
   gap: var(--space-8);
 }
 
-.compositionSummary {
+.synthesis {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+  text-wrap: pretty;
+}
+
+.sectionNote,
+.notice {
   margin: 0;
   color: var(--color-text-secondary);
   font-family: var(--font-satoshi);
@@ -36,25 +44,162 @@
   font-weight: var(--type-body-s-weight);
   letter-spacing: var(--type-body-s-tracking);
   line-height: var(--type-body-s-line);
+  text-wrap: pretty;
 }
 
-.compositionSummary[data-kind="stable"] {
+.sectionNote[data-kind="stable"] {
   color: var(--color-text-accent);
 }
 
-.compositionSummary[data-kind="attention"],
-.compositionSummary[data-kind="caution"] {
+.sectionNote[data-kind="attention"],
+.sectionNote[data-kind="caution"] {
   color: var(--color-text-attention);
 }
 
-.actions {
-  margin-top: calc(var(--space-8) * -1);
+.notice {
+  color: var(--color-text-attention);
 }
 
-.missing {
-  margin-top: calc(var(--space-8) * -1);
+/* Acción principal: una sola por pantalla, con su explicación arriba. */
+.primaryAction {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--space-12);
 }
 
+.primaryActionLine {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
+}
+
+.primaryActionLink {
+  display: inline-flex;
+  min-height: var(--space-48);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-20);
+  border-radius: var(--radius-md);
+  background: var(--color-action-primary-bg);
+  color: var(--color-action-primary-text);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  font-weight: 600;
+  line-height: var(--type-body-m-line);
+  text-align: center;
+  text-decoration: none;
+}
+
+.primaryActionLink:focus-visible {
+  outline: var(--border-width-hairline) solid var(--border-accent);
+  outline-offset: var(--space-2);
+}
+
+/* Señales de calidad: lista real, estado no dependiente del color. */
+.qualityState {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+  gap: var(--space-8);
+}
+
+.qualityLabel {
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  font-weight: 600;
+  line-height: var(--type-body-m-line);
+}
+
+.qualityRatio {
+  color: var(--color-text-secondary);
+  font-family: var(--font-ibm-plex-mono);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+.signals {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-16);
+  list-style: none;
+}
+
+.signal {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.signalHead {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  gap: var(--space-8);
+}
+
+.signalMark {
+  width: var(--space-8);
+  height: var(--space-8);
+  flex-shrink: 0;
+  margin-top: var(--space-8);
+  border: var(--border-width-hairline) solid var(--color-ink-300);
+  border-radius: var(--radius-full);
+}
+
+.signal[data-state="met"] .signalMark {
+  border-color: var(--color-mineral-600);
+  background: var(--color-mineral-600);
+}
+
+.signalLabel {
+  min-width: 0;
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  font-weight: 600;
+  line-height: var(--type-body-m-line);
+}
+
+.signalStateText {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  font-weight: var(--type-body-s-weight);
+}
+
+.signalReading {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-m-size);
+  line-height: var(--type-body-m-line);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.signal[data-state="missing"] .signalReading {
+  color: var(--color-text-attention);
+}
+
+.signalMatters {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+  text-wrap: pretty;
+}
+
+.missing,
 .information {
   margin-top: calc(var(--space-8) * -1);
 }
