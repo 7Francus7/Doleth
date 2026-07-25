@@ -4,6 +4,7 @@ import {
   isDuplicateWithinWindow,
   reconcileCoverage,
   resilientList,
+  resilientRead,
   selectRecommendation,
   signedPatrimonyEffect,
   type AnalysisMovement,
@@ -160,6 +161,23 @@ describe("resilientList", () => {
       throw new Error("conexión caída");
     });
     expect(result).toEqual([]);
+  });
+});
+
+describe("resilientRead", () => {
+  it("devuelve el valor cuando la lectura resuelve", async () => {
+    expect(await resilientRead(async () => ({ ok: true }))).toEqual({ ok: true });
+  });
+
+  it("distingue 'falló' de 'está vacío': un error da null, no una lista vacía", async () => {
+    const result = await resilientRead<number[]>(async () => {
+      throw new Error("conexión caída");
+    });
+    expect(result).toBeNull();
+  });
+
+  it("una lista vacía sigue siendo una lista vacía, no un fallo", async () => {
+    expect(await resilientRead(async () => [])).toEqual([]);
   });
 });
 

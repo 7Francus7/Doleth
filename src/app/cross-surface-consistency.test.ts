@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { formatCents } from "../lib/finance/domain";
 import { formatCentsAR } from "../lib/finance/amount";
-import { describeDateAR } from "../lib/finance/movementDate";
-import { computeCoverage } from "../lib/finance/projection";
+import { describeDateAR, describeMonthAR } from "../lib/finance/movementDate";
+import {
+  computeCoverage,
+  patrimonyCents,
+  selectCommitments,
+  type ProjectionAccount,
+  type UpcomingCommitment,
+} from "../lib/finance/projection";
 import {
   compareChangePeriods,
   compareProgressPeriods,
@@ -11,6 +17,8 @@ import {
   recentPeriod,
   type CategorizedMovement,
 } from "../lib/finance/comparison";
+import { computeReality, splitCommitments, type RealityMovement } from "../lib/finance/reality";
+import { computeClose, monthPeriod } from "../lib/finance/close";
 
 const TODAY = "2026-07-24";
 
@@ -112,6 +120,209 @@ describe("la cobertura significa lo mismo en /ahora y en /progreso", () => {
 });
 
 // ---------------------------------------------------------------------------
+// El patrimonio significa lo mismo en /mi-realidad, /cambios y /progreso, y el
+// cierre no puede contar una plata distinta de la que compone la realidad.
+// ---------------------------------------------------------------------------
+
+const JULY = monthPeriod("2026-07", TODAY);
+
+const realityMovement = (
+  over: Partial<RealityMovement> & { id: string },
+): RealityMovement => ({
+  type: "EXPENSE",
+  amountCents: 0n,
+  occurredOn: "2026-07-10",
+  voided: false,
+  label: "Movimiento",
+  accountName: "Banco",
+  categoryId: "cat",
+  ...over,
+});
+
+describe("el patrimonio es el mismo en todas las superficies", () => {
+  const balances: readonly [string, bigint, boolean][] = [
+    ["banco", 412_000_00n, false],
+    ["efectivo", 86_500_00n, false],
+    ["vieja", 40_000_00n, true],
+  ];
+
+  const projectionAccounts: ProjectionAccount[] = balances.map(([id, balanceCents, archived]) => ({
+    id,
+    name: id,
+    balanceCents,
+    archived,
+  }));
+
+  const reality = computeReality({
+    today: TODAY,
+    period: JULY,
+    accounts: balances.map(([id, balanceCents, archived]) => ({
+      id,
+      name: id,
+      type: "BANK",
+      balanceCents,
+      initialBalanceCents: balanceCents,
+      archived,
+      lastActivityOn: null,
+      movementCount: 0,
+    })),
+    investments: [{ id: "i", name: "Fondo", currentValueCents: 305_000_00n }],
+    commitments: [],
+    movements: [],
+  });
+
+  it("/mi-realidad usa la misma suma que /ahora y /proximo", () => {
+    expect(reality.patrimonyCents).toBe(patrimonyCents(projectionAccounts));
+  });
+
+  it("las inversiones no entran en ninguna de las dos definiciones", () => {
+    expect(reality.patrimonyCents).toBe(538_500_00n);
+    expect(reality.investedCents).toBe(305_000_00n);
+  });
+
+  it("el cierre de un mes sin movimientos coincide con el patrimonio actual", () => {
+    const close = computeClose({
+      period: JULY,
+      today: TODAY,
+      patrimonyNowCents: reality.patrimonyCents,
+      accounts: balances.map(([id, balanceCents, archived]) => ({
+        id,
+        name: id,
+        type: "BANK",
+        archived,
+        balanceCents,
+        withinCents: 0n,
+        afterCents: 0n,
+        lastActivityOn: null,
+      })),
+      movements: [],
+      payments: [],
+    });
+    expect(close.closingCents).toBe(reality.patrimonyCents);
+    expect(close.openingCents).toBe(reality.patrimonyCents);
+  });
+});
+
+describe("el horizonte de compromisos es uno solo", () => {
+  const commitments: UpcomingCommitment[] = [
+    {
+      id: "cerca",
+      concept: "Luz",
+      dueOn: "2026-08-01",
+      amountCents: 41_800_00n,
+      accountId: "a",
+      accountName: "Banco",
+      accountBalanceCents: 0n,
+      frequency: null,
+      createdAtMs: 0,
+    },
+    {
+      id: "lejos",
+      concept: "Patente",
+      dueOn: "2026-10-01",
+      amountCents: 73_000_00n,
+      accountId: "a",
+      accountName: "Banco",
+      accountBalanceCents: 0n,
+      frequency: null,
+      createdAtMs: 0,
+    },
+  ];
+
+  it("/mi-realidad y la proyección de /ahora cortan en el mismo día", () => {
+    const reality = splitCommitments(commitments, TODAY);
+    const projection = selectCommitments(commitments, TODAY);
+    expect(reality.horizonEnd).toBe(projection.horizonEnd);
+    expect(reality.horizonDays).toBe(projection.horizonDays);
+  });
+
+  it("lo comprometido cerca es lo mismo que descuenta la proyección", () => {
+    const reality = splitCommitments(commitments, TODAY);
+    const projection = selectCommitments(commitments, TODAY);
+    expect(reality.nearCents).toBe(projection.committedCents);
+  });
+
+  it("lo que queda afuera se declara igual en las dos", () => {
+    const reality = splitCommitments(commitments, TODAY);
+    const projection = selectCommitments(commitments, TODAY);
+    expect(reality.beyondCents).toBe(projection.excludedCents);
+  });
+});
+
+describe("el resultado del mes se cuenta una sola vez", () => {
+  const movements = [
+    realityMovement({ id: "sueldo", type: "INCOME", amountCents: 900_000_00n }),
+    realityMovement({ id: "alquiler", amountCents: 448_700_00n }),
+    realityMovement({ id: "transfer", type: "TRANSFER", amountCents: 50_000_00n }),
+    realityMovement({ id: "anulado", amountCents: 99_000_00n, voided: true }),
+    realityMovement({ id: "original", amountCents: 24_300_00n, voided: true, corrected: true }),
+    realityMovement({ id: "reemplazo", amountCents: 18_000_00n }),
+  ];
+
+  const reality = computeReality({
+    today: TODAY,
+    period: JULY,
+    accounts: [
+      {
+        id: "a",
+        name: "Banco",
+        type: "BANK",
+        balanceCents: 1_231_300_00n,
+        initialBalanceCents: 780_000_00n,
+        archived: false,
+        lastActivityOn: "2026-07-10",
+        movementCount: 4,
+      },
+    ],
+    investments: [],
+    commitments: [],
+    movements,
+  });
+
+  const close = computeClose({
+    period: JULY,
+    today: TODAY,
+    patrimonyNowCents: 1_231_300_00n,
+    accounts: [
+      {
+        id: "a",
+        name: "Banco",
+        type: "BANK",
+        archived: false,
+        balanceCents: 1_231_300_00n,
+        withinCents: 433_300_00n,
+        afterCents: 0n,
+        lastActivityOn: "2026-07-10",
+      },
+    ],
+    movements,
+    payments: [],
+  });
+
+  it("/mi-realidad y el cierre calculan el mismo resultado del período", () => {
+    expect(reality.activity.netCents).toBe(close.netCents);
+    expect(reality.activity.incomeCents).toBe(close.movements.incomeCents);
+    expect(reality.activity.expenseCents).toBe(close.movements.expenseCents);
+  });
+
+  it("la transferencia no aparece en el resultado de ninguna de las dos", () => {
+    expect(reality.activity.transferCents).toBe(close.movements.transferCents);
+    expect(reality.activity.netCents).toBe(900_000_00n - 466_700_00n);
+  });
+
+  it("el anulado y el original corregido no cuentan en ninguna de las dos", () => {
+    expect(reality.activity.movementCount).toBe(3);
+    expect(close.movements.totalCount).toBe(3);
+    expect(close.movements.voidedCount).toBe(2);
+  });
+
+  it("el cierre reconcilia con el patrimonio que muestra /mi-realidad", () => {
+    expect(close.closingCents).toBe(reality.patrimonyCents);
+    expect(close.openingCents + close.netCents).toBe(close.closingCents);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Formato compartido: un importe se lee igual en todas las pantallas.
 // ---------------------------------------------------------------------------
 
@@ -168,5 +379,13 @@ describe("fechas argentinas", () => {
   it("hoy y ayer se nombran como tales", () => {
     expect(describeDateAR(TODAY, TODAY).toLowerCase()).toContain("hoy");
     expect(describeDateAR("2026-07-23", TODAY).toLowerCase()).toContain("ayer");
+  });
+
+  it("un mes del año en curso no repite el año", () => {
+    expect(describeMonthAR("2026-07", TODAY)).toBe("julio");
+  });
+
+  it("un mes de otro año lo dice, para no confundir dos eneros", () => {
+    expect(describeMonthAR("2025-12", TODAY)).toBe("diciembre de 2025");
   });
 });
