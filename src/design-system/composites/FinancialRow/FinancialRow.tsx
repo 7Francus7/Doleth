@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Label } from "../../primitives/Label";
 import { NumericValue } from "../../primitives/NumericValue";
+import { isInternalRoute } from "../../primitives/TextLink";
 import styles from "./FinancialRow.module.css";
 
 export type FinancialRowKind = "simple" | "with-status" | "navigable";
@@ -89,7 +91,13 @@ export function FinancialRow(props: FinancialRowProps) {
   );
 
   if (props.kind === "navigable") {
-    return (
+    // Una fila navegable dentro de la app usa el router: con un `<a>` cada toque
+    // en la lista de /ahora o /proximo recargaba toda la aplicación.
+    return isInternalRoute(props.href) ? (
+      <Link aria-label={`Ver ${props.label}`} className={classes} href={props.href}>
+        {content}
+      </Link>
+    ) : (
       <a aria-label={`Ver ${props.label}`} className={classes} href={props.href}>
         {content}
       </a>

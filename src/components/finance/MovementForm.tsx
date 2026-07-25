@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   correctMovementAction,
@@ -94,6 +95,9 @@ export function MovementForm({
   const isCorrection = mode === "correction";
   const handler = isCorrection ? correctMovementAction : createMovementAction;
   const [state, action] = useActionState(handler, initialState);
+  // Cancelar y descartar vuelven con el router: recargar la app perdía el layout
+  // y el historial de vuelta al listado del que se venía.
+  const router = useRouter();
 
   const initialValues: MovementDraftValues = {
     type: defaults?.type ?? "EXPENSE",
@@ -438,7 +442,7 @@ export function MovementForm({
           <div className={styles.movementSubmitRow}>
             <Button
               kind="secondary"
-              onClick={() => (dirty ? setDiscardOpen(true) : window.location.assign(returnTo))}
+              onClick={() => (dirty ? setDiscardOpen(true) : router.push(returnTo))}
               ref={cancelRef}
               size="lg"
               type="button"
@@ -466,7 +470,7 @@ export function MovementForm({
               onClick={() => {
                 clearDraft();
                 setDiscardOpen(false);
-                window.location.assign(returnTo);
+                router.push(returnTo);
               }}
               size="lg"
               type="button"

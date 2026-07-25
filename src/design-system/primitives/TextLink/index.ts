@@ -1,2 +1,2 @@
-export { TextLink } from "./TextLink";
+export { TextLink, isInternalRoute } from "./TextLink";
 export type { TextLinkKind, TextLinkProps } from "./TextLink";

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DolethBrand } from "../../components/brand/DolethBrand";
 import { RestorableList } from "../../components/finance/RestorableList";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
@@ -22,20 +23,23 @@ export interface NextPageProps {
   model: NextViewModel;
 }
 
+/** Rutas de cada acción. Navegación interna: la app no se recarga. */
+const ACTION_ROUTES: Record<string, string> = {
+  register: "/proximo/nuevo",
+  resolve: "/proximo",
+  overdue: "/proximo",
+  "add-first-account": "/cuentas/nueva",
+  now: "/ahora",
+  history: "/movimientos",
+};
+
 export function NextPage({ model }: NextPageProps) {
+  const router = useRouter();
   const actionProps = styles.actions ? { className: styles.actions } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
 
   const handleAction = (actionId: string) => {
-    const routes: Record<string, string> = {
-      register: "/proximo/nuevo",
-      resolve: "/proximo",
-      overdue: "/proximo",
-      "add-first-account": "/cuentas/nueva",
-      now: "/ahora",
-      history: "/movimientos",
-    };
-    window.location.assign(routes[actionId] ?? "/proximo/nuevo");
+    router.push(ACTION_ROUTES[actionId] ?? "/proximo/nuevo");
   };
 
   return (

@@ -2,6 +2,7 @@
 
 import { AnimatePresence, LayoutGroup } from "motion/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DolethBrand } from "../../components/brand/DolethBrand";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
@@ -22,21 +23,24 @@ export interface NowPageProps {
   model: NowViewModel;
 }
 
+/** Rutas de cada acción. Navegación interna: la app no se recarga. */
+const ACTION_ROUTES: Record<string, string> = {
+  register: "/movimientos/nuevo",
+  resolve: "/proximo",
+  overdue: "/proximo",
+  "add-first-account": "/cuentas/nueva",
+  history: "/movimientos",
+  accounts: "/cuentas",
+  upcoming: "/proximo",
+};
+
 export function NowPage({ model }: NowPageProps) {
+  const router = useRouter();
   const actionStripProps = styles.actions ? { className: styles.actions } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
   const accounts = model.accounts ?? [];
   const handleAction = (actionId: string) => {
-    const routes: Record<string, string> = {
-      register: "/movimientos/nuevo",
-      resolve: "/proximo",
-      overdue: "/proximo",
-      "add-first-account": "/cuentas/nueva",
-      history: "/movimientos",
-      accounts: "/cuentas",
-      upcoming: "/proximo",
-    };
-    window.location.assign(routes[actionId] ?? "/movimientos/nuevo");
+    router.push(ACTION_ROUTES[actionId] ?? "/movimientos/nuevo");
   };
 
   return (
