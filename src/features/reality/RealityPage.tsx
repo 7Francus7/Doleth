@@ -50,7 +50,7 @@ export function RealityPage({ model }: RealityPageProps) {
           valueActionLabel="Ver cómo se calculó tu patrimonio"
         />
 
-        <p className={styles.synthesis}>{model.synthesis}</p>
+        {model.synthesis ? <p className={styles.synthesis}>{model.synthesis}</p> : null}
 
         <StabilityStatement {...model.stability} />
 

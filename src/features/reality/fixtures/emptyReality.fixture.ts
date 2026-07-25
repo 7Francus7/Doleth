@@ -14,7 +14,8 @@ export const emptyRealityFixture = {
     valueLabel: "Creá una cuenta para empezar a representar dónde está tu dinero.",
   },
   evidence: null,
-  synthesis: "Creá una cuenta para empezar a representar dónde está tu dinero.",
+  // El Hero ya dice qué hacer: la síntesis se calla en vez de repetirlo.
+  synthesis: "",
   sections: [],
   stability: {
     children: "Creá tu primera cuenta para empezar a representar tu realidad.",

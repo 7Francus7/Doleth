@@ -56,9 +56,16 @@ export interface RealityInvestment {
   currentValueCents: bigint;
 }
 
-/** Movimiento del período con su categoría: permite contar los que no la tienen. */
+/**
+ * Movimiento del período.
+ *
+ * No lleva categoría a propósito: el esquema exige categoría en todo movimiento
+ * que no sea transferencia (CHECK `Transaction_accounts_by_type`), y ese CHECK
+ * también bloquea el `ON DELETE SET NULL` de `Category`. Un movimiento sin
+ * categoría es inalcanzable hoy, así que ni la composición ni el cierre inventan
+ * ese estado. Si un corte futuro relaja el CHECK, la señal se agrega ahí.
+ */
 export interface RealityMovement extends AnalysisMovement {
-  categoryId: string | null;
   /** El movimiento es el original de una corrección: anulado, sin efecto vigente. */
   corrected?: boolean;
 }
@@ -106,7 +113,6 @@ export interface RealityActivity {
   /** Movimientos patrimoniales no anulados del período. */
   movementCount: number;
   voidedCount: number;
-  uncategorizedCount: number;
 }
 
 export type RealitySignalId =
@@ -304,7 +310,6 @@ export function computeReality(input: RealityInput): RealityResult {
     transferCount: transfers.length,
     movementCount: patrimonial.length,
     voidedCount: periodMovements.filter((movement) => movement.voided).length,
-    uncategorizedCount: patrimonial.filter((movement) => movement.categoryId === null).length,
   };
 
   // Señales explícitas. Cada una se puede señalar con el dedo en la pantalla.
@@ -326,7 +331,12 @@ export function computeReality(input: RealityInput): RealityResult {
   const unverifiableSignals: RealitySignalId[] = [];
   if (commitmentsAvailable) {
     signals.push({ id: "upcoming", met: commitments.totalCount > 0 });
-    signals.push({ id: "reviewed-overdue", met: commitments.overdueCount === 0 });
+    // "Sin pagos vencidos" no dice nada cuando no hay ningún pago cargado: se
+    // cumpliría por ausencia de datos e inflaría el recuento. Solo entra en el
+    // denominador cuando hay compromisos que revisar.
+    if (commitments.totalCount > 0) {
+      signals.push({ id: "reviewed-overdue", met: commitments.overdueCount === 0 });
+    }
   } else {
     unverifiableSignals.push("upcoming", "reviewed-overdue");
   }

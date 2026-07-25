@@ -33,15 +33,6 @@ export const warningsCloseFixture = {
       actionHref: "/movimientos/nuevo",
     },
     {
-      id: "uncategorized",
-      label: "Movimientos sin categoría",
-      detail:
-        "2 movimientos no tienen categoría. Cuentan en el resultado igual; lo que no se puede es explicar por qué se gastó.",
-      severity: "review",
-      actionLabel: "Ver movimientos",
-      actionHref: "/movimientos",
-    },
-    {
       id: "overdue",
       label: "Pagos vencidos sin confirmar",
       detail:

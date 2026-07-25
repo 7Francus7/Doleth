@@ -20,11 +20,11 @@ export const initialRealityFixture = {
     inlineNote: "Inversiones y compromisos se muestran aparte: no suman ni restan de esta cifra.",
     coverage: {
       title: "Calidad de la información",
-      value: 33,
+      value: 40,
       leftSummary: "Información inicial",
-      rightSummary: "2 de 6 señales",
+      rightSummary: "2 de 5 señales",
       state: "partial",
-      accessibleLabel: "Se cumplen 2 de las 6 señales de información verificadas.",
+      accessibleLabel: "Se cumplen 2 de las 5 señales de información verificadas.",
     },
   },
   evidence: null,
@@ -68,12 +68,12 @@ export const initialRealityFixture = {
     {
       id: "activity",
       title: "Actividad de julio",
-      supportingLine: "Del 1 de julio al 31 de julio",
+      supportingLine: "Del 1 de julio al 31 de julio · sin movimientos vigentes",
       rows: [
         {
           kind: "with-status",
           label: "Ingresos del mes",
-          supportingLabel: "Sin movimientos",
+          supportingLabel: "Movimientos vigentes de julio",
           status: "Sin ingresos registrados",
           value: "0",
           valuePrefix: "$",
@@ -115,7 +115,7 @@ export const initialRealityFixture = {
     title: "Calidad de la información",
     supportingLine: "Señales explícitas, no un puntaje",
     stateLabel: "Información inicial",
-    ratioLabel: "2 de 6 señales",
+    ratioLabel: "2 de 5 señales",
     summary: "Ya representaste dónde está tu dinero. Falta información para explicar cómo cambia.",
     signals: [
       {
@@ -159,13 +159,6 @@ export const initialRealityFixture = {
         matters: "Sin compromisos cargados la proyección solo refleja el dinero actual.",
         actionLabel: "Cargar un pago",
         actionHref: "/proximo/nuevo",
-      },
-      {
-        id: "reviewed-overdue",
-        label: "Sin pagos vencidos por revisar",
-        state: "met",
-        reading: "Ningún pago cargado quedó con la fecha pasada.",
-        matters: "Un pago vencido sin confirmar puede significar que ya lo pagaste y falta registrarlo.",
       },
     ],
   },

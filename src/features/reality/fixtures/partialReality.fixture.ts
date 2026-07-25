@@ -85,12 +85,12 @@ export const partialRealityFixture = {
     {
       id: "activity",
       title: "Actividad de julio",
-      supportingLine: "Del 1 de julio al 31 de julio",
+      supportingLine: "Del 1 de julio al 31 de julio · 4 movimientos vigentes",
       rows: [
         {
           kind: "with-status",
           label: "Ingresos del mes",
-          supportingLabel: "4 movimientos en total",
+          supportingLabel: "Movimientos vigentes de julio",
           status: "Sin ingresos registrados",
           value: "0",
           valuePrefix: "$",

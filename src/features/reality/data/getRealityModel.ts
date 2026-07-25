@@ -310,7 +310,7 @@ function buildSections(result: RealityResult, today: string): RealitySection[] {
     {
       kind: "with-status",
       label: "Ingresos del mes",
-      supportingLabel: `${activity.movementCount === 0 ? "Sin movimientos" : `${activity.movementCount} ${plural(activity.movementCount, "movimiento", "movimientos")} en total`}`,
+      supportingLabel: `Movimientos vigentes de ${monthLabel}`,
       status: activity.incomeCents > 0n ? "Registrados y no anulados" : "Sin ingresos registrados",
       value: money(activity.incomeCents),
       valuePrefix: "$",
@@ -340,10 +340,17 @@ function buildSections(result: RealityResult, today: string): RealitySection[] {
       ? ` ${activity.voidedCount} ${plural(activity.voidedCount, "movimiento anulado sigue", "movimientos anulados siguen")} en el historial sin efecto sobre las cifras.`
       : "";
 
+  // El total de movimientos va en la línea de la sección, no colgado de
+  // "Ingresos": ahí se leía como si todos los movimientos fueran ingresos.
+  const activityCount =
+    activity.movementCount === 0
+      ? "sin movimientos vigentes"
+      : `${activity.movementCount} ${plural(activity.movementCount, "movimiento vigente", "movimientos vigentes")}`;
+
   sections.push({
     id: "activity",
     title: `Actividad de ${monthLabel}`,
-    supportingLine: `Del ${describePlainDateAR(result.period.start, today)} al ${describePlainDateAR(result.period.end, today)}`,
+    supportingLine: `Del ${describePlainDateAR(result.period.start, today)} al ${describePlainDateAR(result.period.end, today)} · ${activityCount}`,
     rows: activityRows,
     note: `Solo cuentan los movimientos vigentes del período.${transferNote}${voidedNote}`,
     noteKind: "neutral",
@@ -488,9 +495,9 @@ export async function getRealityModel(): Promise<RealityViewModel> {
     banner: null,
     hero,
     evidence: buildEvidence(result, data.today),
-    synthesis: hasAccounts
-      ? buildSynthesis(result)
-      : "Creá una cuenta para empezar a representar dónde está tu dinero.",
+    // Sin cuentas el Hero ya dice qué hacer: repetirlo acá sería la misma frase
+    // dos veces seguidas.
+    synthesis: hasAccounts ? buildSynthesis(result) : "",
     sections: hasAccounts ? buildSections(result, data.today) : [],
     stability: {
       children: hasAccounts

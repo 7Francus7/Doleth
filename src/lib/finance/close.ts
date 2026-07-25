@@ -186,7 +186,6 @@ export interface CloseMovements {
   expenseCount: number;
   voidedCount: number;
   correctedCount: number;
-  uncategorizedCount: number;
   /** Movimientos patrimoniales no anulados del período. */
   totalCount: number;
 }
@@ -206,7 +205,6 @@ export type CloseWarningId =
   | "period-open"
   | "no-movements"
   | "no-income"
-  | "uncategorized"
   | "overdue"
   | "account-without-activity"
   | "archived-accounts"
@@ -295,7 +293,6 @@ export function computeClose(input: CloseInput): CloseResult {
     // El original de una corrección queda anulado: se cuenta como corregido, no
     // como un gasto más. Sin ese dato el usuario vería dos importes por un hecho.
     correctedCount: periodMovements.filter((movement) => movement.corrected === true).length,
-    uncategorizedCount: patrimonial.filter((movement) => movement.categoryId === null).length,
     totalCount: patrimonial.length,
   };
 
@@ -333,13 +330,6 @@ export function computeClose(input: CloseInput): CloseResult {
     warnings.push({ id: "no-movements", count: 0, severity: "review" });
   } else if (income.length === 0) {
     warnings.push({ id: "no-income", count: 0, severity: "review" });
-  }
-  if (movements.uncategorizedCount > 0) {
-    warnings.push({
-      id: "uncategorized",
-      count: movements.uncategorizedCount,
-      severity: "review",
-    });
   }
   if (!paymentsAvailable) {
     warnings.push({ id: "payments-unavailable", count: 0, severity: "info" });

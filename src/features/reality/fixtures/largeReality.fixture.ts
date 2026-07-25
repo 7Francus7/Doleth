@@ -98,12 +98,12 @@ export const largeRealityFixture = {
     {
       id: "activity",
       title: "Actividad de julio",
-      supportingLine: "Del 1 de julio al 31 de julio",
+      supportingLine: "Del 1 de julio al 31 de julio · 12 movimientos vigentes",
       rows: [
         {
           kind: "with-status",
           label: "Ingresos del mes",
-          supportingLabel: "12 movimientos en total",
+          supportingLabel: "Movimientos vigentes de julio",
           status: "Registrados y no anulados",
           value: "24.800.000",
           valuePrefix: "$",

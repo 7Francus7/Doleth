@@ -350,7 +350,6 @@ function toRealityMovement(transaction: {
   occurredOn: Date;
   voidedAt: Date | null;
   description: string | null;
-  categoryId: string | null;
   category: { name: string } | null;
   sourceAccount: { name: string };
   destinationAccount: { name: string } | null;
@@ -364,7 +363,6 @@ function toRealityMovement(transaction: {
     voided: transaction.voidedAt !== null,
     label: movementLabel(transaction),
     accountName: accountLabel(transaction),
-    categoryId: transaction.categoryId,
     corrected: transaction.correction !== null,
   };
 }

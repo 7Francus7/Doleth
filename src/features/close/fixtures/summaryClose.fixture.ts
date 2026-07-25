@@ -17,13 +17,13 @@ export const summaryCloseFixture = {
   blocks: [],
   warnings: [
     {
-      id: "uncategorized",
-      label: "Movimientos sin categoría",
+      id: "no-income",
+      label: "Sin ingresos registrados",
       detail:
-        "2 movimientos no tienen categoría. Cuentan en el resultado igual; lo que no se puede es explicar por qué se gastó.",
+        "No encontramos ingresos en el período. Si cobraste y no lo registraste, el resultado del mes va a mostrar solo gastos.",
       severity: "review",
-      actionLabel: "Ver movimientos",
-      actionHref: "/movimientos",
+      actionLabel: "Registrar ingreso",
+      actionHref: "/movimientos/nuevo",
     },
     {
       id: "overdue",

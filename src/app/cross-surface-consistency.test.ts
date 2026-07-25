@@ -135,7 +135,6 @@ const realityMovement = (
   voided: false,
   label: "Movimiento",
   accountName: "Banco",
-  categoryId: "cat",
   ...over,
 });
 

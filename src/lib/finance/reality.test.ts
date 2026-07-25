@@ -30,7 +30,6 @@ const movement = (over: Partial<RealityMovement> & { id: string }): RealityMovem
   voided: false,
   label: "Movimiento",
   accountName: "Banco",
-  categoryId: "cat",
   ...over,
 });
 
@@ -264,18 +263,6 @@ describe("actividad del período", () => {
     expect(result.activity.expenseCents).toBe(10_000_00n);
   });
 
-  it("cuenta los movimientos sin categoría sin llamarlos error", () => {
-    const result = computeReality(
-      input({
-        ...base,
-        movements: [
-          movement({ id: "sin", amountCents: 5_000_00n, categoryId: null }),
-          movement({ id: "con", amountCents: 5_000_00n }),
-        ],
-      }),
-    );
-    expect(result.activity.uncategorizedCount).toBe(1);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -360,6 +347,13 @@ describe("señales de calidad", () => {
     ]);
   });
 
+  it("sin pagos cargados, 'sin vencidos' no se cumple por ausencia de datos", () => {
+    const result = computeReality({ ...full(), commitments: [] });
+    expect(result.signals.map((signal) => signal.id)).not.toContain("reviewed-overdue");
+    expect(result.totalSignals).toBe(5);
+    expect(result.metSignals).toBe(4);
+  });
+
   it("todas cumplidas: completa para análisis", () => {
     const result = computeReality(full());
     expect(result.metSignals).toBe(6);
@@ -406,6 +400,19 @@ describe("señales de calidad", () => {
   it("señal de compromisos: sin pagos cargados no se cumple", () => {
     const result = computeReality(input({ accounts: [account({ id: "a", balanceCents: 10n })] }));
     expect(result.signals.find((signal) => signal.id === "upcoming")?.met).toBe(false);
+  });
+
+  it("solo saldo inicial: dos de cinco señales, información inicial", () => {
+    const result = computeReality(
+      input({
+        accounts: [
+          account({ id: "a", balanceCents: 180_000_00n, initialBalanceCents: 180_000_00n, movementCount: 0, lastActivityOn: null }),
+        ],
+      }),
+    );
+    expect(result.metSignals).toBe(2);
+    expect(result.totalSignals).toBe(5);
+    expect(result.completeness).toBe("initial");
   });
 
   it("señal de vencidos: un vencido sin confirmar la deja sin cumplir", () => {

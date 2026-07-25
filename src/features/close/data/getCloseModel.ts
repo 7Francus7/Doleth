@@ -73,12 +73,6 @@ const WARNING_COPY: Record<
       "No encontramos ingresos en el período. Si cobraste y no lo registraste, el resultado del mes va a mostrar solo gastos.",
     action: { label: "Registrar ingreso", href: "/movimientos/nuevo" },
   },
-  uncategorized: {
-    label: "Movimientos sin categoría",
-    detail: (count) =>
-      `${count} ${plural(count, "movimiento no tiene", "movimientos no tienen")} categoría. Cuentan en el resultado igual; lo que no se puede es explicar por qué se gastó.`,
-    action: { label: "Ver movimientos", href: "/movimientos" },
-  },
   overdue: {
     label: "Pagos vencidos sin confirmar",
     detail: (count) =>
@@ -228,17 +222,6 @@ function movementBlock(result: CloseResult): CloseBlock[] {
       valuePrefix: "$",
     });
   }
-  if (movements.uncategorizedCount > 0) {
-    excluded.push({
-      kind: "with-status",
-      label: "Movimientos sin categoría",
-      supportingLabel: `${movements.uncategorizedCount} ${plural(movements.uncategorizedCount, "movimiento", "movimientos")} del período`,
-      status: "Cuentan en el resultado, no explican la causa",
-      value: "0",
-      valuePrefix: "$",
-    });
-  }
-
   const blocks: CloseBlock[] = [
     {
       id: "movements",

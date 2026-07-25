@@ -40,6 +40,10 @@
 }
 
 .kind-standalone {
+  /* El área tocable no puede ser solo la altura de la línea: 18 px queda por
+     debajo del mínimo de WCAG 2.2 (24 × 24). Se sube el alto sin cambiar el
+     ritmo vertical de las pantallas ya congeladas. */
+  min-height: var(--space-24);
   font-size: var(--type-label-l-size);
   font-weight: var(--type-label-l-weight);
   letter-spacing: var(--type-label-l-tracking);

@@ -38,7 +38,6 @@ const movement = (over: Partial<RealityMovement> & { id: string }): RealityMovem
   voided: false,
   label: "Movimiento",
   accountName: "Banco",
-  categoryId: "cat",
   ...over,
 });
 
@@ -260,19 +259,6 @@ describe("qué cuenta y qué no", () => {
     expect(result.movements.totalCount).toBe(1);
   });
 
-  it("los movimientos sin categoría se cuentan sin dejar de sumar", () => {
-    const result = computeClose(
-      input({
-        ...base,
-        movements: [
-          movement({ id: "sin", amountCents: 5_000_00n, categoryId: null }),
-          movement({ id: "con", amountCents: 3_000_00n }),
-        ],
-      }),
-    );
-    expect(result.movements.uncategorizedCount).toBe(1);
-    expect(result.movements.expenseCents).toBe(8_000_00n);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -357,20 +343,18 @@ describe("advertencias honestas", () => {
     expect(ids).not.toContain("no-movements");
   });
 
-  it("cuenta los movimientos sin categoría", () => {
+  it("no inventa el estado 'sin categoría': el esquema no lo permite", () => {
+    // El CHECK `Transaction_accounts_by_type` exige categoría en todo movimiento
+    // que no sea transferencia, y también bloquea el ON DELETE SET NULL de
+    // Category. Advertir por un estado inalcanzable sería inventarlo.
     const result = computeClose(
       input({
         patrimonyNowCents: 1n,
         accounts: [account({ id: "a", balanceCents: 1n })],
-        movements: [
-          movement({ id: "a", amountCents: 100n, categoryId: null }),
-          movement({ id: "b", amountCents: 100n, categoryId: null }),
-        ],
+        movements: [movement({ id: "a", amountCents: 100n })],
       }),
     );
-    const warning = result.warnings.find((item) => item.id === "uncategorized");
-    expect(warning?.count).toBe(2);
-    expect(warning?.severity).toBe("review");
+    expect(result.warnings.map((warning) => warning.id)).not.toContain("uncategorized");
   });
 
   it("una cuenta sin actividad es informativa, no un error", () => {
@@ -408,7 +392,7 @@ describe("advertencias honestas", () => {
       input({
         patrimonyNowCents: 100_000_00n,
         accounts: [account({ id: "a", balanceCents: 100_000_00n, withinCents: -20_000_00n })],
-        movements: [movement({ id: "g", amountCents: 20_000_00n, categoryId: null })],
+        movements: [movement({ id: "g", amountCents: 20_000_00n })],
         payments: [payment({ id: "v", dueOn: "2026-07-01" })],
       }),
     );

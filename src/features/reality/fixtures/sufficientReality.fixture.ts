@@ -129,12 +129,12 @@ export const sufficientRealityFixture = {
     {
       id: "activity",
       title: "Actividad de julio",
-      supportingLine: "Del 1 de julio al 31 de julio",
+      supportingLine: "Del 1 de julio al 31 de julio · 9 movimientos vigentes",
       rows: [
         {
           kind: "with-status",
           label: "Ingresos del mes",
-          supportingLabel: "9 movimientos en total",
+          supportingLabel: "Movimientos vigentes de julio",
           status: "Registrados y no anulados",
           value: "900.000",
           valuePrefix: "$",
