@@ -19,12 +19,14 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
   const requestedType = first(query.type);
   const type = requestedType === "EXPENSE" || requestedType === "INCOME" || requestedType === "TRANSFER" ? requestedType : undefined;
   const accountId = first(query.accountId) || undefined;
-  const hasActiveFilters = month !== currentMonth || Boolean(type) || Boolean(accountId);
-  const data = await getMovements({ month, ...(type ? { type } : {}), ...(accountId ? { accountId } : {}) });
+  const categoryId = first(query.categoryId) || undefined;
+  const hasActiveFilters = month !== currentMonth || Boolean(type) || Boolean(accountId) || Boolean(categoryId);
+  const data = await getMovements({ month, ...(type ? { type } : {}), ...(accountId ? { accountId } : {}), ...(categoryId ? { categoryId } : {}) });
   const listPath = normalizeListPath("/movimientos", {
     ...(month !== currentMonth ? { month } : {}),
     ...(type ? { type } : {}),
     ...(accountId ? { accountId } : {}),
+    ...(categoryId ? { categoryId } : {}),
   });
   const detailHref = (id: string) => `/movimientos/${id}?volver=${encodeURIComponent(listPath)}`;
   return (
@@ -33,6 +35,7 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
         <label className={styles.field}><span>Mes</span><input defaultValue={month} name="month" type="month" /></label>
         <label className={styles.field}><span>Tipo</span><select defaultValue={type ?? ""} name="type"><option value="">Todos</option><option value="EXPENSE">Gastos</option><option value="INCOME">Ingresos</option><option value="TRANSFER">Transferencias</option></select></label>
         <label className={styles.field}><span>Cuenta</span><select defaultValue={accountId ?? ""} name="accountId"><option value="">Todas</option>{data.accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+        {categoryId ? <input name="categoryId" type="hidden" value={categoryId} /> : null}
         <button className={styles.filterButton} type="submit">Aplicar filtros</button>
       </form>
       {data.movements.length ? <RestorableList className={styles.list} restorationKey={listPath}>{data.movements.map((movement) => (

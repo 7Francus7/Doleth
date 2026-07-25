@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { emptyChangesFixture } from "./fixtures";
+import { downChangesFixture } from "./fixtures";
 import { ChangesPage } from "./ChangesPage";
 
 const meta = {
-  title: "Features/Changes/Sin base",
+  title: "Features/Changes/Baja",
   component: ChangesPage,
-  args: { model: emptyChangesFixture },
+  args: { model: downChangesFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ChangesPage>;
 

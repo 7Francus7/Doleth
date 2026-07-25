@@ -1,68 +1,78 @@
 import type { ChangesViewModel } from "../model";
-import { emptyChangeEvidenceFixture } from "../evidence";
 
+/** Sin cuentas no hay patrimonio ni período anterior: no hay cambio que leer. */
 export const emptyChangesFixture = {
   rail: {
-    items: ["Ultimos 7 dias", "ARS", "Personal", "Informacion completa"],
-    state: "complete",
+    items: ["Últimos 7 días", "ARS", "Personal", "Comparación parcial"],
+    state: "partial",
     wrap: "truncate",
   },
   banner: null,
   hero: {
-    scenario: "stable",
-    stateText: "Hoy no estas distinto por hechos materiales recientes.",
-    value: "0",
-    valuePrefix: "$",
-    valueLabel: "Cambio neto visible",
-    inlineNote: "La estabilidad reciente tambien es una respuesta valida.",
-    coverage: {
-      title: "Explicacion conocida",
-      value: 0,
-      leftSummary: "Sin cambios materiales",
-      rightSummary: "Nada por explicar",
-      state: "empty",
-    },
+    scenario: "new",
+    stateText: "Todavía no hay una base para leer cambios.",
+    valueLabel: "Creá una cuenta con su saldo real para empezar a leer cambios.",
   },
-  evidence: emptyChangeEvidenceFixture,
+  evidence: null,
   comparison: {
-    title: "Comparacion breve",
-    supportingLine: "Base previa y lectura actual",
+    title: "Período comparado",
+    supportingLine:
+      "del viernes 18 al jueves 24 de julio contra del viernes 11 al jueves 17 de julio",
     rows: [
+      { label: "Patrimonio al inicio", supportingLabel: "Viernes 18 de julio", value: "0", valuePrefix: "$" },
+      { label: "Patrimonio hoy", supportingLabel: "Hoy", value: "0", valuePrefix: "$" },
       {
-        label: "Base previa visible",
-        supportingLabel: "Ultima lectura comparable",
-        value: "320.000",
+        kind: "with-status",
+        label: "Diferencia",
+        supportingLabel: "Sin porcentaje válido",
+        status: "Sin base",
+        value: "0",
         valuePrefix: "$",
+        state: "default",
       },
       {
-        label: "Lectura actual",
-        supportingLabel: "Hoy - Sin variacion material",
-        value: "320.000",
+        label: "Mismo período anterior (7 días)",
+        supportingLabel: "Sin movimientos registrados",
+        value: "0",
         valuePrefix: "$",
       },
     ],
     summary:
-      "La base previa y la lectura actual no muestran una variacion reciente que cambie la situacion visible hoy.",
+      "Sin cuentas registradas no hay patrimonio ni período anterior contra el cual comparar.",
     summaryKind: "neutral",
-    actionLabel: "Ver evidencia",
-    actionHref: "#changes-evidence",
   },
+  causes: null,
+  transfers: null,
+  notice: null,
   stability: {
-    children: "No aparece un hecho reciente que hoy cambie materialmente la lectura actual.",
+    children: "Creá tu primera cuenta con su saldo real para empezar a leer cambios.",
     container: "none",
     kind: "neutral",
   },
-  actions: null,
-  explained: null,
-  missing: null,
+  actions: {
+    primary: "add-first-account",
+    primaryLabel: "Crear una cuenta",
+    secondaryActions: [
+      { id: "upcoming", label: "Ver próximos pagos" },
+      { id: "history", label: "Ver movimientos" },
+    ],
+    state: "default",
+  },
+  missing: {
+    title: "Falta tu base financiera",
+    primaryLine: "Sin cuentas registradas no hay patrimonio ni lectura previa para comparar.",
+    causalLine: "Creá al menos una cuenta con su saldo inicial para habilitar esta lectura.",
+    linkLabel: "Crear cuenta",
+    linkHref: "/cuentas/nueva",
+    state: "partial",
+  },
   information: {
-    title: "Evidencia de esta explicacion",
-    primaryLine:
-      "No aparecen hechos recientes con impacto material suficiente para alterar la lectura actual.",
+    title: "De dónde sale esta lectura",
+    primaryLine: "0 movimientos considerados del viernes 18 al jueves 24 de julio; 0 en el período anterior.",
     causalLine:
-      "La ausencia de cambio relevante tambien puede comprobarse con la ventana observada y su cobertura.",
-    linkLabel: "Ver evidencia",
-    linkHref: "#changes-evidence",
-    state: "complete",
+      "El cambio se deriva del ledger real: movimientos no anulados, sin transferencias internas y sin contar dos veces una corrección.",
+    linkLabel: "Ver movimientos",
+    linkHref: "/movimientos",
+    state: "partial",
   },
 } satisfies ChangesViewModel;

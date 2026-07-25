@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  computeChanges,
-  computeProgress,
   computeReality,
   coverageRatio,
   isDuplicateWithinWindow,
@@ -23,99 +21,6 @@ const movement = (over: Partial<AnalysisMovement> & { id: string }): AnalysisMov
   ...over,
 });
 
-describe("computeChanges", () => {
-  it("sin movimientos: neto cero, referencia = actual, plano", () => {
-    const result = computeChanges([], 320_000_00n);
-    expect(result.netCents).toBe(0n);
-    expect(result.referenceCents).toBe(320_000_00n);
-    expect(result.currentCents).toBe(320_000_00n);
-    expect(result.direction).toBe("flat");
-    expect(result.hasMovements).toBe(false);
-  });
-
-  it("ingreso sube el patrimonio y aparece como causa entrante", () => {
-    const result = computeChanges(
-      [movement({ id: "a", type: "INCOME", amountCents: 58_000_00n, label: "Cobro" })],
-      419_820_00n,
-    );
-    expect(result.netCents).toBe(58_000_00n);
-    expect(result.referenceCents).toBe(361_820_00n);
-    expect(result.direction).toBe("up");
-    expect(result.causes).toHaveLength(1);
-    expect(result.causes[0]!.direction).toBe("in");
-  });
-
-  it("gasto baja el patrimonio", () => {
-    const result = computeChanges(
-      [movement({ id: "a", type: "EXPENSE", amountCents: 21_500_00n })],
-      100_000_00n,
-    );
-    expect(result.netCents).toBe(-21_500_00n);
-    expect(result.direction).toBe("down");
-    expect(result.causes[0]!.direction).toBe("out");
-  });
-
-  it("transferencia interna no cuenta como cambio patrimonial ni como causa", () => {
-    const result = computeChanges(
-      [
-        movement({ id: "t", type: "TRANSFER", amountCents: 50_000_00n, label: "Banco → Efectivo" }),
-        movement({ id: "i", type: "INCOME", amountCents: 10_000_00n }),
-      ],
-      210_000_00n,
-    );
-    expect(result.netCents).toBe(10_000_00n);
-    expect(result.causes.map((cause) => cause.id)).toEqual(["i"]);
-  });
-
-  it("movimiento anulado no aparece como causa ni afecta el neto", () => {
-    const result = computeChanges(
-      [
-        movement({ id: "v", type: "EXPENSE", amountCents: 99_000_00n, voided: true }),
-        movement({ id: "e", type: "EXPENSE", amountCents: 5_000_00n }),
-      ],
-      200_000_00n,
-    );
-    expect(result.netCents).toBe(-5_000_00n);
-    expect(result.causes.map((cause) => cause.id)).toEqual(["e"]);
-  });
-
-  it("corrección no duplica impacto: solo cuenta el reemplazo no anulado", () => {
-    // El original quedó anulado (voided) y el reemplazo vive como movimiento nuevo.
-    const result = computeChanges(
-      [
-        movement({ id: "orig", type: "EXPENSE", amountCents: 30_000_00n, voided: true }),
-        movement({ id: "fix", type: "EXPENSE", amountCents: 12_000_00n }),
-      ],
-      88_000_00n,
-    );
-    expect(result.netCents).toBe(-12_000_00n);
-    expect(result.causes).toHaveLength(1);
-  });
-
-  it("ordena causas por impacto absoluto descendente de forma determinista", () => {
-    const result = computeChanges(
-      [
-        movement({ id: "small", type: "EXPENSE", amountCents: 1_000_00n }),
-        movement({ id: "big", type: "INCOME", amountCents: 40_000_00n }),
-        movement({ id: "mid", type: "EXPENSE", amountCents: 9_000_00n }),
-      ],
-      500_000_00n,
-    );
-    expect(result.causes.map((cause) => cause.id)).toEqual(["big", "mid", "small"]);
-  });
-
-  it("reconcilia: referencia + neto = actual", () => {
-    const result = computeChanges(
-      [
-        movement({ id: "a", type: "INCOME", amountCents: 12_345_00n }),
-        movement({ id: "b", type: "EXPENSE", amountCents: 6_789_00n }),
-      ],
-      654_321_00n,
-    );
-    expect(result.referenceCents + result.netCents).toBe(result.currentCents);
-  });
-});
-
 describe("coverageRatio", () => {
   it("sin compromiso: 100", () => {
     expect(coverageRatio(0n, 0n)).toBe(100);
@@ -126,73 +31,6 @@ describe("coverageRatio", () => {
   it("nunca supera 100 ni baja de 0", () => {
     expect(coverageRatio(300_000_00n, 100_000_00n)).toBe(100);
     expect(coverageRatio(-5_000_00n, 100_000_00n)).toBe(0);
-  });
-});
-
-describe("computeProgress", () => {
-  const baseInput = {
-    currentMonthMovements: [] as AnalysisMovement[],
-    previousMonthMovements: [] as AnalysisMovement[],
-    hasPreviousPeriod: false,
-    availableCents: 0n,
-    upcomingCents: 0n,
-    daysWithActivity: 0,
-    elapsedDays: 0,
-  };
-
-  it("sin datos: neto cero y sin período previo", () => {
-    const result = computeProgress(baseInput);
-    expect(result.currentNetCents).toBe(0n);
-    expect(result.hasPreviousPeriod).toBe(false);
-    expect(result.direction).toBe("flat");
-    expect(result.consistency).toBe(0);
-  });
-
-  it("un solo período: no declara dirección de mejora ni retroceso", () => {
-    const result = computeProgress({
-      ...baseInput,
-      currentMonthMovements: [movement({ id: "a", type: "INCOME", amountCents: 10_000_00n })],
-      hasPreviousPeriod: false,
-    });
-    expect(result.currentNetCents).toBe(10_000_00n);
-    expect(result.direction).toBe("flat");
-  });
-
-  it("dos períodos comparables con mejora", () => {
-    const result = computeProgress({
-      ...baseInput,
-      currentMonthMovements: [movement({ id: "a", type: "INCOME", amountCents: 30_000_00n })],
-      previousMonthMovements: [movement({ id: "b", type: "INCOME", amountCents: 10_000_00n })],
-      hasPreviousPeriod: true,
-    });
-    expect(result.deltaCents).toBe(20_000_00n);
-    expect(result.direction).toBe("improved");
-  });
-
-  it("dos períodos comparables con retroceso", () => {
-    const result = computeProgress({
-      ...baseInput,
-      currentMonthMovements: [movement({ id: "a", type: "EXPENSE", amountCents: 30_000_00n })],
-      previousMonthMovements: [movement({ id: "b", type: "INCOME", amountCents: 10_000_00n })],
-      hasPreviousPeriod: true,
-    });
-    expect(result.direction).toBe("declined");
-  });
-
-  it("transferencia interna no cuenta como progreso", () => {
-    const result = computeProgress({
-      ...baseInput,
-      currentMonthMovements: [movement({ id: "t", type: "TRANSFER", amountCents: 50_000_00n })],
-      hasPreviousPeriod: true,
-      previousMonthMovements: [],
-    });
-    expect(result.currentNetCents).toBe(0n);
-    expect(result.direction).toBe("flat");
-  });
-
-  it("consistencia = días con actividad / días transcurridos", () => {
-    const result = computeProgress({ ...baseInput, daysWithActivity: 6, elapsedDays: 20 });
-    expect(result.consistency).toBe(30);
   });
 });
 

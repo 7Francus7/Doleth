@@ -2,6 +2,12 @@ import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
 import { resilientList, resilientRead, type AnalysisMovement } from "./analysis";
+import {
+  precedingPeriod,
+  recentPeriod,
+  type CategorizedMovement,
+  type Period,
+} from "./comparison";
 import type { UpcomingCommitment } from "./projection";
 
 /**
@@ -169,6 +175,8 @@ export interface MovementFilters {
   month: string;
   type?: "EXPENSE" | "INCOME" | "TRANSFER";
   accountId?: string;
+  /** Filtro por categoría: lo usa cada causa de /cambios para mostrar su detalle. */
+  categoryId?: string;
 }
 
 export async function getMovements(filters: MovementFilters) {
@@ -182,6 +190,7 @@ export async function getMovements(filters: MovementFilters) {
       where: {
         occurredOn: { gte: start, lt: end },
         ...(filters.type ? { type: filters.type } : {}),
+        ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
         ...accountFilter,
       },
       include: { sourceAccount: true, destinationAccount: true, category: true },
@@ -311,33 +320,55 @@ function shiftDays(day: string, amount: number): Date {
   return date;
 }
 
-export async function getChangesData(): Promise<{
-  movements: AnalysisMovement[];
-  currentPatrimonyCents: bigint;
+export interface ChangesData {
+  /** Movimientos de la ventana observada **y** de la anterior, para comparar. */
+  movements: CategorizedMovement[];
+  period: Period;
+  previous: Period;
+  patrimonyCents: bigint;
   today: string;
-  windowStart: string;
-  windowDays: number;
   hasAccounts: boolean;
-}> {
+  /** Día del movimiento más antiguo registrado: define si el período anterior existe. */
+  firstMovementDay: string | null;
+  /** `null` cuando el desglose por causas no pudo leerse. */
+  causesAvailable: boolean;
+}
+
+/**
+ * Lectura de /cambios. Trae las dos ventanas de una sola vez: comparar exige el
+ * período anterior completo, no solo el actual. El patrimonio y las cuentas son
+ * datos centrales; el desglose por categorías es secundario y puede degradar
+ * declarándolo, porque el cambio total sigue siendo verdadero sin él.
+ */
+export async function getChangesData(windowDays = 7): Promise<ChangesData> {
   const db = getDb();
   const today = todayInArgentina();
-  const windowDays = 7;
-  const start = shiftDays(today, -(windowDays - 1));
-  const end = shiftDays(today, 1);
+  const period = recentPeriod(today, windowDays);
+  const previous = precedingPeriod(period);
 
-  const [transactions, accounts] = await Promise.all([
-    db.transaction.findMany({
-      where: { voidedAt: null, occurredOn: { gte: start, lt: end } },
-      include: { sourceAccount: true, destinationAccount: true, category: true },
-      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
-    }),
+  const [accounts, transactions, oldest] = await Promise.all([
     getAccountsWithBalances(),
+    resilientRead(() =>
+      db.transaction.findMany({
+        where: {
+          voidedAt: null,
+          occurredOn: { gte: new Date(`${previous.start}T00:00:00.000Z`), lt: shiftDays(period.end, 1) },
+        },
+        include: { sourceAccount: true, destinationAccount: true, category: true },
+        orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+      }),
+    ),
+    resilientRead(() =>
+      db.transaction.findFirst({
+        where: { voidedAt: null },
+        orderBy: { occurredOn: "asc" },
+        select: { occurredOn: true },
+      }),
+    ),
   ]);
 
-  const currentPatrimonyCents = accounts.reduce((sum, account) => sum + account.balanceCents, 0n);
-
   return {
-    movements: transactions.map((transaction) => ({
+    movements: (transactions ?? []).map((transaction) => ({
       id: transaction.id,
       type: transaction.type,
       amountCents: transaction.amountCents,
@@ -345,15 +376,20 @@ export async function getChangesData(): Promise<{
       voided: transaction.voidedAt !== null,
       label: movementLabel(transaction),
       accountName: accountLabel(transaction),
+      categoryId: transaction.categoryId,
+      categoryName: transaction.category?.name ?? null,
     })),
-    currentPatrimonyCents,
+    period,
+    previous,
+    patrimonyCents: accounts.reduce((sum, account) => sum + account.balanceCents, 0n),
     today,
-    windowStart: dayString(start),
-    windowDays,
     hasAccounts: accounts.length > 0,
+    firstMovementDay: oldest ? dayString(oldest.occurredOn) : null,
+    causesAvailable: transactions !== null,
   };
 }
 
+/** Lectura previa de /progreso. La reemplaza la comparación por tramos en el corte siguiente. */
 export async function getProgressData(): Promise<{
   currentMonthMovements: AnalysisMovement[];
   previousMonthMovements: AnalysisMovement[];

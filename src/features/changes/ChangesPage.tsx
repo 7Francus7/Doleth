@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -10,36 +12,63 @@ import { Divider } from "../../design-system/primitives/Divider";
 import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { Surface } from "../../design-system/primitives/Surface";
 import { EvidenceBreakdownExperience } from "../evidence";
-import type { ChangesViewModel } from "./model";
+import type { ChangeCauseRow, ChangesViewModel } from "./model";
 import styles from "./ChangesPage.module.css";
 
 export interface ChangesPageProps {
   model: ChangesViewModel;
 }
 
+/** Rutas de cada acción. Navegación interna: la app no se recarga. */
+const ACTION_ROUTES: Record<string, string> = {
+  resolve: "/movimientos",
+  register: "/movimientos/nuevo",
+  "add-first-account": "/cuentas/nueva",
+  upcoming: "/proximo",
+  history: "/movimientos",
+};
+
+function CauseLine({ row }: { row: ChangeCauseRow }) {
+  const content = (
+    <>
+      <span className={styles.causeCopy}>
+        <span className={styles.causeLabel}>{row.label}</span>
+        <span className={styles.causeMeta}>{row.supportingLabel}</span>
+      </span>
+      <span className={styles.causeAmount} data-direction={row.direction}>
+        {row.valuePrefix}
+        {row.value}
+      </span>
+    </>
+  );
+
+  if (!row.href) {
+    return (
+      <div className={styles.cause} data-material={row.material ? "true" : "false"}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      className={styles.cause}
+      data-material={row.material ? "true" : "false"}
+      href={row.href}
+    >
+      {content}
+    </Link>
+  );
+}
+
 export function ChangesPage({ model }: ChangesPageProps) {
+  const router = useRouter();
   const actionProps = styles.actions ? { className: styles.actions } : {};
   const missingProps = styles.missing ? { className: styles.missing } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
 
   const handleAction = (actionId: string) => {
-    if (actionId === "evidence") {
-      document.getElementById("changes-evidence")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
-    if (actionId === "facts") {
-      document.getElementById("changes-facts")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
-    window.location.assign("/actuar");
+    router.push(ACTION_ROUTES[actionId] ?? "/movimientos");
   };
 
   return (
@@ -51,72 +80,62 @@ export function ChangesPage({ model }: ChangesPageProps) {
         <EvidenceBreakdownExperience
           evidence={model.evidence}
           hero={model.hero}
-          valueActionLabel="Ver evidencia del cambio actual"
+          valueActionLabel="Ver cómo se calculó este cambio"
         />
 
-        <Surface
-          border="subtle"
-          className={styles.comparison}
-          padding="md"
-          radius="lg"
-          tone="base"
-        >
-          {model.comparison.actionHref && model.comparison.actionLabel ? (
-            <SectionTitle
-              action="link"
-              actionHref={model.comparison.actionHref}
-              actionLabel={model.comparison.actionLabel}
-              support="line"
-              supportingLine={model.comparison.supportingLine}
-              title={model.comparison.title}
-            />
-          ) : (
+        {model.notice ? (
+          <p className={styles.notice} role="status">
+            {model.notice}
+          </p>
+        ) : null}
+
+        <section aria-label={model.comparison.title}>
+          <Surface border="subtle" className={styles.comparison} padding="md" radius="lg" tone="base">
             <SectionTitle
               action="none"
               support="line"
               supportingLine={model.comparison.supportingLine}
               title={model.comparison.title}
             />
-          )}
-          <div className={styles.rows}>
-            {model.comparison.rows.map((row, index) => (
-              <div className={styles.unit} key={`${row.label}-${row.value}`}>
-                {index > 0 ? <Divider /> : null}
-                <FinancialRow {...row} />
-              </div>
-            ))}
-          </div>
-          <p
-            className={styles.comparisonSummary}
-            data-kind={model.comparison.summaryKind}
-          >
-            {model.comparison.summary}
-          </p>
-        </Surface>
-
-        <StabilityStatement {...model.stability} />
-        {model.actions ? <ActionStrip {...model.actions} {...actionProps} onAction={handleAction} /> : null}
-
-        {model.explained ? (
-          <Surface
-            border="subtle"
-            className={styles.section}
-            id="changes-facts"
-            padding="md"
-            radius="lg"
-            tone="base"
-          >
-            <SectionTitle title={model.explained.title} />
             <div className={styles.rows}>
-              {model.explained.rows.map((row, index) => (
+              {model.comparison.rows.map((row, index) => (
                 <div className={styles.unit} key={`${row.label}-${row.value}`}>
                   {index > 0 ? <Divider /> : null}
                   <FinancialRow {...row} />
                 </div>
               ))}
             </div>
+            <p className={styles.comparisonSummary} data-kind={model.comparison.summaryKind}>
+              {model.comparison.summary}
+            </p>
           </Surface>
+        </section>
+
+        <StabilityStatement {...model.stability} />
+        {model.actions ? <ActionStrip {...model.actions} {...actionProps} onAction={handleAction} /> : null}
+
+        {model.causes ? (
+          <section aria-label={model.causes.title} id="changes-facts">
+            <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
+              <SectionTitle
+                action="none"
+                support="line"
+                supportingLine={model.causes.supportingLine}
+                title={model.causes.title}
+              />
+              <ul className={styles.causes}>
+                {model.causes.rows.map((row) => (
+                  <li key={row.id}>
+                    <CauseLine row={row} />
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.causesNote}>{model.causes.note}</p>
+            </Surface>
+          </section>
         ) : null}
+
+        {model.transfers ? <p className={styles.transfers}>{model.transfers.line}</p> : null}
 
         {model.missing ? <InformationBlock {...model.missing} {...missingProps} /> : null}
 

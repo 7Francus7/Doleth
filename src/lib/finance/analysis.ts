@@ -22,8 +22,6 @@ export interface AnalysisMovement {
   accountName: string;
 }
 
-const abs = (value: bigint): bigint => (value < 0n ? -value : value);
-
 /** Movimientos que efectivamente alteran el patrimonio: no anulados y no transferencias. */
 export function patrimonialMovements(
   movements: readonly AnalysisMovement[],
@@ -39,78 +37,15 @@ export function signedPatrimonyEffect(movement: AnalysisMovement): bigint {
 }
 
 // ---------------------------------------------------------------------------
-// /cambios — qué cambió y por qué
+// Cobertura simple. La comparación entre períodos de /cambios y /progreso vive
+// en `comparison.ts`; acá solo queda lo que comparten todas las superficies.
 // ---------------------------------------------------------------------------
 
-export type ChangeDirection = "up" | "down" | "flat";
-
-export interface ChangeCause {
-  id: string;
-  label: string;
-  accountName: string;
-  occurredOn: string;
-  /** Efecto con signo sobre el patrimonio. */
-  effectCents: bigint;
-  direction: "in" | "out";
+export function coverageRatio(availableCents: bigint, commitmentCents: bigint): number {
+  if (commitmentCents <= 0n) return 100;
+  const raw = Number((availableCents * 100n) / commitmentCents);
+  return Math.max(0, Math.min(100, raw));
 }
-
-export interface ChangesResult {
-  /** Cambio neto del patrimonio en la ventana observada, con signo. */
-  netCents: bigint;
-  /** Patrimonio derivado al inicio de la ventana (actual − neto). */
-  referenceCents: bigint;
-  /** Patrimonio actual (fuente de verdad recibida). */
-  currentCents: bigint;
-  direction: ChangeDirection;
-  /** Causas ordenadas por impacto absoluto descendente (determinista). */
-  causes: ChangeCause[];
-  hasMovements: boolean;
-}
-
-/**
- * Calcula el cambio patrimonial de una ventana a partir de sus movimientos.
- * `currentPatrimonyCents` es el patrimonio actual real (Σ saldos); la referencia
- * se deriva restando el neto, de modo que ambos reconcilian por construcción.
- */
-export function computeChanges(
-  movements: readonly AnalysisMovement[],
-  currentPatrimonyCents: bigint,
-): ChangesResult {
-  const material = patrimonialMovements(movements);
-  const netCents = material.reduce((sum, movement) => sum + signedPatrimonyEffect(movement), 0n);
-
-  const causes: ChangeCause[] = material
-    .map((movement) => {
-      const effectCents = signedPatrimonyEffect(movement);
-      return {
-        id: movement.id,
-        label: movement.label,
-        accountName: movement.accountName,
-        occurredOn: movement.occurredOn,
-        effectCents,
-        direction: effectCents >= 0n ? ("in" as const) : ("out" as const),
-      };
-    })
-    .sort((left, right) => {
-      const byImpact = Number(abs(right.effectCents) - abs(left.effectCents));
-      if (byImpact !== 0) return byImpact;
-      if (left.occurredOn !== right.occurredOn) return left.occurredOn < right.occurredOn ? 1 : -1;
-      return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
-    });
-
-  return {
-    netCents,
-    referenceCents: currentPatrimonyCents - netCents,
-    currentCents: currentPatrimonyCents,
-    direction: netCents > 0n ? "up" : netCents < 0n ? "down" : "flat",
-    causes,
-    hasMovements: causes.length > 0,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// /progreso — indicadores derivables honestamente
-// ---------------------------------------------------------------------------
 
 export type ProgressDirection = "improved" | "declined" | "flat";
 
@@ -130,12 +65,6 @@ export interface ProgressResult {
   /** Días transcurridos del mes hasta hoy (denominador real de consistencia). */
   elapsedDays: number;
   consistency: number;
-}
-
-export function coverageRatio(availableCents: bigint, commitmentCents: bigint): number {
-  if (commitmentCents <= 0n) return 100;
-  const raw = Number((availableCents * 100n) / commitmentCents);
-  return Math.max(0, Math.min(100, raw));
 }
 
 export interface ProgressInput {

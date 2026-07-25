@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { attentionChangesFixture } from "./fixtures";
+import { stableChangesFixture } from "./fixtures";
 import { ChangesPage } from "./ChangesPage";
 
 const meta = {
-  title: "Features/Changes/Attention",
+  title: "Features/Changes/Estable",
   component: ChangesPage,
-  args: { model: attentionChangesFixture },
+  args: { model: stableChangesFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ChangesPage>;
 

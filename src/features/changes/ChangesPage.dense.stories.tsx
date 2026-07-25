@@ -1,23 +1,20 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { upChangesFixture } from "./fixtures";
+import { denseChangesFixture } from "./fixtures";
 import { ChangesPage } from "./ChangesPage";
 
 const meta = {
-  title: "Features/Changes/Sube",
+  title: "Features/Changes/Causas numerosas",
   component: ChangesPage,
-  args: { model: upChangesFixture },
+  args: { model: denseChangesFixture },
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ChangesPage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Importes en millones y una causa agrupada: el corte de "Otros" tiene que leerse. */
 export const Screen: Story = {};
 
-/**
- * 320 px: el ancho se fija en el propio story para que la verificación no
- * dependa de qué viewport tenga seleccionado quien mira.
- */
 export const Mobile320: Story = {
   decorators: [
     (Story) => (

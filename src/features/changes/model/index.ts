@@ -1,1 +1,1 @@
-export type { ChangesViewModel } from "./ChangesViewModel";
+export type { ChangeCauseRow, ChangesViewModel } from "./ChangesViewModel";

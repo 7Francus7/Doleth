@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { formatCents } from "./lib/finance/domain";
 import {
-  computeChanges,
+  patrimonialMovements,
+  signedPatrimonyEffect,
   reconcileCoverage,
   selectRecommendation,
   type AnalysisMovement,
   type ActPayment,
 } from "./lib/finance/analysis";
+import { summarizeCauses } from "./lib/finance/comparison";
 import { validateEvidenceBreakdown, type EvidenceBreakdown } from "./features/evidence/model";
 import {
   validateRecommendationEvidence,
@@ -28,8 +30,9 @@ const movement = (over: Partial<AnalysisMovement> & { id: string }): AnalysisMov
 });
 
 // Construye la evidencia de /cambios igual que getChangesModel y la valida.
-function changesEvidence(movements: AnalysisMovement[], patrimony: bigint): EvidenceBreakdown {
-  const { causes, netCents } = computeChanges(movements, patrimony);
+function changesEvidence(movements: AnalysisMovement[]): EvidenceBreakdown {
+  const { causes } = summarizeCauses(movements.map((movement) => ({ ...movement, categoryId: movement.id, categoryName: movement.label })));
+  const netCents = patrimonialMovements(movements).reduce((sum, item) => sum + signedPatrimonyEffect(item), 0n);
   return {
     status: "complete",
     title: "Movimientos que explican el cambio",
@@ -60,12 +63,12 @@ describe("/cambios: evidencia reconcilia con el validador real", () => {
       movement({ id: "b", type: "EXPENSE", amountCents: 21_500_00n }),
     ];
     const net = 58_000_00n - 21_500_00n;
-    const evidence = changesEvidence(movements, 400_000_00n);
+    const evidence = changesEvidence(movements);
     expect(() => validateEvidenceBreakdown(evidence, money(net))).not.toThrow();
   });
 
   it("sin movimientos: evidencia vacía válida y neto 0", () => {
-    const evidence = changesEvidence([], 320_000_00n);
+    const evidence = changesEvidence([]);
     expect(() => validateEvidenceBreakdown(evidence, "0")).not.toThrow();
   });
 
@@ -74,7 +77,7 @@ describe("/cambios: evidencia reconcilia con el validador real", () => {
       movement({ id: "a", type: "EXPENSE", amountCents: 12_000_00n }),
       movement({ id: "b", type: "EXPENSE", amountCents: 3_500_00n }),
     ];
-    const evidence = changesEvidence(movements, 100_000_00n);
+    const evidence = changesEvidence(movements);
     expect(() => validateEvidenceBreakdown(evidence, money(-15_500_00n))).not.toThrow();
   });
 });
