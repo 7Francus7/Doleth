@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -17,7 +18,18 @@ export interface RealityPageProps {
   model: RealityViewModel;
 }
 
+/** Rutas de cada acción. Navegación interna: la app no se recarga. */
+const ACTION_ROUTES: Record<string, string> = {
+  register: "/movimientos/nuevo",
+  resolve: "/proximo",
+  update: "/cuentas",
+  "add-first-account": "/cuentas/nueva",
+  changes: "/cambios",
+  history: "/movimientos",
+};
+
 export function RealityPage({ model }: RealityPageProps) {
+  const router = useRouter();
   const actionProps = styles.actions ? { className: styles.actions } : {};
   const missingProps = styles.missing ? { className: styles.missing } : {};
   const informationProps = styles.information ? { className: styles.information } : {};
@@ -39,7 +51,7 @@ export function RealityPage({ model }: RealityPageProps) {
       return;
     }
 
-    window.location.assign("/actuar");
+    router.push(ACTION_ROUTES[actionId] ?? "/movimientos");
   };
 
   return (
