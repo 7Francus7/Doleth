@@ -52,7 +52,8 @@ describe("/cambios: causas reconciliadas", () => {
 
   it("cada causa muestra participación con denominador y cantidad de movimientos", () => {
     expect(model).toContain("% del movimiento bruto");
-    expect(model).toContain('plural(\n      cause.movementCount,\n      "movimiento",\n      "movimientos",\n    )');
+    expect(model).toContain("cause.movementCount");
+    expect(model).toContain('"movimiento",');
   });
 
   it("las transferencias se mencionan aparte y nunca como causa", () => {

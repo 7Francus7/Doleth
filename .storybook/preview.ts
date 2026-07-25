@@ -7,6 +7,11 @@ const preview: Preview = {
       test: "error",
     },
     layout: "centered",
+    // Las pantallas navegan con el router de la app; sin este contexto
+    // `useRouter` rompe el story aunque el build pase.
+    nextjs: {
+      appDirectory: true,
+    },
   },
 };
 

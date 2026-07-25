@@ -37,6 +37,18 @@ export function describeDateAR(iso: string, todayIso: string): string {
   return sameYear ? dayAndMonth : `${dayAndMonth} de ${year}`;
 }
 
+/**
+ * "21 de julio" · "21 de julio de 2025". Sin "Hoy" ni "Ayer": dentro de un
+ * rango —"del 18 al 24 de julio"— lo relativo se lee mal y confunde el período.
+ */
+export function describePlainDateAR(iso: string, todayIso: string): string {
+  if (!ISO_DATE.test(iso)) return iso;
+  const [year, month, day] = iso.split("-").map(Number) as [number, number, number];
+  const dayAndMonth = `${day} de ${MONTHS[month - 1] ?? ""}`;
+  const sameYear = ISO_DATE.test(todayIso) && todayIso.slice(0, 4) === iso.slice(0, 4);
+  return sameYear ? dayAndMonth : `${dayAndMonth} de ${year}`;
+}
+
 /** ¿La fecha cae después de hoy? El dominio no acepta movimientos futuros. */
 export function isFutureDate(iso: string, todayIso: string): boolean {
   if (!ISO_DATE.test(iso) || !ISO_DATE.test(todayIso)) return false;

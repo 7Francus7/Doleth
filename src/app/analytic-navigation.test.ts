@@ -40,6 +40,13 @@ describe("superficies analíticas: navegación interna", () => {
   });
 });
 
+describe("storybook puede montar pantallas que navegan", () => {
+  it("el preview provee el contexto del app router", () => {
+    // Sin esto `useRouter` rompe cada story aunque `build-storybook` pase.
+    expect(read(".storybook/preview.ts")).toContain("appDirectory: true");
+  });
+});
+
 describe("superficies analíticas: estructura accesible", () => {
   it("cada bloque es una sección con nombre", () => {
     expect(surfaces.cambios).toContain("<section aria-label=");

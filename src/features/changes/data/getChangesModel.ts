@@ -1,7 +1,7 @@
 import "server-only";
 import type { EvidenceBreakdown } from "../../evidence/model";
 import { formatCents } from "../../../lib/finance/domain";
-import { describeDateAR } from "../../../lib/finance/movementDate";
+import { describeDateAR, describePlainDateAR } from "../../../lib/finance/movementDate";
 import {
   MATERIAL_SHARE_PERCENT,
   compareChangePeriods,
@@ -18,7 +18,17 @@ const plural = (count: number, one: string, many: string): string => (count === 
 
 /** "del 18 al 24 de julio": el período se dice en fechas argentinas, no en jerga. */
 const describePeriod = (period: Period, today: string): string =>
-  `del ${describeDateAR(period.start, today)} al ${describeDateAR(period.end, today)}`;
+  `del ${describePlainDateAR(period.start, today)} al ${describePlainDateAR(period.end, today)}`;
+
+/** El estado viaja como texto: el color nunca es el único indicador. */
+const STATE_LABELS: Record<ChangeComparison["state"], string> = {
+  "no-base": "Sin base",
+  "no-previous": "Primer período",
+  partial: "Parcial",
+  stable: "Estable",
+  up: "Sube",
+  down: "Baja",
+};
 
 const percentLabel = (percent: number): string =>
   `${percent > 0 ? "+" : percent < 0 ? "-" : ""}${Math.abs(percent).toLocaleString("es-AR", {
@@ -141,7 +151,9 @@ export async function getChangesModel(): Promise<ChangesViewModel> {
   const today = data.today;
   const periodLabel = describePeriod(change.period, today);
   const previousLabel = describePeriod(change.previous, today);
-  const complete = data.hasAccounts && data.causesAvailable && !change.partial;
+  // Una comparación es completa solo si cubre el período anterior entero.
+  const complete =
+    data.hasAccounts && data.causesAvailable && !change.partial && change.hasPreviousPeriod;
   const metadata = [
     `Últimos ${change.period.days} días`,
     "ARS",
@@ -229,16 +241,7 @@ export async function getChangesModel(): Promise<ChangesViewModel> {
           kind: "with-status",
           label: "Diferencia",
           supportingLabel: change.percent !== null ? percentLabel(change.percent) : "Sin porcentaje válido",
-          status:
-            change.state === "up"
-              ? "Sube"
-              : change.state === "down"
-                ? "Baja"
-                : change.state === "stable"
-                  ? "Estable"
-                  : change.state === "partial"
-                    ? "Parcial"
-                    : "Sin base",
+          status: STATE_LABELS[change.state],
           value: money(change.netCents),
           valuePrefix: prefix(change.netCents),
           state: change.state === "down" ? "attention" : "default",

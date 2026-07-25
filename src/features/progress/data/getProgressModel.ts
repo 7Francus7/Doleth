@@ -1,7 +1,7 @@
 import "server-only";
 import type { EvidenceBreakdown } from "../../evidence/model";
 import { formatCents } from "../../../lib/finance/domain";
-import { describeDateAR } from "../../../lib/finance/movementDate";
+import { describePlainDateAR } from "../../../lib/finance/movementDate";
 import {
   compareProgressPeriods,
   type Milestone,
@@ -16,7 +16,7 @@ const prefix = (cents: bigint): string => (cents < 0n ? "-$" : "$");
 const plural = (count: number, one: string, many: string): string => (count === 1 ? one : many);
 
 const describePeriod = (period: Period, today: string): string =>
-  `del ${describeDateAR(period.start, today)} al ${describeDateAR(period.end, today)}`;
+  `del ${describePlainDateAR(period.start, today)} al ${describePlainDateAR(period.end, today)}`;
 
 /**
  * Indicadores factuales. Cada uno dice su fórmula y su denominador, y solo
@@ -87,7 +87,11 @@ function buildIndicators(progress: ProgressComparison, today: string): ProgressI
     indicators.push({
       id: "overdue",
       label: "Pagos vencidos",
-      reading: `${progress.overdueCount} ${plural(progress.overdueCount, "pago vencido sigue", "pagos vencidos siguen")} pendientes de confirmar.`,
+      reading: `${progress.overdueCount} ${plural(
+        progress.overdueCount,
+        "pago vencido sigue pendiente",
+        "pagos vencidos siguen pendientes",
+      )} de confirmar.`,
       formula: "Pagos pendientes con vencimiento anterior a hoy.",
       reference: "Se cuentan sobre el estado actual, no contra el período anterior.",
       direction: "down-is-better",
