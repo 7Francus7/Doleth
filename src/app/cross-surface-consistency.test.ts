@@ -29,8 +29,8 @@ const movement = (over: Partial<CategorizedMovement> & { id: string }): Categori
   voided: false,
   label: "Movimiento",
   accountName: "Banco",
-  categoryId: null,
-  categoryName: null,
+  categoryId: "cat-default",
+  categoryName: "Categoría de prueba",
   ...over,
 });
 
