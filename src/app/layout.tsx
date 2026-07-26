@@ -35,6 +35,18 @@ export const metadata: Metadata = {
     title: "Doleth",
     statusBarStyle: "default",
   },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noarchive: true,
+      noimageindex: true,
+      nosnippet: true,
+    },
+  },
 };
 
 export const viewport: Viewport = {

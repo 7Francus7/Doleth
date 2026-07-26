@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
@@ -13,6 +14,7 @@ import { sanitizeReturnPath } from "../../../lib/navigation/returnPath";
 import styles from "../../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Detalle de próximo pago" };
 
 const STATE_LABELS = {
   overdue: "Vencido",

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { UpcomingPaymentForm } from "../../../components/finance/UpcomingPaymentForm";
@@ -5,6 +6,7 @@ import { getMovementFormData } from "../../../lib/finance/data";
 import styles from "../../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Registrar próximo pago" };
 
 export default async function NewUpcomingPaymentPage() {
   const data = await getMovementFormData();
