@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "../components/finance/AppNav";
+import { AmountPrivacyProvider } from "../components/privacy/AmountPrivacy";
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -53,7 +54,20 @@ export default function RootLayout({
       lang="es"
       className={`${manrope.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}
     >
-      <body>{children}<AppNav /></body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{document.documentElement.dataset.amountsHidden=localStorage.getItem('doleth.hideAmounts')==='true'?'true':'false'}catch{document.documentElement.dataset.amountsHidden='false'}",
+          }}
+        />
+      </head>
+      <body>
+        <AmountPrivacyProvider>
+          {children}
+          <AppNav />
+        </AmountPrivacyProvider>
+      </body>
     </html>
   );
 }

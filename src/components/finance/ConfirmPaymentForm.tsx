@@ -6,6 +6,7 @@ import { payUpcomingPaymentAction, type FinanceActionState } from "../../app/act
 import { SubmitButton } from "./SubmitButton";
 import { AmountInput } from "../../design-system/primitives/AmountInput";
 import { StatusMessage, SuccessState } from "../../design-system/feedback";
+import { SensitiveAmount } from "../privacy/AmountPrivacy";
 import { formatCentsAR, parseAmountInput } from "../../lib/finance/amount";
 import styles from "./finance.module.css";
 
@@ -85,17 +86,17 @@ export function ConfirmPaymentForm({
           </div>
           <div className={styles.detailRow}>
             <dt>Saldo actual de la cuenta</dt>
-            <dd>{balanceCents < 0n ? "-" : ""}${formatCentsAR(balanceCents < 0n ? -balanceCents : balanceCents)}</dd>
+            <dd><SensitiveAmount>{balanceCents < 0n ? "-" : ""}${formatCentsAR(balanceCents < 0n ? -balanceCents : balanceCents)}</SensitiveAmount></dd>
           </div>
           <div className={styles.detailRow}>
             <dt>Saldo después de pagar</dt>
-            <dd>
+            <dd><SensitiveAmount sensitive={afterCents !== null}>
               {afterCents === null
                 ? "—"
                 : afterCents < 0n
                   ? `Faltarían $${formatCentsAR(-afterCents)}`
                   : `$${formatCentsAR(afterCents)}`}
-            </dd>
+            </SensitiveAmount></dd>
           </div>
         </dl>
       </div>

@@ -3,6 +3,7 @@ import { Label } from "../../primitives/Label";
 import { NumericValue } from "../../primitives/NumericValue";
 import { isInternalRoute } from "../../primitives/TextLink";
 import styles from "./FinancialRow.module.css";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 
 export type FinancialRowKind = "simple" | "with-status" | "navigable";
 export type FinancialRowDensity = "compact" | "regular";
@@ -63,7 +64,7 @@ export function FinancialRow(props: FinancialRowProps) {
         </Label>
         {props.supportingLabel ? (
           <Label size="s" tone="tertiary">
-            {props.supportingLabel}
+            <SensitiveText>{props.supportingLabel}</SensitiveText>
           </Label>
         ) : null}
         {props.status ? (
@@ -72,7 +73,7 @@ export function FinancialRow(props: FinancialRowProps) {
             size="s"
             tone={state === "attention" ? "primary" : "secondary"}
           >
-            {props.status}
+            <SensitiveText>{props.status}</SensitiveText>
           </Label>
         ) : null}
       </span>

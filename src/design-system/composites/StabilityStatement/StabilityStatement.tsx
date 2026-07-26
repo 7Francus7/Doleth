@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Surface } from "../../primitives/Surface";
 import { motionCurve, motionDuration, motionSequence } from "../../tokens";
 import styles from "./StabilityStatement.module.css";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 
 export type StabilityStatementKind = "neutral" | "stable" | "attention" | "caution";
 export type StabilityStatementContainer = "none" | "subtle";
@@ -44,7 +45,7 @@ export function StabilityStatement({
         }}
       >
         <p className={statementClasses} {...props}>
-          {children}
+          {typeof children === "string" ? <SensitiveText>{children}</SensitiveText> : children}
         </p>
       </motion.div>
     </AnimatePresence>

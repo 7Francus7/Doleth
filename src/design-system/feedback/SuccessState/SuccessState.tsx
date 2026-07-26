@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
 import styles from "./SuccessState.module.css";
 
 export type SuccessStateVariant = "inline" | "full";
@@ -45,8 +46,10 @@ export function SuccessState({
         <h2 className={styles.title}>{title}</h2>
         {amount ? (
           <p className={styles.amount}>
-            <span className={styles.amountPrefix}>{amountPrefix}</span>
-            {amount}
+            <SensitiveAmount>
+              <span className={styles.amountPrefix}>{amountPrefix}</span>
+              {amount}
+            </SensitiveAmount>
             {account ? <span className={styles.account}> · {account}</span> : null}
           </p>
         ) : null}

@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef } from "react";
+import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
 import styles from "./NumericValue.module.css";
 
 export type NumericValueSize = "sm" | "md" | "lg" | "xl";
@@ -18,6 +19,7 @@ export interface NumericValueProps extends Omit<ComponentPropsWithoutRef<"span">
   deltaValue?: string;
   state?: NumericValueState;
   unavailableLabel?: string;
+  sensitive?: boolean;
 }
 
 export function NumericValue({
@@ -31,6 +33,7 @@ export function NumericValue({
   deltaValue,
   state = "confirmed",
   unavailableLabel = "No disponible",
+  sensitive,
   className,
   ...props
 }: NumericValueProps) {
@@ -44,13 +47,16 @@ export function NumericValue({
     .filter(Boolean)
     .join(" ");
   const displayValue = state === "unavailable" ? unavailableLabel : value;
+  const shouldMask = sensitive ?? (state !== "unavailable" && Boolean(prefix?.includes("$")));
 
   return (
     <span className={classes} data-format={format} data-state={state} {...props}>
       <span className={styles.value}>
-        {state !== "unavailable" && prefix ? <span>{prefix}</span> : null}
-        <span>{displayValue}</span>
-        {state !== "unavailable" && suffix ? <span>{suffix}</span> : null}
+        <SensitiveAmount sensitive={shouldMask}>
+          {state !== "unavailable" && prefix ? <span>{prefix}</span> : null}
+          <span>{displayValue}</span>
+          {state !== "unavailable" && suffix ? <span>{suffix}</span> : null}
+        </SensitiveAmount>
       </span>
       {delta !== "none" && deltaValue ? (
         <span className={styles.delta} data-direction={delta}>

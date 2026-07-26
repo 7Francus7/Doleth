@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef } from "react";
+import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
 import { Label } from "../../primitives/Label";
 import styles from "./CoverageMeter.module.css";
 
@@ -39,7 +40,7 @@ export function CoverageMeter({
           {leftSummary}
         </Label>
         <Label className={styles.rightSummary} size="s" tone="primary">
-          {rightSummary}
+          <SensitiveAmount sensitive={rightSummary.includes("$")}>{rightSummary}</SensitiveAmount>
         </Label>
       </div>
     </div>

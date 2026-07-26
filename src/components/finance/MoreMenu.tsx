@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { BottomSheet } from "../../design-system/composites/BottomSheet";
 import { logoutAction } from "../../app/actions/session";
+import { AmountPrivacyToggle } from "../privacy/AmountPrivacy";
 import { NavIcon } from "./NavIcon";
 import { isDestinationActive, isMoreActive, moreGroups } from "./navModel";
 import styles from "./finance.module.css";
@@ -64,6 +65,13 @@ export function MoreMenu() {
               </ul>
             </section>
           ))}
+          <section aria-labelledby="privacy-title" className={styles.moreGroup}>
+            <p className={styles.moreGroupTitle} id="privacy-title">Privacidad</p>
+            <AmountPrivacyToggle />
+            <p className={styles.morePrivacyCopy}>
+              La preferencia queda solo en este dispositivo. No cambia cálculos ni datos guardados.
+            </p>
+          </section>
           <form action={logoutAction} className={styles.moreSession}>
             <button className={styles.moreLogout} type="submit">Cerrar sesión</button>
           </form>

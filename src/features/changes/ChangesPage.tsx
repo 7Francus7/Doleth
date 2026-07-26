@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SensitiveAmount, SensitiveText } from "../../components/privacy/AmountPrivacy";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -36,8 +37,7 @@ function CauseLine({ row }: { row: ChangeCauseRow }) {
         <span className={styles.causeMeta}>{row.supportingLabel}</span>
       </span>
       <span className={styles.causeAmount} data-direction={row.direction}>
-        {row.valuePrefix}
-        {row.value}
+        <SensitiveAmount>{row.valuePrefix}{row.value}</SensitiveAmount>
       </span>
     </>
   );
@@ -106,7 +106,7 @@ export function ChangesPage({ model }: ChangesPageProps) {
               ))}
             </div>
             <p className={styles.comparisonSummary} data-kind={model.comparison.summaryKind}>
-              {model.comparison.summary}
+              <SensitiveText>{model.comparison.summary}</SensitiveText>
             </p>
           </Surface>
         </section>
@@ -130,12 +130,12 @@ export function ChangesPage({ model }: ChangesPageProps) {
                   </li>
                 ))}
               </ul>
-              <p className={styles.causesNote}>{model.causes.note}</p>
+              <p className={styles.causesNote}><SensitiveText>{model.causes.note}</SensitiveText></p>
             </Surface>
           </section>
         ) : null}
 
-        {model.transfers ? <p className={styles.transfers}>{model.transfers.line}</p> : null}
+        {model.transfers ? <p className={styles.transfers}><SensitiveText>{model.transfers.line}</SensitiveText></p> : null}
 
         {model.missing ? <InformationBlock {...model.missing} {...missingProps} /> : null}
 

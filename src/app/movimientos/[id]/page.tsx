@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { VoidMovementFlow } from "../../../components/finance/VoidMovementFlow";
+import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
 import { formatCentsAR } from "../../../lib/finance/amount";
 import { describeDateAR } from "../../../lib/finance/movementDate";
 import { canRepeat, currentVersionId } from "../../../lib/finance/repeatMovement";
@@ -53,7 +54,7 @@ export default async function MovementDetailPage({ params, searchParams }: { par
       <section className={styles.panel}>
         <dl className={styles.detailGrid}>
           <div className={styles.detailRow}><dt>Tipo</dt><dd>{typeLabels[movement.type]}</dd></div>
-          <div className={styles.detailRow}><dt>Importe</dt><dd>${formatCentsAR(movement.amountCents)}</dd></div>
+          <div className={styles.detailRow}><dt>Importe</dt><dd><SensitiveAmount>${formatCentsAR(movement.amountCents)}</SensitiveAmount></dd></div>
           <div className={styles.detailRow}><dt>Fecha</dt><dd>{describeDateAR(occurredOn, today)}</dd></div>
           <div className={styles.detailRow}><dt>Origen</dt><dd>{movement.sourceAccount.name}</dd></div>
           {movement.destinationAccount ? <div className={styles.detailRow}><dt>Destino</dt><dd>{movement.destinationAccount.name}</dd></div> : null}

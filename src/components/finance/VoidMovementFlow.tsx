@@ -6,6 +6,7 @@ import { voidMovementAction, type FinanceActionState } from "../../app/actions/f
 import { ConfirmDialog } from "../../design-system/composites/ConfirmDialog";
 import { Button } from "../../design-system/primitives/Button";
 import { StatusMessage } from "../../design-system/feedback";
+import { SensitiveAmount } from "../privacy/AmountPrivacy";
 import styles from "./finance.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
@@ -53,7 +54,7 @@ export function VoidMovementFlow({ movementId, summary, returnTo }: VoidMovement
       >
         <dl className={styles.detailGrid}>
           <div className={styles.detailRow}><dt>Tipo</dt><dd>{summary.typeLabel}</dd></div>
-          <div className={styles.detailRow}><dt>Importe</dt><dd>${summary.amount}</dd></div>
+          <div className={styles.detailRow}><dt>Importe</dt><dd><SensitiveAmount>${summary.amount}</SensitiveAmount></dd></div>
           <div className={styles.detailRow}><dt>Cuenta</dt><dd>{summary.accountName}</dd></div>
           <div className={styles.detailRow}><dt>Fecha</dt><dd>{summary.date}</dd></div>
           <div className={styles.detailRow}><dt>Estado</dt><dd>Confirmado</dd></div>

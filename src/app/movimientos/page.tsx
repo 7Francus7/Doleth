@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { OperationalShell } from "../../components/finance/OperationalShell";
 import { RestorableList } from "../../components/finance/RestorableList";
+import { SensitiveAmount } from "../../components/privacy/AmountPrivacy";
 import { EmptyState } from "../../design-system/feedback";
 import { normalizeListPath } from "../../lib/navigation/scrollRestoration";
 import { getMovements } from "../../lib/finance/data";
@@ -41,7 +42,9 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
       {data.movements.length ? <RestorableList className={styles.list} restorationKey={listPath}>{data.movements.map((movement) => (
         <Link className={`${styles.listItem} ${movement.voided ? styles.voided : ""}`} href={detailHref(movement.id)} key={movement.id}>
           <span className={styles.itemCopy}><span className={styles.itemTitle}>{movement.description}</span><span className={styles.itemMeta}>{formatDateAR(movement.occurredOn)} · {movement.accountName}{movement.voided ? " · Anulado" : ""}</span></span>
-          <span className={styles.itemAmount}>{movement.type === "EXPENSE" ? "-" : movement.type === "INCOME" ? "+" : ""}${movement.amount}</span>
+          <span className={styles.itemAmount}>
+            <SensitiveAmount>{movement.type === "EXPENSE" ? "-" : movement.type === "INCOME" ? "+" : ""}${movement.amount}</SensitiveAmount>
+          </span>
         </Link>
       ))}</RestorableList> : hasActiveFilters ? (
         <EmptyState
