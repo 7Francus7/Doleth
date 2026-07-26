@@ -120,7 +120,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.holdingDelta[data-state="positive"] { color: var(--color-stable-text); }
+.holdingDelta[data-state="positive"] { color: var(--color-slate-500); }
 .holdingDelta[data-state="negative"] { color: var(--color-attention-text); }
 .holdingDelta[data-state="neutral"] { color: var(--color-text-tertiary); }
 
