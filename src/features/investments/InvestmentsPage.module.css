@@ -136,3 +136,16 @@
   font-size: var(--type-body-l-size);
   line-height: var(--type-body-l-line);
 }
+
+@media (max-width: 359px) {
+  .heroTop {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .gain {
+    width: fit-content;
+    align-items: flex-start;
+  }
+}
