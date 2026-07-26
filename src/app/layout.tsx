@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "../components/finance/AppNav";
 import { AmountPrivacyProvider } from "../components/privacy/AmountPrivacy";
+import { PwaManager } from "../components/pwa/PwaManager";
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -51,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="es-AR"
       className={`${manrope.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}
     >
       <head>
@@ -66,6 +67,7 @@ export default function RootLayout({
         <AmountPrivacyProvider>
           {children}
           <AppNav />
+          <PwaManager />
         </AmountPrivacyProvider>
       </body>
     </html>
