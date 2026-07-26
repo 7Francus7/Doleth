@@ -170,10 +170,14 @@ describe("resilientRead", () => {
   });
 
   it("distingue 'falló' de 'está vacío': un error da null, no una lista vacía", async () => {
+    let reported = false;
     const result = await resilientRead<number[]>(async () => {
       throw new Error("conexión caída");
+    }, () => {
+      reported = true;
     });
     expect(result).toBeNull();
+    expect(reported).toBe(true);
   });
 
   it("una lista vacía sigue siendo una lista vacía, no un fallo", async () => {

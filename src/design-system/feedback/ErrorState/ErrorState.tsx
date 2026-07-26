@@ -31,6 +31,7 @@ export function ErrorState({
   className,
 }: ErrorStateProps) {
   const classes = [styles.error, styles[variant], className].filter(Boolean).join(" ");
+  const Heading = variant === "screen" ? "h1" : "h2";
   return (
     <section className={classes} {...(assertive ? { role: "alert" } : {})}>
       <span aria-hidden="true" className={styles.mark}>
@@ -41,7 +42,7 @@ export function ErrorState({
         </svg>
       </span>
       <div className={styles.copy}>
-        <h2 className={styles.title}>{title}</h2>
+        <Heading className={styles.title}>{title}</Heading>
         <p className={styles.description}>{description}</p>
         {safetyLine ? <p className={styles.safety}>{safetyLine}</p> : null}
       </div>

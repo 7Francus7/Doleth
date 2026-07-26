@@ -5,6 +5,7 @@ import {
   toSemicolonCsv,
   type ExportDataset,
 } from "../../../../lib/export/format";
+import { logServerError } from "../../../../lib/observability";
 
 const CSV_FILES = new Map<string, ExportDataset>([
   ["movimientos.csv", "movimientos"],
@@ -47,13 +48,11 @@ export async function GET(
       },
     });
   } catch {
-    const reference = crypto.randomUUID().slice(0, 8);
-    console.error(JSON.stringify({
-      level: "error",
+    const reference = logServerError({
+      route: `/api/export/${file}`,
       operation: "financial-export",
-      reference,
-      timestamp: new Date().toISOString(),
-    }));
+      code: "export-failed",
+    });
     return NextResponse.json(
       { error: "No pudimos preparar la copia de datos.", reference },
       { status: 500, headers: PRIVATE_DOWNLOAD_HEADERS },
