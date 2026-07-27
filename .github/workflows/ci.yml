@@ -71,8 +71,11 @@ jobs:
     env:
       # Base efímera del runner. Nunca la de producción: este job no tiene
       # acceso a ningún secreto de entorno productivo.
+      #
+      # `DATABASE_URL` NO se define a nivel de job a propósito: las pruebas sólo
+      # pueden ver `TEST_DATABASE_URL`. Los pasos que sí necesitan `DATABASE_URL`
+      # —migrar, auditar y limpiar— la declaran ellos mismos.
       TEST_DATABASE_URL: postgresql://doleth:doleth@localhost:5432/doleth_ci
-      DATABASE_URL: postgresql://doleth:doleth@localhost:5432/doleth_ci
       DOLETH_REQUIRE_DB: "1"
       DOLETH_SESSION_SECRET: secreto-efimero-de-ci-con-mas-de-treinta-y-dos-caracteres
       DOLETH_APP_URL: http://localhost:3000
@@ -94,9 +97,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Aplicar migraciones desde cero
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
         run: pnpm db:migrate
 
       - name: Auditar el historial de migraciones
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
         run: pnpm db:audit-migrations
 
       - name: Pruebas
@@ -109,6 +116,8 @@ jobs:
 
       - name: Limpiar la base efímera
         if: always()
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
         run: |
           psql "$DATABASE_URL" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' || true
 
