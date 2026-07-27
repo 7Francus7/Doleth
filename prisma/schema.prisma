@@ -216,9 +216,8 @@ enum InvestmentStatus {
 
 model Account {
   id                  String            @id @default(cuid())
-  /// Propietario. Nullable sólo mientras dura la migración legacy; la aplicación
-  /// nunca lee ni escribe filas sin propietario. Ver docs/auth/owner-migration-plan.md.
-  userId              String?
+  /// Propietario. Obligatorio desde 202607280001_require_financial_ownership.
+  userId              String
   name                String
   type                AccountType
   currency            String            @default("ARS")
@@ -226,7 +225,7 @@ model Account {
   status              AccountStatus     @default(ACTIVE)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
-  user                User?             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Restrict)
   entries             LedgerEntry[]
   sourceTransactions  Transaction[]     @relation("TransactionSource")
   targetTransactions  Transaction[]     @relation("TransactionTarget")
@@ -238,13 +237,13 @@ model Account {
 
 model Category {
   id           String        @id @default(cuid())
-  userId       String?
+  userId       String
   slug         String
   name         String
   kind         CategoryKind
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   transactions Transaction[]
 
   @@unique([userId, slug])
@@ -254,7 +253,7 @@ model Category {
 
 model Transaction {
   id                   String           @id @default(cuid())
-  userId               String?
+  userId               String
   type                 TransactionType
   amountCents          BigInt
   occurredOn           DateTime         @db.Date
@@ -268,7 +267,7 @@ model Transaction {
   correctedFromId      String?          @unique
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
-  user                 User?            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Restrict)
   sourceAccount        Account          @relation("TransactionSource", fields: [sourceAccountId], references: [id])
   destinationAccount   Account?         @relation("TransactionTarget", fields: [destinationAccountId], references: [id], onDelete: Restrict)
   category             Category?        @relation(fields: [categoryId], references: [id])
@@ -281,18 +280,19 @@ model Transaction {
   @@index([occurredOn])
   @@index([type, occurredOn])
   @@index([sourceAccountId, occurredOn])
+  @@index([destinationAccountId, occurredOn])
   @@index([userId, occurredOn])
   @@index([userId, type, occurredOn])
 }
 
 model LedgerEntry {
   id            String      @id @default(cuid())
-  userId        String?
+  userId        String
   transactionId String
   accountId     String
   amountCents   BigInt
   createdAt     DateTime    @default(now())
-  user          User?       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
   account       Account     @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
@@ -303,7 +303,7 @@ model LedgerEntry {
 
 model Investment {
   id                String           @id @default(cuid())
-  userId            String?
+  userId            String
   name              String
   kind              InvestmentKind
   symbol            String?
@@ -314,7 +314,7 @@ model Investment {
   status            InvestmentStatus @default(ACTIVE)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  user              User?            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([status])
   @@index([kind])
@@ -323,7 +323,7 @@ model Investment {
 
 model UpcomingPayment {
   id               String                @id @default(cuid())
-  userId           String?
+  userId           String
   concept          String
   estimatedCents   BigInt
   dueOn            DateTime              @db.Date
@@ -333,7 +333,7 @@ model UpcomingPayment {
   transactionId    String?               @unique
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
-  user             User?                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
   plannedAccount   Account               @relation(fields: [plannedAccountId], references: [id])
   transaction      Transaction?          @relation(fields: [transactionId], references: [id])
 
