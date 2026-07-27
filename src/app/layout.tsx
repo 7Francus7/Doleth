@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "../components/finance/AppNav";
+import { AccountLink } from "../components/auth/AccountLink";
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -53,7 +54,7 @@ export default function RootLayout({
       lang="es"
       className={`${manrope.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}
     >
-      <body>{children}<AppNav /></body>
+      <body>{children}<AccountLink /><AppNav /></body>
     </html>
   );
 }

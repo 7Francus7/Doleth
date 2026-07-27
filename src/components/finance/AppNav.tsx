@@ -21,9 +21,25 @@ function NavIcon({ name }: { name: (typeof items)[number][3] }) {
   return <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">{paths[name]}</svg>;
 }
 
+/** Pantallas sin sesión útil todavía: la barra sólo agrega ruido. */
+const HIDDEN_ON = new Set([
+  "/",
+  "/ingresar",
+  "/iniciar-sesion",
+  "/crear-cuenta",
+  "/crear-cuenta/revisa-tu-correo",
+  "/verificar-email",
+  "/olvide-mi-contrasena",
+  "/restablecer-contrasena",
+  "/restablecer-contrasena/listo",
+  "/terminos",
+  "/privacidad",
+  "/onboarding",
+]);
+
 export function AppNav() {
   const pathname = usePathname();
-  if (pathname === "/ingresar") return null;
+  if (HIDDEN_ON.has(pathname)) return null;
   return (
     <nav aria-label="Navegación principal" className={styles.nav}>
       {items.slice(0, 2).map(([href, label, compactLabel, icon]) => (
