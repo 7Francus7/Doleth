@@ -1,6 +1,6 @@
 # Migración del owner original
 
-Estado: validado en local · Pendiente de ejecución en producción
+Estado: ensayado de punta a punta en local · **No ejecutado en producción**
 Última actualización: 27 de julio de 2026
 
 ---
@@ -52,27 +52,47 @@ pnpm db:backfill-owner -- --email=vos@ejemplo.com
   aplicación. Si no existe, aborta. Nunca se usa un id inventado en producción.
 - Reclama **sólo** filas con `userId IS NULL`. Correrlo dos veces no cambia nada
   la segunda vez.
-- Escribe **únicamente** la columna `userId`. No toca importes, fechas, asientos
-  ni relaciones contables. No reconstruye el ledger.
-- Todo en **una sola transacción**: o queda todo asignado, o nada.
-- Completa el catálogo base de categorías del owner con las que le falten
-  (`skipDuplicates`: no toca las suyas).
-- Marca el onboarding como terminado: un owner con datos no debe pasar por la
-  configuración inicial.
-- Verifica la conservación:
-  `owner_después == owner_antes + reclamadas + categorías_repuestas`. Si no
-  cierra, aborta con el detalle por tabla.
-- Deja evidencia en `OwnerBackfillRun` con todos los conteos.
+- **Aborta ante ambigüedad**: si hay huérfanos y algún otro usuario tiene datos
+  propios, la pertenencia no es determinable y no escribe nada. Igual si detecta
+  propiedad parcial (un movimiento huérfano con asientos ya asignados).
+- Escribe **únicamente** la columna `userId` de las tablas financieras, más el
+  estado de onboarding del owner. **No crea ni borra ninguna fila**: ni
+  categorías, ni movimientos compensatorios. No toca importes, monedas, fechas,
+  tipos, estados ni relaciones contables. No reconstruye el ledger.
+- Todo en **una sola transacción**, con las verificaciones adentro: si algo no
+  cierra, Postgres revierte y no queda nada escrito.
+- Verifica, antes de confirmar: cero huérfanos restantes; la cantidad de filas de
+  **otros** usuarios sin cambios; los conteos de propiedad exactos; y **cero
+  diferencias contables** contra la captura previa —saldo por cuenta, saldo
+  inicial, ledger vivo y total, asientos, moneda y estado; total, anulados e
+  importes por tipo; débitos y créditos; correcciones; transferencias;
+  inversiones; próximos pagos—.
+- Deja evidencia en `OwnerBackfillRun` y, con `--out`, en un JSON.
+
+Como el backfill no crea filas, las sumas de control tienen que dar
+**exactamente** iguales, sin excepciones. Completar el catálogo de categorías del
+owner es un paso aparte: `pnpm db:seed`, que es aditivo e idempotente.
 
 ### Paso 3 — contract (manual, posterior)
 
-`docs/auth/sql/owner-not-null.sql` convierte las seis columnas a `NOT NULL`.
-Empieza con un `DO $$` que falla ruidosamente si quedó alguna fila huérfana.
+La migración `202607280001_require_financial_ownership` convierte las seis
+columnas a `NOT NULL` y agrega el índice `Transaction(destinationAccountId,
+occurredOn)`. Empieza con un bloque `DO $$` que falla ruidosamente si quedó
+alguna fila huérfana.
 
-**Por qué no es una migración de Prisma**: `prisma migrate deploy` aplica todas
-las migraciones pendientes de una. Una migración que exige `NOT NULL` fallaría el
-deploy hasta que alguien corra el backfill a mano, lo que deja el despliegue
-trabado. Separarlo es lo que permite que el paso 1 sea automático y seguro.
+**Sobre el orden.** `prisma migrate deploy` aplica todas las migraciones
+pendientes de una, así que si se corre con las dos pendientes y todavía hay
+huérfanos, la segunda falla. Eso es deliberado y seguro: verificado en el ensayo,
+el bloque de guarda corta antes de tocar el esquema, las columnas siguen nullable
+y no se pierde ningún dato. La recuperación es
+`prisma migrate resolve --rolled-back 202607280001_require_financial_ownership`,
+ejecutar el backfill y reintentar. El runbook lo documenta como camino esperado.
+
+> El comentario de cabecera de `202607270001_multiuser_identity` menciona una ruta
+> `docs/auth/sql/owner-not-null.sql` que ya no existe: el endurecimiento pasó a
+> ser esta migración. El archivo **no se edita** a propósito —nunca se modifica
+> una migración que puede estar aplicada en algún entorno—; `pnpm db:audit-migrations`
+> detecta justamente ese tipo de deriva por checksum.
 
 ## 3. Rollback
 
@@ -89,59 +109,58 @@ El paso 1 también es reversible sin pérdida: `DROP COLUMN "userId"` y borrar l
 tablas de identidad devuelve el esquema anterior. Sólo tiene sentido si se
 abandona el corte multiusuario entero.
 
-## 4. Validación ejecutada (local, PostgreSQL 16)
+## 4. Ensayo general ejecutado (local, PostgreSQL 16)
 
-Se sembró un conjunto legacy con `userId IS NULL` en las seis tablas y se corrió
-el ciclo completo.
+Se construyó una base con **sólo las migraciones previas al corte** y datos
+financieros legacy reales (cuatro cuentas, seis movimientos incluidos un anulado
+y una corrección encadenada, siete asientos, dos inversiones, dos próximos
+pagos), y se corrió la secuencia completa.
 
-**Antes**
+**Antes** — 24 filas sin propietario:
 
-| Tabla | Filas huérfanas |
-| --- | --- |
-| Account | 2 |
-| Category | 2 |
-| Transaction | 3 |
-| LedgerEntry | 4 |
-| Investment | 1 |
-| UpcomingPayment | 1 |
-| **Total** | **13** |
+| Tabla | Filas | Con dueño | Sin dueño |
+| --- | --- | --- | --- |
+| Account | 4 | 0 | 4 |
+| Category | 3 | 0 | 3 |
+| Transaction | 6 | 0 | 6 |
+| LedgerEntry | 7 | 0 | 7 |
+| Investment | 2 | 0 | 2 |
+| UpcomingPayment | 2 | 0 | 2 |
 
-Saldos de referencia: `Cuenta legacy = 1.265.000` centavos ·
-`Ahorro legacy = 350.000` centavos.
+**Después** — 24 reclamadas, 0 huérfanas, 0 filas de otros usuarios tocadas.
 
-**Después**
+**Conservación contable** — saldos idénticos en centavos:
 
-| Tabla | Huérfanas | Del owner |
+| Cuenta | Antes | Después |
 | --- | --- | --- |
-| Account | 0 | 2 |
-| Category | 0 | 13 (2 legacy + 11 repuestas) |
-| Transaction | 0 | 3 |
-| LedgerEntry | 0 | 4 |
-| Investment | 0 | 1 |
-| UpcomingPayment | 0 | 1 |
+| Banco Nación | 3.000.000 | 3.000.000 |
+| Mercado Pago | 644.650 | 644.650 |
+| Efectivo | 81.500 | 81.500 |
+| Caja vieja | 0 | 0 |
 
-**Conservación contable**: saldos idénticos (`1.265.000` y `350.000`). Importes,
-tipos y fechas sin cambios:
+Y el resto de las métricas, sin una sola diferencia: 7 asientos, débitos
+−464.950, créditos 1.750.000, 6 movimientos, 2 anulados, 1 corrección,
+1 transferencia, inversiones 1.100.000 / 1.285.000, próximos pagos 825.000.
 
-```
-legacy-tx-1 | EXPENSE  |  35000 | 2026-06-11
-legacy-tx-2 | INCOME   | 900000 | 2026-06-01
-legacy-tx-3 | TRANSFER | 100000 | 2026-06-15
-```
+Resultado del comando: `✔ Sin diferencias contables.`
 
-**Otras comprobaciones**
+**También se ejecutaron**
 
-- Dry-run: reporta los conteos y no escribe.
-- Idempotencia: segunda corrida → "No hay filas huérfanas. Nada que hacer."
-- Rollback sin `--confirm`: se niega.
-- Rollback con `--confirm`: 13 filas liberadas; `Transaction=3`, `LedgerEntry=4`
-  y saldo `1.265.000` intactos.
-- Backfill posterior al rollback: restaura el estado.
+- Preflight antes de la migración (sin columnas de propiedad) y después.
+- Dry-run: informa 24 filas y no escribe.
+- `migrate deploy` con las dos migraciones pendientes: la de endurecimiento
+  **falla a propósito** con `P3018`, sin tocar el esquema ni perder datos.
+- Recuperación con `prisma migrate resolve --rolled-back` y reintento exitoso.
+- Endurecimiento a `NOT NULL` sobre el esquema productivo previo: 2,25 s.
+- Migraciones desde cero sobre base limpia.
+- Auditoría de migraciones, incluida la detección de un archivo editado después
+  de aplicarse.
 
-**Hallazgo durante la validación**: la primera versión del post-chequeo no
-contemplaba las categorías repuestas del catálogo y abortaba con "los conteos no
-cierran" aunque el backfill había sido correcto. Se corrigió el chequeo (el
-backfill no tenía el error) y se agregó el detalle por tabla al mensaje de fallo.
+**Hallazgo del ensayo.** El control contable detectó que el backfill hacía algo
+de más: reponía el catálogo de categorías dentro de la misma transacción
+(`Category: 3 → 13`). Era una escritura intencional, pero rompía la garantía de
+que el backfill sólo asigna propiedad. Se quitó: ahora la comparación contable no
+tiene ninguna excepción y el catálogo se completa con `pnpm db:seed`.
 
 ## 5. Riesgos y mitigaciones
 

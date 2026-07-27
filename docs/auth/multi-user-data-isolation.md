@@ -151,15 +151,20 @@ prueba confirma que el usuario vecino no se movió ni un centavo.
 **QA de navegador** — ver `manual-qa.md`: usuario B intenta abrir por URL un
 movimiento de A → 404, y su pantalla de corrección → 404.
 
-## 6. Deuda conocida: `userId` es nullable
+## 6. Propiedad obligatoria a nivel base
 
-Las columnas `userId` de las tablas financieras admiten `NULL` mientras dura la
-migración legacy. Ver `owner-migration-plan.md`.
+Las seis columnas `userId` son `NOT NULL` desde la migración
+`202607280001_require_financial_ownership`.
 
-Consecuencia de seguridad: **ninguna**. Toda consulta filtra por un `userId`
-concreto, así que una fila huérfana es invisible para todos los usuarios
-(`WHERE "userId" = 'x'` nunca matchea `NULL`). El riesgo es de integridad, no de
-filtración: hoy nada a nivel base impide insertar una fila sin propietario.
+Durante la migración legacy fueron nullable a propósito, para poder aplicar el
+cambio de esquema sin tocar ninguna fila. Esa ventana nunca tuvo impacto de
+filtración —toda consulta filtra por un `userId` concreto y `WHERE "userId" = 'x'`
+nunca matchea `NULL`—, pero sí dejaba a la base sin poder impedir una fila sin
+propietario. Eso ya no es posible.
 
-El endurecimiento a `NOT NULL` está escrito en `docs/auth/sql/owner-not-null.sql`
-y se aplica después de verificar el backfill.
+Efecto adicional del endurecimiento: los únicos compuestos
+`Transaction(userId, idempotencyKey)` y `Category(userId, slug)` pasaron a ser
+realmente exclusivos. Con `NULL`s, Postgres los trataba como distintos.
+
+El orden de aplicación y el rollback están en `owner-migration-plan.md` y
+`rollback-playbook.md`.

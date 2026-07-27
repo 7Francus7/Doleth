@@ -198,7 +198,7 @@ consultan la base. Regresión fijada en `proxy.test.ts`.
 
 | Riesgo | Por qué se acepta | Qué lo cerraría |
 | --- | --- | --- |
-| `userId` nullable en las tablas financieras | Sin impacto de filtración: las consultas filtran por un valor concreto y `NULL` nunca matchea. Es integridad, no confidencialidad | `docs/auth/sql/owner-not-null.sql` tras el backfill |
+| `userId` nullable en las tablas financieras (resuelto) | Sin impacto de filtración: las consultas filtran por un valor concreto y `NULL` nunca matchea. Era integridad, no confidencialidad | Cerrado: migración `202607280001_require_financial_ownership`, que se aplica tras el backfill |
 | Sin segundo factor | Producto personal en etapa inicial; el 2FA sin canal de recuperación robusto genera más pérdidas de cuenta que las que evita | TOTP con códigos de respaldo |
 | Sin verificación contra contraseñas filtradas | Requiere un servicio externo (HIBP k-anonymity); hoy la política es longitud + lista corta de comunes | Consulta al rango de HIBP en registro y cambio |
 | Sesión de 30 días sin reautenticación periódica | Es una app financiera personal, de uso frecuente desde el propio teléfono; toda operación sensible ya pide la contraseña | Reautenticación por antigüedad de sesión |
