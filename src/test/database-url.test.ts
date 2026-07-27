@@ -13,7 +13,7 @@ import { TestDatabaseConfigError, resolveTestDatabaseUrl } from "./database-url"
 
 const LOCAL = "postgresql://doleth:doleth@localhost:5432/doleth_test";
 const CI_URL = "postgresql://doleth:doleth@localhost:5432/doleth_ci";
-const PRODUCCION = "postgresql://owner:secreto@ep-lisa-frost-12345.us-east-1.aws.neon.tech/neondb?sslmode=require";
+const PRODUCCION = "postgresql://owner:secreto@ep-base-de-ejemplo.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
 describe("resolveTestDatabaseUrl", () => {
   describe("a) falta TEST_DATABASE_URL", () => {
@@ -46,7 +46,7 @@ describe("resolveTestDatabaseUrl", () => {
       }
       expect(mensaje).not.toContain("secreto");
       expect(mensaje).not.toContain("owner");
-      expect(mensaje).not.toContain("ep-lisa-frost-12345");
+      expect(mensaje).not.toContain("ep-base-de-ejemplo.us-east-1.aws.neon.tech");
       expect(mensaje).not.toContain(PRODUCCION);
     });
   });
@@ -62,12 +62,12 @@ describe("resolveTestDatabaseUrl", () => {
     });
 
     it("acepta una base remota sólo si su nombre se declara de prueba", () => {
-      const url = "postgresql://u:p@ep-otra-branch.aws.neon.tech/doleth_test?sslmode=require";
+      const url = "postgresql://u:p@ep-otra-de-ejemplo.aws.neon.tech/doleth_test?sslmode=require";
       expect(resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toBe(url);
     });
 
     it("rechaza una base remota que no se declara de prueba", () => {
-      const url = "postgresql://u:p@ep-otra-branch.aws.neon.tech/neondb?sslmode=require";
+      const url = "postgresql://u:p@ep-otra-de-ejemplo.aws.neon.tech/neondb?sslmode=require";
       expect(() => resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toThrow(TestDatabaseConfigError);
     });
 
@@ -101,7 +101,7 @@ describe("resolveTestDatabaseUrl", () => {
 
     it("rechaza el mismo destino aunque cambien las credenciales o los parámetros", () => {
       const mismaBaseOtroUsuario =
-        "postgresql://otro:otraclave@ep-lisa-frost-12345.us-east-1.aws.neon.tech/neondb?sslmode=verify-full";
+        "postgresql://otro:otraclave@ep-base-de-ejemplo.us-east-1.aws.neon.tech/neondb?sslmode=verify-full";
       expect(() =>
         resolveTestDatabaseUrl({ TEST_DATABASE_URL: mismaBaseOtroUsuario, DATABASE_URL: PRODUCCION }),
       ).toThrow(/mismo destino/);

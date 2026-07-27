@@ -78,8 +78,9 @@ Probada en los dos escenarios exigidos:
 
 1. **Base limpia**: las cuatro migraciones desde cero → las seis columnas quedan
    `NOT NULL` y el índice existe.
-2. **Esquema productivo previo** con datos legacy reales → migración de
-   identidad, backfill, endurecimiento. Duración del endurecimiento: 2,25 s.
+2. **Esquema productivo previo** con datos legacy sintéticos —con la forma de
+   los reales, pero inventados— → migración de identidad, backfill,
+   endurecimiento. Duración del endurecimiento: 2,25 s.
 
 ## 5. Owner
 

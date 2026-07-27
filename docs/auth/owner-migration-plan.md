@@ -112,7 +112,8 @@ abandona el corte multiusuario entero.
 ## 4. Ensayo general ejecutado (local, PostgreSQL 16)
 
 Se construyó una base con **sólo las migraciones previas al corte** y datos
-financieros legacy reales (cuatro cuentas, seis movimientos incluidos un anulado
+financieros legacy sintéticos, con la forma de los reales pero inventados: no
+salen de la base de producción (cuatro cuentas, seis movimientos incluidos un anulado
 y una corrección encadenada, siete asientos, dos inversiones, dos próximos
 pagos), y se corrió la secuencia completa.
 
