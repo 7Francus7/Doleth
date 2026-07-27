@@ -1,4 +1,3 @@
-import "server-only";
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, type ScryptOptions } from "node:crypto";
 
 function scrypt(password: string, salt: Buffer, keyLength: number, options: ScryptOptions): Promise<Buffer> {
@@ -23,6 +22,12 @@ function scrypt(password: string, salt: Buffer, keyLength: number, options: Scry
  * El hash guarda su propio algoritmo y parámetros (`scrypt$N$r$p$salt$hash`), así
  * que migrar a Argon2id más adelante es agregar un verificador y rehashear en el
  * próximo login exitoso: no hace falta tocar la base ni invalidar contraseñas.
+ *
+ * Este módulo NO lleva el guard `server-only` a propósito: es cálculo puro sobre
+ * strings, sin secretos de entorno ni acceso a cookies, y el instrumental de
+ * migración (`prisma/ops/`) necesita hashear con exactamente el mismo algoritmo
+ * que la aplicación. Los módulos que sí tocan secretos —`config`, `email`,
+ * `session`, `audit`— conservan el guard.
  */
 const ALGORITHM = "scrypt";
 const COST = 2 ** 16;
