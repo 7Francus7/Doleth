@@ -26,8 +26,14 @@ export default function TermsPage() {
 
       <h2>Tus datos</h2>
       <p>
-        Los datos financieros que cargás son tuyos. Cada cuenta ve exclusivamente su propia información. Podés pedir la
-        eliminación de tu cuenta desde la configuración.
+        Los datos financieros que cargás son tuyos. Cada cuenta ve exclusivamente su propia información.
+      </p>
+
+      <h2>Baja de la cuenta</h2>
+      <p>
+        Desde la configuración podés <strong>solicitar</strong> la baja. Eso registra tu pedido; no borra tu información
+        de forma inmediata ni automática. Procesamos las bajas a mano: bloqueamos el acceso y después anonimizamos la
+        identidad asociada a la cuenta. Mientras el pedido no se haya ejecutado podés cancelarlo.
       </p>
 
       <h2>Disponibilidad</h2>
@@ -42,9 +48,26 @@ export default function TermsPage() {
         comunicarían con anticipación y no se aplicarían de forma retroactiva.
       </p>
 
-      <h2>Contacto</h2>
+      <h2>Contacto y responsable</h2>
       <p>
         Para cualquier consulta sobre estos términos, escribinos desde la dirección con la que creaste tu cuenta.
+      </p>
+
+      <h2 id="pendiente">Lo que todavía falta definir</h2>
+      <p>
+        Somos explícitos con esto en lugar de completarlo con texto genérico. Estos puntos requieren una decisión
+        humana y una revisión profesional que todavía no ocurrió:
+      </p>
+      <ul>
+        <li>Razón social o persona responsable del servicio.</li>
+        <li>Domicilio y dirección de contacto formal.</li>
+        <li>Jurisdicción y ley aplicable.</li>
+        <li>Plazos de conservación de la información.</li>
+        <li>Condiciones de un eventual plan pago.</li>
+      </ul>
+      <p>
+        Hasta que se definan, este documento describe cómo funciona Doleth hoy, no constituye asesoramiento legal y no
+        afirma cumplimiento normativo de ninguna jurisdicción.
       </p>
 
       <p className={styles.legal}>

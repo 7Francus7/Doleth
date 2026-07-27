@@ -43,7 +43,8 @@ export default function PrivacyPage() {
       <h2>Con quién compartimos</h2>
       <p>
         Con nadie, salvo los proveedores necesarios para que el servicio funcione: el hosting de la aplicación, la base
-        de datos y el proveedor de envío de correo, que recibe únicamente tu dirección y el contenido del mensaje.
+        de datos y el proveedor de envío de correo, que recibe únicamente tu dirección y el contenido del mensaje. No
+        vendemos ni cedemos información a terceros con fines comerciales.
       </p>
 
       <h2>Cookies</h2>
@@ -55,8 +56,45 @@ export default function PrivacyPage() {
 
       <h2>Tus derechos</h2>
       <p>
-        Podés corregir tu nombre y tu correo desde la configuración de la cuenta, y pedir la eliminación de tu cuenta
-        desde la misma pantalla. La solicitud queda registrada y se procesa de forma manual.
+        Podés corregir tu nombre y tu correo desde la configuración de la cuenta.
+      </p>
+
+      <h2>Qué pasa cuando pedís la baja</h2>
+      <p>
+        Queremos ser exactos, porque acá es fácil prometer de más:
+      </p>
+      <ul>
+        <li>Al pedir la baja se <strong>registra tu solicitud</strong>. No se borra nada en ese momento.</li>
+        <li>Podés cancelar el pedido mientras no lo hayamos ejecutado.</li>
+        <li>Al procesarlo, primero bloqueamos el acceso: se cierran tus sesiones y la cuenta deja de poder entrar.</li>
+        <li>
+          Después anonimizamos tu identidad: tu nombre y tu correo dejan de estar asociados a la cuenta y no se puede
+          volver a iniciar sesión.
+        </li>
+        <li>
+          Los registros contables se conservan sin persona asociada. Todavía no tenemos definido un plazo de
+          destrucción; cuando lo definamos, lo vamos a publicar acá.
+        </li>
+        <li>Nunca vamos a decirte que tu información fue eliminada si sólo quedó registrada la solicitud.</li>
+      </ul>
+      <p>
+        Todavía no está disponible la exportación de tus datos antes de la baja. Es una deuda reconocida, no una
+        función que exista y no encuentres.
+      </p>
+
+      <h2 id="pendiente">Lo que todavía falta definir</h2>
+      <p>Estos puntos requieren una decisión humana y una revisión profesional que todavía no ocurrió:</p>
+      <ul>
+        <li>Responsable del tratamiento de los datos.</li>
+        <li>Vía formal de contacto para ejercer derechos.</li>
+        <li>Base legal y finalidad declarada del tratamiento.</li>
+        <li>Plazos concretos de conservación y destrucción.</li>
+        <li>Identificación nominal de los proveedores y sus ubicaciones.</li>
+        <li>Jurisdicción aplicable y autoridad de control.</li>
+      </ul>
+      <p>
+        Este documento describe cómo funciona Doleth hoy. No es asesoramiento legal y no afirma cumplimiento normativo
+        de ninguna jurisdicción.
       </p>
 
       <p className={styles.legal}>
