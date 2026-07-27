@@ -10,7 +10,28 @@ import { createPostings } from "../lib/finance/domain";
  * simultáneas no se pisan y no hace falta vaciar la base entre tests.
  */
 
-export const hasDatabase = Boolean(process.env.DATABASE_URL);
+/**
+ * ¿Hay una base real disponible?
+ *
+ * Las suites de aislamiento y de identidad no tienen valor sin Postgres, así que
+ * se omiten cuando no hay conexión. Omitirlas en CI sería peor que no tenerlas:
+ * daría verde sin haber probado lo único bloqueante del corte. Por eso, cuando
+ * `DOLETH_REQUIRE_DB` está activo —el job de CI lo activa siempre— la ausencia
+ * de base es un fallo duro y ruidoso, no un skip silencioso.
+ */
+function resolveDatabaseAvailability(): boolean {
+  const available = Boolean(process.env.DATABASE_URL);
+  const required = process.env.DOLETH_REQUIRE_DB === "1";
+  if (required && !available) {
+    throw new Error(
+      "DOLETH_REQUIRE_DB=1 pero no hay DATABASE_URL ni TEST_DATABASE_URL. " +
+        "Las pruebas de aislamiento multiusuario son bloqueantes y no pueden omitirse en CI.",
+    );
+  }
+  return available;
+}
+
+export const hasDatabase = resolveDatabaseAvailability();
 
 export interface TestUser {
   id: string;
