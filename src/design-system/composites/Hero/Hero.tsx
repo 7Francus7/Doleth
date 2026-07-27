@@ -9,6 +9,7 @@ import { NumericValue } from "../../primitives/NumericValue";
 import { Surface } from "../../primitives/Surface";
 import { CoverageMeter, type CoverageMeterProps } from "../CoverageMeter";
 import styles from "./Hero.module.css";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 
 export type HeroScenario = "stable" | "attention" | "incomplete" | "new";
 export type HeroTone = "raised" | "state-raised";
@@ -125,7 +126,7 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
             key={stateText}
             transition={{ duration: motionDuration.micro, ease: motionCurve.snap }}
           >
-            {stateText}
+            <SensitiveText>{stateText}</SensitiveText>
           </motion.p>
         </AnimatePresence>
 
@@ -154,7 +155,7 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
             </Label>
             {inlineNote ? (
               <Label as="p" className={styles.inlineNote} size="s" tone="tertiary">
-                {inlineNote}
+                <SensitiveText>{inlineNote}</SensitiveText>
               </Label>
             ) : null}
           </div>

@@ -9,6 +9,7 @@ import { Surface } from "../../design-system/primitives/Surface";
 import { TextLink } from "../../design-system/primitives/TextLink";
 import type { CloseViewModel } from "./model";
 import styles from "./ClosePage.module.css";
+import { SensitiveText } from "../../components/privacy/AmountPrivacy";
 
 export interface ClosePageProps {
   model: CloseViewModel;
@@ -56,8 +57,8 @@ export function ClosePage({ model }: ClosePageProps) {
             {model.progressLabel}
           </p>
           <h2 className={styles.title}>{model.title}</h2>
-          <p className={styles.support}>{model.supportingLine}</p>
-          <p className={styles.intro}>{model.intro}</p>
+          <p className={styles.support}><SensitiveText>{model.supportingLine}</SensitiveText></p>
+          <p className={styles.intro}><SensitiveText>{model.intro}</SensitiveText></p>
         </header>
 
         {model.periods ? (
@@ -113,7 +114,7 @@ export function ClosePage({ model }: ClosePageProps) {
               )}
               {block.notice ? (
                 <p className={styles.notice} role="status">
-                  {block.notice}
+                  <SensitiveText>{block.notice}</SensitiveText>
                 </p>
               ) : null}
               {block.rows.length > 0 ? (
@@ -127,7 +128,7 @@ export function ClosePage({ model }: ClosePageProps) {
                 </div>
               ) : null}
               <p className={styles.note} data-kind={block.noteKind ?? "neutral"}>
-                {block.note}
+                <SensitiveText>{block.note}</SensitiveText>
               </p>
             </Surface>
           </section>
@@ -154,7 +155,7 @@ export function ClosePage({ model }: ClosePageProps) {
                         </span>
                       </span>
                     </p>
-                    <p className={styles.warningDetail}>{warning.detail}</p>
+                    <p className={styles.warningDetail}><SensitiveText>{warning.detail}</SensitiveText></p>
                     {warning.actionHref && warning.actionLabel ? (
                       <TextLink href={warning.actionHref} kind="standalone" showChevron>
                         {warning.actionLabel}
@@ -169,7 +170,7 @@ export function ClosePage({ model }: ClosePageProps) {
 
         {model.notice ? (
           <p className={styles.notice} role="status">
-            {model.notice}
+            <SensitiveText>{model.notice}</SensitiveText>
           </p>
         ) : null}
 
@@ -178,7 +179,7 @@ export function ClosePage({ model }: ClosePageProps) {
             <Surface border="subtle" className={styles.section} padding="md" radius="lg" tone="base">
               <SectionTitle title={model.summary.title} />
               <p className={styles.note} data-kind="neutral">
-                {model.summary.statement}
+                <SensitiveText>{model.summary.statement}</SensitiveText>
               </p>
               <div className={styles.rows}>
                 {model.summary.rows.map((row, index) => (

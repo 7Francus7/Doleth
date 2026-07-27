@@ -6,6 +6,7 @@ import { successForCorrection, successForMovement, successForVoid } from "../../
 import { formatCentsAR } from "../../lib/finance/amount";
 import { financeError, toSafeError } from "../../lib/finance/errors";
 import { sanitizeReturnPath } from "../../lib/navigation/returnPath";
+import { logServerError } from "../../lib/observability";
 import {
   createPostings,
   dateOnly,
@@ -43,8 +44,11 @@ export interface FinanceActionState {
  * Nunca devuelve el mensaje de una excepción desconocida: Prisma, SQL o red se
  * traducen a copy humano. Solo los errores propios llegan tal cual.
  */
-const errorState = (error: unknown): FinanceActionState => {
+const errorState = (error: unknown, operation: string): FinanceActionState => {
   const safe = toSafeError(error);
+  if (safe.code === "unexpected") {
+    logServerError({ route: "/actions/finance", operation, code: safe.code });
+  }
   return {
     ok: false,
     message: safe.message,
@@ -127,7 +131,7 @@ export async function createInvestmentAction(
     revalidatePath("/inversiones");
     return { ok: true, message: "Inversión registrada. Ya forma parte de tu cartera." };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "create-investment");
   }
 }
 
@@ -165,7 +169,7 @@ export async function createAccountAction(
     refreshFinance();
     return { ok: true, message: "Cuenta creada. El saldo inicial ya forma parte de tu patrimonio." };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "create-account");
   }
 }
 
@@ -297,7 +301,7 @@ export async function createMovementAction(
       },
     };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "create-movement");
   }
 }
 
@@ -325,7 +329,7 @@ export async function voidMovementAction(
     }
     return { ok: true, message: feedback.message, detail: feedback.detail, data: { transactionId: id, redirectTo } };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "void-movement");
   }
 }
 
@@ -406,7 +410,7 @@ export async function correctMovementAction(
       },
     };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "correct-movement");
   }
 }
 
@@ -435,7 +439,7 @@ export async function createUpcomingPaymentAction(
     refreshFinance();
     return { ok: true, message: "Próximo pago registrado." };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "create-upcoming-payment");
   }
 }
 
@@ -554,7 +558,7 @@ export async function payUpcomingPaymentAction(
           : {}),
       };
     }
-    return errorState(error);
+    return errorState(error, "pay-upcoming-payment");
   }
 }
 
@@ -614,6 +618,6 @@ export async function repeatUpcomingPaymentAction(
       data: { redirectTo: `/proximo/${created.id}` },
     };
   } catch (error) {
-    return errorState(error);
+    return errorState(error, "repeat-upcoming-payment");
   }
 }

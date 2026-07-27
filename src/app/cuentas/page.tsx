@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { setAccountStatusAction } from "../actions/finance";
 import { OperationalShell } from "../../components/finance/OperationalShell";
+import { SensitiveAmount } from "../../components/privacy/AmountPrivacy";
 import { EmptyState } from "../../design-system/feedback";
 import { formatCents } from "../../lib/finance/domain";
 import { getAccountsWithBalances } from "../../lib/finance/data";
@@ -19,7 +20,9 @@ export default async function AccountsPage() {
         <div className={styles.listItem} key={account.id}>
           <div className={styles.itemCopy}><span className={styles.itemTitle}>{account.name}</span><span className={styles.itemMeta}>{typeLabel[account.type]} · {account.currency} · {account.status === "ACTIVE" ? "Activa" : "Archivada"}</span></div>
           <div className={styles.itemCopy}>
-            <span className={styles.itemAmount}>{account.balanceCents < 0n ? "-" : ""}${formatCents(account.balanceCents < 0n ? -account.balanceCents : account.balanceCents)}</span>
+            <span className={styles.itemAmount}>
+              <SensitiveAmount>{account.balanceCents < 0n ? "-" : ""}${formatCents(account.balanceCents < 0n ? -account.balanceCents : account.balanceCents)}</SensitiveAmount>
+            </span>
             <form action={setAccountStatusAction}>
               <input name="id" type="hidden" value={account.id} /><input name="status" type="hidden" value={account.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE"} />
               <button className={styles.quietButton} type="submit">{account.status === "ACTIVE" ? "Archivar" : "Reactivar"}</button>

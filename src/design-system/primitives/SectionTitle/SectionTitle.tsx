@@ -1,5 +1,6 @@
 import { TextLink } from "../TextLink";
 import styles from "./SectionTitle.module.css";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 
 export type SectionTitleSupport = "none" | "line";
 export type SectionTitleAction = "none" | "link";
@@ -29,7 +30,7 @@ export function SectionTitle(props: SectionTitleProps) {
       <div className={styles.copy}>
         <h2 className={styles.title}>{props.title}</h2>
         {props.support === "line" ? (
-          <p className={styles.support}>{props.supportingLine}</p>
+          <p className={styles.support}><SensitiveText>{props.supportingLine}</SensitiveText></p>
         ) : null}
       </div>
       {props.action === "link" ? (

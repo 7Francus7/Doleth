@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { ConfirmPaymentForm } from "../../../components/finance/ConfirmPaymentForm";
 import { RepeatUpcomingPaymentForm } from "../../../components/finance/RepeatUpcomingPaymentForm";
+import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
 import { getDb } from "../../../lib/db";
 import { formatCentsAR } from "../../../lib/finance/amount";
 import { todayInArgentina } from "../../../lib/finance/domain";
@@ -12,6 +14,7 @@ import { sanitizeReturnPath } from "../../../lib/navigation/returnPath";
 import styles from "../../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Detalle de próximo pago" };
 
 const STATE_LABELS = {
   overdue: "Vencido",
@@ -58,7 +61,7 @@ export default async function UpcomingPaymentDetailPage({
         <dl className={styles.detailGrid}>
           <div className={styles.detailRow}>
             <dt>Importe previsto</dt>
-            <dd>${formatCentsAR(payment.estimatedCents)}</dd>
+            <dd><SensitiveAmount>${formatCentsAR(payment.estimatedCents)}</SensitiveAmount></dd>
           </div>
           <div className={styles.detailRow}>
             <dt>Vencimiento</dt>
@@ -86,7 +89,7 @@ export default async function UpcomingPaymentDetailPage({
       {payment.transaction ? (
         <section className={styles.panel}>
           <p className={styles.fieldHelp}>
-            Este pago ya se confirmó: salieron ${formatCentsAR(payment.transaction.amountCents)} de{" "}
+            Este pago ya se confirmó: salieron <SensitiveAmount>${formatCentsAR(payment.transaction.amountCents)}</SensitiveAmount> de{" "}
             {payment.plannedAccount.name}.
           </p>
           <Link className={styles.primaryLink} href={`/movimientos/${payment.transaction.id}`}>

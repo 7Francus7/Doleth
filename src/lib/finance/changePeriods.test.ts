@@ -21,8 +21,8 @@ const movement = (over: Partial<CategorizedMovement> & { id: string }): Categori
   voided: false,
   label: "Movimiento",
   accountName: "Banco",
-  categoryId: null,
-  categoryName: null,
+  categoryId: "cat-default",
+  categoryName: "Categoría de prueba",
   ...over,
 });
 
@@ -200,15 +200,12 @@ describe("causas", () => {
     expect(total).toBe(-28_000_00n);
   });
 
-  it("los movimientos sin categoría se agrupan por tipo", () => {
-    const { causes } = summarizeCauses([
-      movement({ id: "a", amountCents: 5_000_00n }),
-      movement({ id: "b", type: "INCOME", amountCents: 8_000_00n }),
-    ]);
-    expect(causes.map((cause) => cause.id).sort()).toEqual([
-      "uncategorized:EXPENSE",
-      "uncategorized:INCOME",
-    ]);
+  it("rechaza un movimiento patrimonial imposible sin categoría", () => {
+    expect(() =>
+      summarizeCauses([
+        movement({ id: "a", amountCents: 5_000_00n, categoryId: null, categoryName: null }),
+      ]),
+    ).toThrow("Movimiento patrimonial sin categoría.");
   });
 
   it("la participación siempre tiene denominador y no supera 100", () => {

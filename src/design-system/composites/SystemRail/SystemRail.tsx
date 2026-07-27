@@ -1,6 +1,7 @@
 import type { ComponentPropsWithoutRef } from "react";
 import { Label } from "../../primitives/Label";
 import styles from "./SystemRail.module.css";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 
 export type SystemRailItems =
   | readonly [string, string, string]
@@ -31,7 +32,7 @@ export function SystemRail({
         <span className={styles.unit} key={`${item}-${index}`}>
           {index > 0 ? <span aria-hidden="true" className={styles.separator} /> : null}
           <Label className={styles.item} size="s" tone="tertiary">
-            {item}
+            <SensitiveText>{item}</SensitiveText>
           </Label>
         </span>
       ))}

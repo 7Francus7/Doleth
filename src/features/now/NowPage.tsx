@@ -4,6 +4,7 @@ import { AnimatePresence, LayoutGroup } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DolethBrand } from "../../components/brand/DolethBrand";
+import { SensitiveAmount, SensitiveText } from "../../components/privacy/AmountPrivacy";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
@@ -90,7 +91,7 @@ export function NowPage({ model }: NowPageProps) {
               tone={model.projection.amountState === "attention" ? "attention" : "neutral"}
               value={model.projection.amount}
             />
-            <p className={styles.projectionHeadline}>{model.projection.headline}</p>
+            <p className={styles.projectionHeadline}><SensitiveText>{model.projection.headline}</SensitiveText></p>
             <div className={styles.projectionRows}>
               {model.projection.rows.map((row, index) => (
                 <div className={styles.projectionUnit} key={row.label}>
@@ -99,9 +100,9 @@ export function NowPage({ model }: NowPageProps) {
                 </div>
               ))}
             </div>
-            <p className={styles.projectionNote}>{model.projection.note}</p>
+            <p className={styles.projectionNote}><SensitiveText>{model.projection.note}</SensitiveText></p>
             {model.projection.excludedNote ? (
-              <p className={styles.projectionNote}>{model.projection.excludedNote}</p>
+              <p className={styles.projectionNote}><SensitiveText>{model.projection.excludedNote}</SensitiveText></p>
             ) : null}
             <TextLink href={model.projection.linkHref} kind="standalone" showChevron>
               {model.projection.linkLabel}
@@ -127,7 +128,7 @@ export function NowPage({ model }: NowPageProps) {
                     <span aria-hidden="true">•••</span>
                   </div>
                   <p>{account.name}</p>
-                  <strong>{account.balancePrefix}{account.balance}</strong>
+                  <strong><SensitiveAmount>{account.balancePrefix}{account.balance}</SensitiveAmount></strong>
                 </article>
               ))}
               <Link className={styles.addAccountCard} href="/cuentas/nueva">
@@ -159,7 +160,7 @@ export function NowPage({ model }: NowPageProps) {
               <span className={styles.investmentsEyebrow}>Cartera de inversiones</span>
               {model.investments.hasInvestments ? (
                 <strong className={styles.investmentsValue}>
-                  {model.investments.valuePrefix}{model.investments.value}
+                  <SensitiveAmount>{model.investments.valuePrefix}{model.investments.value}</SensitiveAmount>
                 </strong>
               ) : (
                 <span className={styles.investmentsCta}>Registrá tu primera inversión</span>

@@ -14,6 +14,7 @@ import { TextLink } from "../../design-system/primitives/TextLink";
 import { EvidenceBreakdownExperience } from "../evidence";
 import type { RealityViewModel } from "./model";
 import styles from "./RealityPage.module.css";
+import { SensitiveText } from "../../components/privacy/AmountPrivacy";
 
 export interface RealityPageProps {
   model: RealityViewModel;
@@ -50,7 +51,7 @@ export function RealityPage({ model }: RealityPageProps) {
           valueActionLabel="Ver cómo se calculó tu patrimonio"
         />
 
-        {model.synthesis ? <p className={styles.synthesis}>{model.synthesis}</p> : null}
+        {model.synthesis ? <p className={styles.synthesis}><SensitiveText>{model.synthesis}</SensitiveText></p> : null}
 
         <StabilityStatement {...model.stability} />
 
@@ -62,7 +63,7 @@ export function RealityPage({ model }: RealityPageProps) {
             radius="lg"
             tone="base"
           >
-            <p className={styles.primaryActionLine}>{model.primaryAction.supportingLine}</p>
+            <p className={styles.primaryActionLine}><SensitiveText>{model.primaryAction.supportingLine}</SensitiveText></p>
             <Link className={styles.primaryActionLink} href={model.primaryAction.href}>
               {model.primaryAction.label}
             </Link>
@@ -91,7 +92,7 @@ export function RealityPage({ model }: RealityPageProps) {
               )}
               {section.notice ? (
                 <p className={styles.notice} role="status">
-                  {section.notice}
+                  <SensitiveText>{section.notice}</SensitiveText>
                 </p>
               ) : null}
               {section.rows.length > 0 ? (
@@ -105,7 +106,7 @@ export function RealityPage({ model }: RealityPageProps) {
                 </div>
               ) : null}
               <p className={styles.sectionNote} data-kind={section.noteKind ?? "neutral"}>
-                {section.note}
+                <SensitiveText>{section.note}</SensitiveText>
               </p>
             </Surface>
           </section>
@@ -125,11 +126,11 @@ export function RealityPage({ model }: RealityPageProps) {
                 <span className={styles.qualityRatio}>{model.quality.ratioLabel}</span>
               </p>
               <p className={styles.sectionNote} data-kind="neutral">
-                {model.quality.summary}
+                <SensitiveText>{model.quality.summary}</SensitiveText>
               </p>
               {model.quality.notice ? (
                 <p className={styles.notice} role="status">
-                  {model.quality.notice}
+                  <SensitiveText>{model.quality.notice}</SensitiveText>
                 </p>
               ) : null}
               <ul className={styles.signals}>
@@ -144,8 +145,8 @@ export function RealityPage({ model }: RealityPageProps) {
                         </span>
                       </span>
                     </p>
-                    <p className={styles.signalReading}>{signal.reading}</p>
-                    <p className={styles.signalMatters}>{signal.matters}</p>
+                    <p className={styles.signalReading}><SensitiveText>{signal.reading}</SensitiveText></p>
+                    <p className={styles.signalMatters}><SensitiveText>{signal.matters}</SensitiveText></p>
                     {signal.actionHref && signal.actionLabel ? (
                       <TextLink href={signal.actionHref} kind="standalone" showChevron>
                         {signal.actionLabel}

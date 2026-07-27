@@ -15,6 +15,7 @@ import {
   type UpcomingCommitment,
 } from "./projection";
 import type { RealityAccount, RealityInvestment, RealityMovement } from "./reality";
+import { logServerError } from "../observability";
 import {
   monthPeriod,
   resolvePeriod,
@@ -22,6 +23,10 @@ import {
   type ClosePayment,
   type ClosePeriod,
 } from "./close";
+
+const reportSecondaryRead = (route: string, operation: string) => () => {
+  logServerError({ route, operation, code: "secondary-read-failed" });
+};
 
 /**
  * Traduce un `UpcomingPayment` de Prisma al compromiso puro que consume
@@ -150,6 +155,7 @@ export async function getNowData(): Promise<NowData> {
         orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
         take: 5,
       }),
+      reportSecondaryRead("/ahora", "recent-movements"),
     ),
   ]);
 
@@ -404,6 +410,7 @@ export async function getChangesData(windowDays = 7): Promise<ChangesData> {
         include: { sourceAccount: true, destinationAccount: true, category: true },
         orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
       }),
+      reportSecondaryRead("/cambios", "comparison-movements"),
     ),
     resilientRead(() =>
       db.transaction.findFirst({
@@ -411,6 +418,7 @@ export async function getChangesData(windowDays = 7): Promise<ChangesData> {
         orderBy: { occurredOn: "asc" },
         select: { occurredOn: true },
       }),
+      reportSecondaryRead("/cambios", "oldest-movement"),
     ),
   ]);
 
@@ -484,6 +492,7 @@ export async function getProgressData(): Promise<ProgressData> {
         include: { plannedAccount: true },
         orderBy: { dueOn: "asc" },
       }),
+      reportSecondaryRead("/progreso", "upcoming-payments"),
     ),
   ]);
 
@@ -573,13 +582,17 @@ export async function getRealityData(): Promise<RealityData> {
   const [accounts, activity, investments, pending, movements] = await Promise.all([
     getAccountsWithBalances(),
     getAccountActivity(),
-    resilientRead(() => getInvestments()),
+    resilientRead(
+      () => getInvestments(),
+      reportSecondaryRead("/mi-realidad", "investments"),
+    ),
     resilientRead(() =>
       db.upcomingPayment.findMany({
         where: { status: "PENDING" },
         include: { plannedAccount: true },
         orderBy: { dueOn: "asc" },
       }),
+      reportSecondaryRead("/mi-realidad", "upcoming-payments"),
     ),
     db.transaction.findMany({
       where: {
@@ -683,6 +696,7 @@ export async function getCloseData(month: string | undefined): Promise<CloseData
         include: { plannedAccount: true },
         orderBy: { dueOn: "asc" },
       }),
+      reportSecondaryRead("/mi-realidad/cierre", "upcoming-payments"),
     ),
   ]);
 

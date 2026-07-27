@@ -5,6 +5,7 @@ import { Label } from "../../primitives/Label";
 import { Surface } from "../../primitives/Surface";
 import { motion, useReducedMotion } from "motion/react";
 import { motionCurve, motionDuration } from "../../tokens";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 import styles from "./AttentionBanner.module.css";
 
 export interface AttentionBannerProps {
@@ -49,9 +50,9 @@ export function AttentionBanner({
       >
         <div className={styles.copy}>
           <Label as="p" className={styles.title} size="l" tone="primary">
-            {title}
+            <SensitiveText>{title}</SensitiveText>
           </Label>
-          <p className={styles.detail}>{detail}</p>
+          <p className={styles.detail}><SensitiveText>{detail}</SensitiveText></p>
         </div>
         <Button kind="ghost" onClick={() => onAction?.(actionId)} width="hug">
           {actionLabel}
