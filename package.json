@@ -15,7 +15,9 @@
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "db:backfill-owner": "tsx prisma/backfill-owner.ts",
+    "db:rollback-owner": "tsx prisma/rollback-owner-backfill.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
