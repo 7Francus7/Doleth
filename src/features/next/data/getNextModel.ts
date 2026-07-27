@@ -3,8 +3,11 @@ import { formatCents, formatDateAR } from "../../../lib/finance/domain";
 import { getAccountsWithBalances, getUpcomingPayments } from "../../../lib/finance/data";
 import type { NextViewModel } from "../model";
 
-export async function getNextModel(): Promise<NextViewModel> {
-  const [{ payments, accounts }, balances] = await Promise.all([getUpcomingPayments(), getAccountsWithBalances()]);
+export async function getNextModel(userId: string): Promise<NextViewModel> {
+  const [{ payments, accounts }, balances] = await Promise.all([
+    getUpcomingPayments(userId),
+    getAccountsWithBalances(userId),
+  ]);
   const pending = payments.filter((payment) => payment.status === "PENDING");
   const paid = payments.filter((payment) => payment.status === "PAID").slice(0, 5);
   const pendingCents = pending.reduce((sum, payment) => sum + payment.estimatedCents, 0n);

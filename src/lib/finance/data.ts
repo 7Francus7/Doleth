@@ -2,13 +2,23 @@ import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
 
-export async function getAccountsWithBalances() {
+/**
+ * Capa de lectura financiera.
+ *
+ * Todas las funciones exigen `userId` como primer argumento y lo aplican al
+ * `where` de cada consulta. El identificador viene siempre de la sesión validada
+ * (`requireUser()`); nunca de la URL ni del formulario. No existe en este archivo
+ * ninguna consulta sin filtro de propietario: esa es la invariante que sostiene el
+ * aislamiento entre usuarios.
+ */
+
+export async function getAccountsWithBalances(userId: string) {
   const db = getDb();
   const [accounts, totals] = await Promise.all([
-    db.account.findMany({ orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
+    db.account.findMany({ where: { userId }, orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
     db.ledgerEntry.groupBy({
       by: ["accountId"],
-      where: { transaction: { voidedAt: null } },
+      where: { userId, transaction: { voidedAt: null } },
       _sum: { amountCents: true },
     }),
   ]);
@@ -25,11 +35,11 @@ export async function getAccountsWithBalances() {
   }));
 }
 
-export async function getMovementFormData() {
+export async function getMovementFormData(userId: string) {
   const db = getDb();
   const [accounts, categories] = await Promise.all([
-    db.account.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
-    db.category.findMany({ orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    db.account.findMany({ where: { userId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
+    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
   ]);
   return {
     accounts: accounts.map(({ id, name, currency }) => ({ id, name, currency })),
@@ -38,7 +48,7 @@ export async function getMovementFormData() {
   };
 }
 
-export async function getDashboardData() {
+export async function getDashboardData(userId: string) {
   const db = getDb();
   const today = todayInArgentina();
   const month = today.slice(0, 7);
@@ -48,23 +58,24 @@ export async function getDashboardData() {
   inSevenDays.setUTCDate(inSevenDays.getUTCDate() + 7);
 
   const [accounts, monthMovements, historyMovements, upcoming, recent] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     db.transaction.findMany({
-      where: { occurredOn: { gte: start, lt: end } },
+      where: { userId, occurredOn: { gte: start, lt: end } },
       select: { type: true, amountCents: true, voidedAt: true },
     }),
     db.transaction.findMany({
-      where: { occurredOn: { gte: historyStart, lt: end } },
+      where: { userId, occurredOn: { gte: historyStart, lt: end } },
       select: { type: true, amountCents: true, occurredOn: true, voidedAt: true },
       orderBy: { occurredOn: "asc" },
     }),
     db.upcomingPayment.findMany({
-      where: { status: "PENDING", dueOn: { lte: inSevenDays } },
+      where: { userId, status: "PENDING", dueOn: { lte: inSevenDays } },
       include: { plannedAccount: true },
       orderBy: { dueOn: "asc" },
       take: 5,
     }),
     db.transaction.findMany({
+      where: { userId },
       include: { sourceAccount: true, destinationAccount: true, category: true },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
       take: 5,
@@ -125,15 +136,18 @@ export interface MovementFilters {
   accountId?: string;
 }
 
-export async function getMovements(filters: MovementFilters) {
+export async function getMovements(userId: string, filters: MovementFilters) {
   const db = getDb();
   const { start, end } = monthBounds(filters.month);
+  // El accountId llega de la query string: se usa sólo para acotar dentro de lo
+  // que ya es del usuario, nunca para ampliar el alcance.
   const accountFilter = filters.accountId
     ? { OR: [{ sourceAccountId: filters.accountId }, { destinationAccountId: filters.accountId }] }
     : {};
   const [movements, accounts] = await Promise.all([
     db.transaction.findMany({
       where: {
+        userId,
         occurredOn: { gte: start, lt: end },
         ...(filters.type ? { type: filters.type } : {}),
         ...accountFilter,
@@ -141,7 +155,7 @@ export async function getMovements(filters: MovementFilters) {
       include: { sourceAccount: true, destinationAccount: true, category: true },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
     }),
-    db.account.findMany({ orderBy: { name: "asc" } }),
+    db.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
   ]);
   return {
     accounts,
@@ -160,22 +174,37 @@ export async function getMovements(filters: MovementFilters) {
   };
 }
 
-export async function getInvestments() {
-  const db = getDb();
-  return db.investment.findMany({
-    where: { status: "ACTIVE" },
+/** Movimiento por id, acotado al propietario: cambiar el id de la URL no alcanza. */
+export async function getOwnedMovement(userId: string, id: string) {
+  return getDb().transaction.findFirst({
+    where: { id, userId },
+    include: { sourceAccount: true, destinationAccount: true, category: true, correction: true, correctedFrom: true },
+  });
+}
+
+export async function getOwnedUpcomingPayment(userId: string, id: string) {
+  return getDb().upcomingPayment.findFirst({
+    where: { id, userId },
+    include: { plannedAccount: true, transaction: true },
+  });
+}
+
+export async function getInvestments(userId: string) {
+  return getDb().investment.findMany({
+    where: { userId, status: "ACTIVE" },
     orderBy: [{ currentValueCents: "desc" }, { createdAt: "asc" }],
   });
 }
 
-export async function getUpcomingPayments() {
+export async function getUpcomingPayments(userId: string) {
   const db = getDb();
   const [payments, accounts] = await Promise.all([
     db.upcomingPayment.findMany({
+      where: { userId },
       include: { plannedAccount: true },
       orderBy: [{ status: "asc" }, { dueOn: "asc" }],
     }),
-    db.account.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
+    db.account.findMany({ where: { userId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
   ]);
   return { payments, accounts };
 }

@@ -3,9 +3,9 @@ import { formatCents } from "../../../lib/finance/domain";
 import { getDashboardData, getInvestments } from "../../../lib/finance/data";
 import type { NowViewModel } from "../model";
 
-async function getInvestmentsSummary(): Promise<NonNullable<NowViewModel["investments"]> | null> {
+async function getInvestmentsSummary(userId: string): Promise<NonNullable<NowViewModel["investments"]> | null> {
   try {
-    const investments = await getInvestments();
+    const investments = await getInvestments(userId);
     if (!investments.length) {
       return { hasInvestments: false, value: "0", valuePrefix: "$", deltaLabel: "", deltaState: "neutral", href: "/inversiones" };
     }
@@ -28,8 +28,8 @@ async function getInvestmentsSummary(): Promise<NonNullable<NowViewModel["invest
   }
 }
 
-export async function getNowModel(): Promise<NowViewModel> {
-  const [data, investments] = await Promise.all([getDashboardData(), getInvestmentsSummary()]);
+export async function getNowModel(userId: string): Promise<NowViewModel> {
+  const [data, investments] = await Promise.all([getDashboardData(userId), getInvestmentsSummary(userId)]);
   const hasAccounts = data.accounts.length > 0;
   const coverage = data.upcomingCents > 0n
     ? Math.max(0, Math.min(100, Number((data.totalCents * 100n) / data.upcomingCents)))

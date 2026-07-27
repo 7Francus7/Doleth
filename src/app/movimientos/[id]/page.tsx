@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { voidMovementAction } from "../../actions/finance";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
-import { getDb } from "../../../lib/db";
+import { requireOnboardedUser } from "../../../lib/auth/guards";
+import { getOwnedMovement } from "../../../lib/finance/data";
 import { formatCents, formatDateAR } from "../../../lib/finance/domain";
 import styles from "../../../components/finance/finance.module.css";
 
@@ -10,7 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function MovementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const movement = await getDb().transaction.findUnique({ where: { id }, include: { sourceAccount: true, destinationAccount: true, category: true, correction: true, correctedFrom: true } });
+  const user = await requireOnboardedUser(`/movimientos/${id}`);
+  // La consulta incluye el propietario: un id ajeno devuelve 404, no un 403 que
+  // confirmaría que ese movimiento existe.
+  const movement = await getOwnedMovement(user.id, id);
   if (!movement) notFound();
   return (
     <OperationalShell eyebrow={movement.voidedAt ? "Movimiento anulado" : "Movimiento confirmado"} title={movement.description || movement.category?.name || "Movimiento"} actions={!movement.voidedAt ? <Link className={styles.primaryLink} href={`/movimientos/${id}/editar`}>Corregir</Link> : undefined}>

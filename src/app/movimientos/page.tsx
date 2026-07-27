@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { OperationalShell } from "../../components/finance/OperationalShell";
 import { getMovements } from "../../lib/finance/data";
+import { requireOnboardedUser } from "../../lib/auth/guards";
 import { formatDateAR, todayInArgentina } from "../../lib/finance/domain";
 import styles from "../../components/finance/finance.module.css";
 
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
 const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 
 export default async function MovementsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const user = await requireOnboardedUser("/movimientos");
   const query = await searchParams;
   const currentMonth = todayInArgentina().slice(0, 7);
   const month = first(query.month) && /^\d{4}-\d{2}$/.test(first(query.month)!) ? first(query.month)! : currentMonth;
@@ -16,7 +18,7 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
   const type = requestedType === "EXPENSE" || requestedType === "INCOME" || requestedType === "TRANSFER" ? requestedType : undefined;
   const accountId = first(query.accountId) || undefined;
   const hasActiveFilters = month !== currentMonth || Boolean(type) || Boolean(accountId);
-  const data = await getMovements({ month, ...(type ? { type } : {}), ...(accountId ? { accountId } : {}) });
+  const data = await getMovements(user.id, { month, ...(type ? { type } : {}), ...(accountId ? { accountId } : {}) });
   return (
     <OperationalShell eyebrow="Registro auditable" title="Movimientos" intro="Los anulados siguen visibles y no participan de saldos ni totales." actions={<Link className={styles.primaryLink} href="/movimientos/nuevo">Registrar movimiento</Link>}>
       <form className={styles.filters}>

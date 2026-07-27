@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { PayUpcomingPaymentForm } from "../../../components/finance/PayUpcomingPaymentForm";
-import { getDb } from "../../../lib/db";
+import { requireOnboardedUser } from "../../../lib/auth/guards";
+import { getOwnedUpcomingPayment } from "../../../lib/finance/data";
 import { formatCents, formatDateAR, todayInArgentina } from "../../../lib/finance/domain";
 import styles from "../../../components/finance/finance.module.css";
 
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function UpcomingPaymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const payment = await getDb().upcomingPayment.findUnique({ where: { id }, include: { plannedAccount: true, transaction: true } });
+  const user = await requireOnboardedUser(`/proximo/${id}`);
+  const payment = await getOwnedUpcomingPayment(user.id, id);
   if (!payment) notFound();
   return (
     <OperationalShell eyebrow={payment.status === "PAID" ? "Pago convertido" : "Pago pendiente"} title={payment.concept}>

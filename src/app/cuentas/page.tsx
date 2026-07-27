@@ -3,6 +3,7 @@ import { setAccountStatusAction } from "../actions/finance";
 import { OperationalShell } from "../../components/finance/OperationalShell";
 import { formatCents } from "../../lib/finance/domain";
 import { getAccountsWithBalances } from "../../lib/finance/data";
+import { requireOnboardedUser } from "../../lib/auth/guards";
 import styles from "../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 const typeLabel: Record<string, string> = { CASH: "Efectivo", BANK: "Banco", WALLET: "Billetera virtual", SAVINGS: "Ahorro", OTHER: "Otra" };
 
 export default async function AccountsPage() {
-  const accounts = await getAccountsWithBalances();
+  const user = await requireOnboardedUser("/cuentas");
+  const accounts = await getAccountsWithBalances(user.id);
   return (
     <OperationalShell eyebrow="Base financiera" title="Cuentas" intro="El saldo actual se deriva del saldo inicial y de todos los movimientos confirmados." actions={<Link className={styles.primaryLink} href="/cuentas/nueva">Crear cuenta</Link>}>
       {accounts.length ? <div className={styles.list}>{accounts.map((account) => (

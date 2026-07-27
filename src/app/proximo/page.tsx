@@ -1,8 +1,10 @@
 import { NextPage } from "../../features/next";
 import { getNextModel } from "../../features/next/data/getNextModel";
+import { requireOnboardedUser } from "../../lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProximoPage() {
-  return <NextPage model={await getNextModel()} />;
+  const user = await requireOnboardedUser("/proximo");
+  return <NextPage model={await getNextModel(user.id)} />;
 }

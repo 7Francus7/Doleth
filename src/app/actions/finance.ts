@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getDb } from "../../lib/db";
+import { UnauthorizedError, requireOnboardedUserForAction } from "../../lib/auth/guards";
+import { FALLBACK_EXPENSE_SLUG } from "../../lib/finance/categories";
 import {
   createPostings,
   dateOnly,
@@ -12,15 +14,29 @@ import {
   type MovementType,
 } from "../../lib/finance/domain";
 
+/**
+ * Server Actions financieras.
+ *
+ * Invariantes que sostienen el aislamiento:
+ *   1. El propietario sale de `requireOnboardedUserForAction()`. Ningún campo del
+ *      formulario puede aportar userId: no se lee de `formData` en ningún lado.
+ *   2. Todo recurso referido por id (cuenta origen, cuenta destino, categoría,
+ *      movimiento original, próximo pago) se busca filtrando por ese propietario.
+ *      Un id ajeno no da "prohibido", da "no existe".
+ *   3. Toda escritura graba `userId`, incluidos los asientos del ledger.
+ */
+
 export interface FinanceActionState {
   ok: boolean;
   message: string;
 }
 
-const errorState = (error: unknown): FinanceActionState => ({
-  ok: false,
-  message: error instanceof Error ? error.message : "No pudimos guardar el cambio.",
-});
+const UNAUTHORIZED_MESSAGE = "Tu sesión venció. Volvé a iniciar sesión para guardar este cambio.";
+
+const errorState = (error: unknown): FinanceActionState => {
+  if (error instanceof UnauthorizedError) return { ok: false, message: UNAUTHORIZED_MESSAGE };
+  return { ok: false, message: error instanceof Error ? error.message : "No pudimos guardar el cambio." };
+};
 
 const value = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
@@ -56,6 +72,7 @@ export async function createInvestmentAction(
   formData: FormData,
 ): Promise<FinanceActionState> {
   try {
+    const user = await requireOnboardedUserForAction();
     const name = value(formData, "name");
     const kind = value(formData, "kind");
     const symbol = value(formData, "symbol") || undefined;
@@ -72,6 +89,7 @@ export async function createInvestmentAction(
 
     await getDb().investment.create({
       data: {
+        userId: user.id,
         name,
         kind,
         currency,
@@ -89,10 +107,12 @@ export async function createInvestmentAction(
 }
 
 export async function archiveInvestmentAction(formData: FormData): Promise<void> {
+  const user = await requireOnboardedUserForAction();
   const id = value(formData, "id");
   const status = value(formData, "status");
   if (!id || (status !== "ACTIVE" && status !== "ARCHIVED")) throw new Error("Estado de inversión inválido.");
-  await getDb().investment.update({ where: { id }, data: { status } });
+  const updated = await getDb().investment.updateMany({ where: { id, userId: user.id }, data: { status } });
+  if (updated.count === 0) throw new Error("Inversión inexistente.");
   revalidatePath("/inversiones");
 }
 
@@ -101,6 +121,7 @@ export async function createAccountAction(
   formData: FormData,
 ): Promise<FinanceActionState> {
   try {
+    const user = await requireOnboardedUserForAction();
     const name = value(formData, "name");
     const type = value(formData, "type");
     const currency = value(formData, "currency").toUpperCase();
@@ -112,7 +133,7 @@ export async function createAccountAction(
     if (currency !== "ARS") throw new Error("Este corte consolida cuentas en ARS. Otras monedas requieren conversión explícita.");
 
     await getDb().account.create({
-      data: { name, type: type as "CASH", currency, initialBalanceCents },
+      data: { userId: user.id, name, type: type as "CASH", currency, initialBalanceCents },
     });
     refreshFinance();
     return { ok: true, message: "Cuenta creada. El saldo inicial ya forma parte de tu patrimonio." };
@@ -122,10 +143,12 @@ export async function createAccountAction(
 }
 
 export async function setAccountStatusAction(formData: FormData): Promise<void> {
+  const user = await requireOnboardedUserForAction();
   const id = value(formData, "id");
   const status = value(formData, "status");
   if (!id || (status !== "ACTIVE" && status !== "ARCHIVED")) throw new Error("Estado de cuenta inválido.");
-  await getDb().account.update({ where: { id }, data: { status } });
+  const updated = await getDb().account.updateMany({ where: { id, userId: user.id }, data: { status } });
+  if (updated.count === 0) throw new Error("Cuenta inexistente.");
   refreshFinance();
 }
 
@@ -134,6 +157,7 @@ export async function createMovementAction(
   formData: FormData,
 ): Promise<FinanceActionState> {
   try {
+    const user = await requireOnboardedUserForAction();
     const db = getDb();
     const type = value(formData, "type");
     if (!validMovementType(type)) throw new Error("Seleccioná un tipo de movimiento.");
@@ -147,19 +171,23 @@ export async function createMovementAction(
     if (idempotencyKey.length < 8) throw new Error("Recargá el formulario antes de guardar.");
     if (description && description.length > 160) throw new Error("La descripción admite hasta 160 caracteres.");
 
-    const existing = await db.transaction.findUnique({ where: { idempotencyKey } });
+    const existing = await db.transaction.findUnique({
+      where: { userId_idempotencyKey: { userId: user.id, idempotencyKey } },
+    });
     if (idempotencyDecision(existing?.id ?? null) === "RETURN_EXISTING") {
       return { ok: true, message: "Movimiento ya registrado. No se creó un duplicado." };
     }
 
     const accountIds = [sourceAccountId, destinationAccountId].filter(Boolean) as string[];
-    const accounts = await db.account.findMany({ where: { id: { in: accountIds }, status: "ACTIVE" } });
+    const accounts = await db.account.findMany({
+      where: { id: { in: accountIds }, userId: user.id, status: "ACTIVE" },
+    });
     if (accounts.length !== new Set(accountIds).size) throw new Error("Una de las cuentas no está activa.");
     if (accounts.some((account) => account.currency !== "ARS")) throw new Error("El resumen actual solo admite cuentas en ARS.");
 
     if (type !== "TRANSFER") {
       if (!categoryId) throw new Error("Seleccioná una categoría.");
-      const category = await db.category.findUnique({ where: { id: categoryId } });
+      const category = await db.category.findFirst({ where: { id: categoryId, userId: user.id } });
       if (!category || category.kind !== type) throw new Error("La categoría no corresponde al tipo de movimiento.");
     }
 
@@ -167,6 +195,7 @@ export async function createMovementAction(
     try {
       await db.transaction.create({
         data: {
+          userId: user.id,
           type,
           amountCents,
           occurredOn,
@@ -175,7 +204,7 @@ export async function createMovementAction(
           ...(categoryId ? { categoryId } : {}),
           ...(description ? { description } : {}),
           idempotencyKey,
-          entries: { create: postings },
+          entries: { create: postings.map((posting) => ({ ...posting, userId: user.id })) },
         },
       });
     } catch (error) {
@@ -193,14 +222,16 @@ export async function createMovementAction(
 }
 
 export async function voidMovementAction(formData: FormData): Promise<void> {
+  const user = await requireOnboardedUserForAction();
   const id = value(formData, "id");
   const reason = value(formData, "reason");
   if (!id) throw new Error("Movimiento inválido.");
   if (reason.length < 4) throw new Error("Indicá brevemente el motivo de la anulación.");
-  await getDb().transaction.updateMany({
-    where: { id, voidedAt: null },
+  const voided = await getDb().transaction.updateMany({
+    where: { id, userId: user.id, voidedAt: null },
     data: { voidedAt: new Date(), voidReason: reason },
   });
+  if (voided.count === 0) throw new Error("El movimiento ya fue anulado o no existe.");
   refreshFinance();
 }
 
@@ -209,6 +240,7 @@ export async function correctMovementAction(
   formData: FormData,
 ): Promise<FinanceActionState> {
   try {
+    const user = await requireOnboardedUserForAction();
     const db = getDb();
     const originalId = value(formData, "originalId");
     const type = value(formData, "type");
@@ -225,14 +257,16 @@ export async function correctMovementAction(
     const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId);
 
     await db.$transaction(async (tx) => {
-      const original = await tx.transaction.findUnique({ where: { id: originalId } });
+      const original = await tx.transaction.findFirst({ where: { id: originalId, userId: user.id } });
       if (!original || original.voidedAt) throw new Error("El movimiento ya fue anulado o no existe.");
       const accountIds = [sourceAccountId, destinationAccountId].filter(Boolean) as string[];
-      const accounts = await tx.account.findMany({ where: { id: { in: accountIds }, status: "ACTIVE", currency: "ARS" } });
+      const accounts = await tx.account.findMany({
+        where: { id: { in: accountIds }, userId: user.id, status: "ACTIVE", currency: "ARS" },
+      });
       if (accounts.length !== new Set(accountIds).size) throw new Error("Una de las cuentas no está activa o no usa ARS.");
       if (type !== "TRANSFER") {
         if (!categoryId) throw new Error("Seleccioná una categoría.");
-        const category = await tx.category.findUnique({ where: { id: categoryId } });
+        const category = await tx.category.findFirst({ where: { id: categoryId, userId: user.id } });
         if (!category || category.kind !== type) throw new Error("La categoría no corresponde al tipo de movimiento.");
       }
       await tx.transaction.update({
@@ -241,6 +275,7 @@ export async function correctMovementAction(
       });
       await tx.transaction.create({
         data: {
+          userId: user.id,
           type,
           amountCents,
           occurredOn,
@@ -250,7 +285,7 @@ export async function correctMovementAction(
           ...(description ? { description } : {}),
           idempotencyKey,
           correctedFromId: originalId,
-          entries: { create: postings },
+          entries: { create: postings.map((posting) => ({ ...posting, userId: user.id })) },
         },
       });
     });
@@ -266,16 +301,27 @@ export async function createUpcomingPaymentAction(
   formData: FormData,
 ): Promise<FinanceActionState> {
   try {
+    const user = await requireOnboardedUserForAction();
+    const db = getDb();
     const concept = value(formData, "concept");
     const estimatedCents = requirePositiveMoney(value(formData, "amount"));
     const dueOn = dateOnly(value(formData, "dueOn"));
     const frequency = value(formData, "frequency") || undefined;
     const plannedAccountId = value(formData, "plannedAccountId");
     if (concept.length < 2 || concept.length > 100) throw new Error("El concepto debe tener entre 2 y 100 caracteres.");
-    const account = await getDb().account.findFirst({ where: { id: plannedAccountId, status: "ACTIVE" } });
+    const account = await db.account.findFirst({
+      where: { id: plannedAccountId, userId: user.id, status: "ACTIVE" },
+    });
     if (!account) throw new Error("Seleccioná una cuenta activa.");
-    await getDb().upcomingPayment.create({
-      data: { concept, estimatedCents, dueOn, plannedAccountId, ...(frequency ? { frequency } : {}) },
+    await db.upcomingPayment.create({
+      data: {
+        userId: user.id,
+        concept,
+        estimatedCents,
+        dueOn,
+        plannedAccountId,
+        ...(frequency ? { frequency } : {}),
+      },
     });
     refreshFinance();
     return { ok: true, message: "Próximo pago registrado." };
@@ -289,17 +335,21 @@ export async function payUpcomingPaymentAction(
   formData: FormData,
 ): Promise<FinanceActionState> {
   try {
+    const user = await requireOnboardedUserForAction();
     const paymentId = value(formData, "paymentId");
     const occurredOn = dateOnly(value(formData, "occurredOn"));
     const db = getDb();
     await db.$transaction(async (tx) => {
-      const payment = await tx.upcomingPayment.findUnique({ where: { id: paymentId } });
+      const payment = await tx.upcomingPayment.findFirst({ where: { id: paymentId, userId: user.id } });
       if (!payment) throw new Error("Próximo pago inexistente.");
       if (paymentConversionDecision(payment.status, payment.transactionId) === "RETURN_EXISTING") return;
-      const category = await tx.category.findUnique({ where: { slug: "other-expense" } });
-      if (!category) throw new Error("Ejecutá el seed de categorías antes de registrar pagos.");
+      const category = await tx.category.findFirst({
+        where: { userId: user.id, slug: FALLBACK_EXPENSE_SLUG },
+      });
+      if (!category) throw new Error("Falta la categoría de respaldo. Completá el onboarding antes de registrar pagos.");
       const movement = await tx.transaction.create({
         data: {
+          userId: user.id,
           type: "EXPENSE",
           amountCents: payment.estimatedCents,
           occurredOn,
@@ -307,7 +357,12 @@ export async function payUpcomingPaymentAction(
           categoryId: category.id,
           description: payment.concept,
           idempotencyKey: `upcoming-payment:${payment.id}`,
-          entries: { create: createPostings("EXPENSE", payment.estimatedCents, payment.plannedAccountId) },
+          entries: {
+            create: createPostings("EXPENSE", payment.estimatedCents, payment.plannedAccountId).map((posting) => ({
+              ...posting,
+              userId: user.id,
+            })),
+          },
         },
       });
       await tx.upcomingPayment.update({ where: { id: payment.id }, data: { status: "PAID", transactionId: movement.id } });
