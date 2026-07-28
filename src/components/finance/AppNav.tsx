@@ -7,9 +7,25 @@ import { NavIcon } from "./NavIcon";
 import { isDestinationActive, primaryDestinations, registerAction } from "./navModel";
 import styles from "./finance.module.css";
 
+/** Pantallas sin sesión útil todavía: la barra sólo agrega ruido. */
+const HIDDEN_ON = new Set([
+  "/",
+  "/ingresar",
+  "/iniciar-sesion",
+  "/crear-cuenta",
+  "/crear-cuenta/revisa-tu-correo",
+  "/verificar-email",
+  "/olvide-mi-contrasena",
+  "/restablecer-contrasena",
+  "/restablecer-contrasena/listo",
+  "/terminos",
+  "/privacidad",
+  "/onboarding",
+]);
+
 export function AppNav() {
   const pathname = usePathname();
-  if (pathname === "/ingresar") return null;
+  if (HIDDEN_ON.has(pathname)) return null;
   const [first, second, third] = primaryDestinations;
   const renderLink = (destination: (typeof primaryDestinations)[number]) => (
     <Link

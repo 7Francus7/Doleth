@@ -468,10 +468,11 @@ function buildSummary(result: CloseResult, periodLabel: string): CloseSummary {
 }
 
 export async function getCloseModel(
+  userId: string,
   month: string | undefined,
   step: string | undefined,
 ): Promise<CloseViewModel> {
-  const data = await getCloseData(month);
+  const data = await getCloseData(userId, month);
   const result = computeClose({
     period: data.period,
     today: data.today,

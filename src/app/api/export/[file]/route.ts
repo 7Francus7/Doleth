@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getOptionalUser } from "../../../../lib/auth/guards";
 import { createFinancialExport, datasetRows } from "../../../../lib/export/data";
 import {
   PRIVATE_DOWNLOAD_HEADERS,
@@ -14,6 +15,15 @@ const CSV_FILES = new Map<string, ExportDataset>([
   ["inversiones.csv", "inversiones"],
 ]);
 
+/**
+ * Descarga de la copia de datos.
+ *
+ * El único parámetro que acepta es `file`, y se valida contra una lista cerrada.
+ * El dueño de los datos sale de la sesión (`getOptionalUser()`): no hay forma de
+ * pedir la copia de otra persona, porque no hay ningún lugar donde escribir un
+ * identificador ajeno. La falta de sesión se responde 401 antes del `try`, para
+ * que nunca quede confundida con un fallo de lectura ni disfrazada de 500.
+ */
 export async function GET(
   _request: Request,
   context: { params: Promise<{ file: string }> },
@@ -26,8 +36,16 @@ export async function GET(
     );
   }
 
+  const user = await getOptionalUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Necesitás iniciar sesión para descargar tus datos." },
+      { status: 401, headers: PRIVATE_DOWNLOAD_HEADERS },
+    );
+  }
+
   try {
-    const snapshot = await createFinancialExport();
+    const snapshot = await createFinancialExport(user.id);
     if (file === "datos.json") {
       return new NextResponse(JSON.stringify(snapshot, null, 2), {
         headers: {

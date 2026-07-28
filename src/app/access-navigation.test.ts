@@ -9,8 +9,11 @@ describe("navegación: superficies y estado activo", () => {
   const appNav = read("src/components/finance/AppNav.tsx");
   const moreMenu = read("src/components/finance/MoreMenu.tsx");
 
-  it("AppNav se oculta en /ingresar", () => {
-    expect(appNav).toContain('if (pathname === "/ingresar") return null;');
+  it("AppNav se oculta en todas las pantallas sin sesión útil", () => {
+    expect(appNav).toContain("if (HIDDEN_ON.has(pathname)) return null;");
+    for (const path of ["/ingresar", "/iniciar-sesion", "/crear-cuenta", "/onboarding", "/privacidad"]) {
+      expect(appNav, path).toContain(`"${path}"`);
+    }
   });
 
   it("AppNav usa enlaces reales y aria-current en destinos", () => {
@@ -39,62 +42,55 @@ describe("navegación: superficies y estado activo", () => {
   });
 });
 
-describe("acceso: /ingresar refinado sin tecnicismos", () => {
-  const page = read("src/app/ingresar/page.tsx");
-  const form = read("src/app/ingresar/LoginForm.tsx");
-  const action = read("src/app/ingresar/actions.ts");
+describe("acceso: la clave única de un solo usuario ya no existe", () => {
+  const legacyPage = read("src/app/ingresar/page.tsx");
+  const form = read("src/components/auth/LoginForm.tsx");
 
-  it("muestra copy humano de producto privado", () => {
-    expect(page).toContain("Entrá a Doleth");
-    expect(page).toContain("Accedé a tu espacio financiero privado.");
-    expect(page).toContain("Tus datos se usan únicamente para mostrarte tu situación financiera.");
-    expect(page).toContain("La clave no coincide. Revisala e intentá nuevamente.");
+  it("/ingresar quedó como redirección al login real", () => {
+    expect(legacyPage).toContain('redirect("/iniciar-sesion")');
   });
 
-  it("no filtra términos técnicos al usuario", () => {
-    for (const surface of [page, form]) {
+  it("no queda rastro de la clave compartida en las superficies de acceso", () => {
+    for (const surface of [legacyPage, form]) {
       expect(surface).not.toContain("DOLETH_ACCESS_PASSWORD");
       expect(surface).not.toContain("DOLETH_SESSION_SECRET");
       expect(surface).not.toMatch(/\b401\b/);
       expect(surface).not.toContain("Unauthorized");
-      expect(surface).not.toContain("token");
     }
   });
 
-  it("el formulario cubre mostrar/ocultar, describe el campo, autocompleta y usa loading humano", () => {
+  it("el login pide correo y contraseña, autocompleta y anuncia el error", () => {
+    expect(form).toContain('autoComplete="email"');
     expect(form).toContain('autoComplete="current-password"');
-    expect(form).toContain("aria-describedby={describedBy}");
-    expect(form).toContain("aria-pressed={visible}");
-    expect(form).toContain('loadingLabel="Verificando…"');
     expect(form).toContain('role="alert"');
+    expect(form).toContain('pendingLabel="Entrando…"');
   });
 
-  it("deshabilita el submit cuando el campo está vacío (previene doble submit con loading)", () => {
-    expect(form).toContain("disabled={value.trim().length === 0}");
-    expect(form).toContain("const { pending } = useFormStatus();");
-  });
-
-  it("redirige a /ahora tras un acceso válido", () => {
-    expect(action).toContain('redirect("/ahora")');
+  it("ofrece recuperación y alta desde el mismo lugar", () => {
+    expect(form).toContain('href="/olvide-mi-contrasena"');
+    expect(form).toContain('href="/crear-cuenta"');
   });
 });
 
 describe("sesión: cierre seguro", () => {
-  const session = read("src/app/actions/session.ts");
+  const authActions = read("src/app/auth/actions.ts");
+  const moreMenu = read("src/components/finance/MoreMenu.tsx");
   const proxy = read("src/proxy.ts");
 
-  it("cerrar sesión elimina la cookie y vuelve a /ingresar", () => {
-    expect(session).toContain('store.delete("doleth_session")');
-    expect(session).toContain('redirect("/ingresar")');
+  it("cerrar sesión revoca la sesión en la base, no sólo la cookie", () => {
+    expect(authActions).toContain("destroyCurrentSession()");
+    expect(authActions).toContain('redirect("/iniciar-sesion")');
+    expect(authActions).toContain('type: "LOGOUT"');
   });
 
-  it('usa el copy "Cerrar sesión"', () => {
-    expect(read("src/components/finance/MoreMenu.tsx")).toContain("Cerrar sesión");
+  it("el menú usa el cierre de sesión con revocación", () => {
+    expect(moreMenu).toContain('from "../../app/auth/actions"');
+    expect(moreMenu).toContain("Cerrar sesión");
   });
 
-  it("el proxy protege las rutas privadas redirigiendo a /ingresar", () => {
-    expect(proxy).toContain('new URL("/ingresar", request.url)');
-    expect(proxy).toContain("verifyAccessToken");
+  it("el proxy protege las rutas privadas mandando al login", () => {
+    expect(proxy).toContain('new URL("/iniciar-sesion", request.url)');
+    expect(proxy).toContain("openSessionCookie");
   });
 });
 

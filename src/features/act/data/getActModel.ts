@@ -157,8 +157,8 @@ function ruleCopy(decision: ActDecisionResult, today: string): RuleCopy {
   return map[decision.ruleId];
 }
 
-export async function getActModel(): Promise<ActViewModel> {
-  const data = await getActData();
+export async function getActModel(userId: string): Promise<ActViewModel> {
+  const data = await getActData(userId);
   const decision = selectRecommendation({
     today: data.today,
     hasAccounts: data.hasAccounts,

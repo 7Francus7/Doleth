@@ -66,16 +66,29 @@ export interface FinancialExportSnapshot {
   }[];
 }
 
-export async function createFinancialExport(): Promise<FinancialExportSnapshot> {
+/**
+ * Copia de datos de **un** usuario.
+ *
+ * `userId` viene siempre de la sesión validada (`requireUser()`), nunca de la
+ * URL, del formulario ni de un encabezado: la ruta de exportación no acepta un
+ * identificador del cliente. Las cinco consultas llevan `where: { userId }`, sin
+ * excepción. Antes de que la app fuera multiusuario estas lecturas eran
+ * globales, y con una sola persona en la base daban el mismo resultado; con dos
+ * usuarios eso habría entregado las finanzas de todos a cualquiera que
+ * descargara su copia. `export-isolation.test.ts` ejecuta esa situación contra
+ * PostgreSQL con dos usuarios y falla si alguna consulta vuelve a ser global.
+ */
+export async function createFinancialExport(userId: string): Promise<FinancialExportSnapshot> {
   const db = getDb();
   const [accounts, ledgerTotals, movements, upcomingPayments, investments] = await Promise.all([
-    db.account.findMany({ orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
+    db.account.findMany({ where: { userId }, orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
     db.ledgerEntry.groupBy({
       by: ["accountId"],
-      where: { transaction: { voidedAt: null } },
+      where: { userId, transaction: { voidedAt: null } },
       _sum: { amountCents: true },
     }),
     db.transaction.findMany({
+      where: { userId },
       include: {
         category: true,
         correction: { select: { id: true } },
@@ -85,10 +98,11 @@ export async function createFinancialExport(): Promise<FinancialExportSnapshot> 
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
     }),
     db.upcomingPayment.findMany({
+      where: { userId },
       include: { plannedAccount: true },
       orderBy: [{ dueOn: "asc" }, { createdAt: "asc" }],
     }),
-    db.investment.findMany({ orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
+    db.investment.findMany({ where: { userId }, orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
   ]);
   const totals = new Map(
     ledgerTotals.map((row) => [row.accountId, row._sum.amountCents ?? 0n]),

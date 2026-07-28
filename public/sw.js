@@ -36,7 +36,28 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+    // Nunca se cachea una página: la red es la única fuente. Si no hay red se
+    // sirve la pantalla offline, y si el install falló y ni siquiera esa está
+    // cacheada hay que devolver una Response igual — respondWith(undefined)
+    // rompe con TypeError y el usuario ve un error del navegador sin explicación.
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const offline = await caches.match(OFFLINE_URL);
+        if (offline) return offline;
+        return new Response(
+          "<!doctype html><meta charset=\"utf-8\"><title>Sin conexión</title>" +
+            "<p>Estás sin conexión. Doleth no guarda páginas financieras, así que " +
+            "necesita red para mostrarte tus números.</p>",
+          {
+            status: 503,
+            headers: {
+              "Cache-Control": "no-store",
+              "Content-Type": "text/html; charset=utf-8",
+            },
+          },
+        );
+      }),
+    );
     return;
   }
 

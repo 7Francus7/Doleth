@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { MovementForm } from "../../../components/finance/MovementForm";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { getMovementFormData } from "../../../lib/finance/data";
+import { requireOnboardedUser } from "../../../lib/auth/guards";
 import { getDb } from "../../../lib/db";
 import { formatCentsAR } from "../../../lib/finance/amount";
 import { buildRepeatDefaults, canRepeat, isReferenceOnly } from "../../../lib/finance/repeatMovement";
@@ -16,16 +17,22 @@ export const metadata = { title: "Registrar movimiento" };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 export default async function NewMovementPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const user = await requireOnboardedUser("/movimientos/nuevo");
   const query = await searchParams;
   const returnTo = sanitizeReturnPath(first(query.volver), "/movimientos");
   const repeatId = first(query.repetir);
-  const data = await getMovementFormData();
+  const data = await getMovementFormData(user.id);
 
   // "Registrar otro igual": se copia la intención, nunca la identidad ni la fecha.
+  // El id del original llega por la URL, así que la búsqueda va acotada al dueño:
+  // repetir un movimiento ajeno no copia nada, simplemente no lo encuentra.
   let repeatDefaults: ReturnType<typeof buildRepeatDefaults> | undefined;
   let referenceOnly = false;
   if (repeatId) {
-    const source = await getDb().transaction.findUnique({ where: { id: repeatId }, include: { correction: true } });
+    const source = await getDb().transaction.findFirst({
+      where: { id: repeatId, userId: user.id },
+      include: { correction: true },
+    });
     if (source) {
       const repeatable = {
         id: source.id,

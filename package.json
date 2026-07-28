@@ -15,7 +15,15 @@
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "db:backfill-owner": "tsx prisma/backfill-owner.ts",
+    "db:rollback-owner": "tsx prisma/rollback-owner-backfill.ts",
+    "db:preflight": "tsx prisma/ops/preflight.ts",
+    "db:ensure-owner": "tsx prisma/ops/ensure-owner.ts",
+    "db:audit-migrations": "tsx prisma/ops/audit-migrations.ts",
+    "test:isolation": "vitest run src/test/database-required.test.ts src/lib/finance/isolation.test.ts src/app/actions/finance.authorization.test.ts src/lib/finance/ledger-integrity.test.ts src/lib/export/export-isolation.test.ts",
+    "db:deletions": "tsx prisma/ops/deletion.ts",
+    "db:smoke-cleanup": "tsx prisma/ops/smoke-cleanup.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

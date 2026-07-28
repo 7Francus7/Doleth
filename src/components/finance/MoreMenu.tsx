@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { BottomSheet } from "../../design-system/composites/BottomSheet";
-import { logoutAction } from "../../app/actions/session";
+// El cierre de sesión del corte de identidad: además de borrar la cookie revoca
+// la fila `Session` y deja el evento en la bitácora. El de la etapa de un solo
+// usuario sólo borraba la cookie y dejaba la sesión viva en la base.
+import { logoutAction } from "../../app/auth/actions";
 import { AmountPrivacyToggle } from "../privacy/AmountPrivacy";
 import { DataExportPanel } from "./DataExportPanel";
 import { NavIcon } from "./NavIcon";

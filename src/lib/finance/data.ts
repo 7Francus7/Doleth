@@ -59,13 +59,23 @@ function toCommitment(
   };
 }
 
-export async function getAccountsWithBalances() {
+/**
+ * Capa de lectura financiera.
+ *
+ * Todas las funciones exigen `userId` como primer argumento y lo aplican al
+ * `where` de cada consulta. El identificador viene siempre de la sesión validada
+ * (`requireUser()`); nunca de la URL ni del formulario. No existe en este archivo
+ * ninguna consulta sin filtro de propietario: esa es la invariante que sostiene el
+ * aislamiento entre usuarios.
+ */
+
+export async function getAccountsWithBalances(userId: string) {
   const db = getDb();
   const [accounts, totals] = await Promise.all([
-    db.account.findMany({ orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
+    db.account.findMany({ where: { userId }, orderBy: [{ status: "asc" }, { createdAt: "asc" }] }),
     db.ledgerEntry.groupBy({
       by: ["accountId"],
-      where: { transaction: { voidedAt: null } },
+      where: { userId, transaction: { voidedAt: null } },
       _sum: { amountCents: true },
     }),
   ]);
@@ -82,16 +92,103 @@ export async function getAccountsWithBalances() {
   }));
 }
 
-export async function getMovementFormData() {
+export async function getMovementFormData(userId: string) {
   const db = getDb();
   const [accounts, categories] = await Promise.all([
-    db.account.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
-    db.category.findMany({ orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    db.account.findMany({ where: { userId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
+    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
   ]);
   return {
     accounts: accounts.map(({ id, name, currency }) => ({ id, name, currency })),
     categories: categories.map(({ id, name, kind }) => ({ id, name, kind })),
     today: todayInArgentina(),
+  };
+}
+
+/**
+ * Panel resumido con seis meses de historia. Lo consumen las pruebas de
+ * aislamiento como sonda de propiedad; `getNowData` es la lectura que usa la
+ * pantalla /ahora.
+ */
+export async function getDashboardData(userId: string) {
+  const db = getDb();
+  const today = todayInArgentina();
+  const month = today.slice(0, 7);
+  const { start, end } = monthBounds(month);
+  const historyStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - 5, 1));
+  const inSevenDays = new Date(`${today}T00:00:00.000Z`);
+  inSevenDays.setUTCDate(inSevenDays.getUTCDate() + 7);
+
+  const [accounts, monthMovements, historyMovements, upcoming, recent] = await Promise.all([
+    getAccountsWithBalances(userId),
+    db.transaction.findMany({
+      where: { userId, occurredOn: { gte: start, lt: end } },
+      select: { type: true, amountCents: true, voidedAt: true },
+    }),
+    db.transaction.findMany({
+      where: { userId, occurredOn: { gte: historyStart, lt: end } },
+      select: { type: true, amountCents: true, occurredOn: true, voidedAt: true },
+      orderBy: { occurredOn: "asc" },
+    }),
+    db.upcomingPayment.findMany({
+      where: { userId, status: "PENDING", dueOn: { lte: inSevenDays } },
+      include: { plannedAccount: true },
+      orderBy: { dueOn: "asc" },
+      take: 5,
+    }),
+    db.transaction.findMany({
+      where: { userId },
+      include: { sourceAccount: true, destinationAccount: true, category: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+  ]);
+
+  const { incomeCents, expenseCents, balanceCents } = summarizeMonth(monthMovements);
+  const totalCents = accounts.reduce((sum, account) => sum + account.balanceCents, 0n);
+  const upcomingCents = upcoming.reduce((sum, payment) => sum + payment.estimatedCents, 0n);
+  const monthLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthlyHistory = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - (5 - index), 1));
+    const key = date.toISOString().slice(0, 7);
+    const movements = historyMovements.filter((movement) => movement.occurredOn.toISOString().slice(0, 7) === key);
+    const totals = summarizeMonth(movements);
+    return {
+      month: key,
+      label: monthLabels[date.getUTCMonth()] ?? key.slice(5),
+      incomeCents: totals.incomeCents,
+      expenseCents: totals.expenseCents,
+    };
+  });
+
+  return {
+    accounts,
+    totalCents,
+    incomeCents,
+    expenseCents,
+    monthlyBalanceCents: balanceCents,
+    monthlyHistory,
+    upcomingCents,
+    upcoming: upcoming.map((payment) => ({
+      id: payment.id,
+      concept: payment.concept,
+      amount: formatCents(payment.estimatedCents),
+      dueOn: payment.dueOn.toISOString().slice(0, 10),
+      accountName: payment.plannedAccount.name,
+    })),
+    recent: recent.map((movement) => ({
+      id: movement.id,
+      type: movement.type,
+      description: movement.description || movement.category?.name || movement.type,
+      amount: formatCents(movement.amountCents),
+      occurredOn: movement.occurredOn.toISOString().slice(0, 10),
+      accountName:
+        movement.type === "TRANSFER"
+          ? `${movement.sourceAccount.name} → ${movement.destinationAccount?.name ?? ""}`
+          : movement.sourceAccount.name,
+      voided: movement.voidedAt !== null,
+    })),
+    today,
   };
 }
 
@@ -132,25 +229,26 @@ export interface NowData {
  * Los movimientos recientes son secundarios y degradan a `null` para que la
  * pantalla pueda decir qué no pudo cargar sin perder el saldo principal.
  */
-export async function getNowData(): Promise<NowData> {
+export async function getNowData(userId: string): Promise<NowData> {
   const db = getDb();
   const today = todayInArgentina();
   const { start, end } = monthBounds(today.slice(0, 7));
 
   const [accounts, monthMovements, pending, movementCount, recent] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     db.transaction.findMany({
-      where: { occurredOn: { gte: start, lt: end } },
+      where: { userId, occurredOn: { gte: start, lt: end } },
       select: { type: true, amountCents: true, voidedAt: true },
     }),
     db.upcomingPayment.findMany({
-      where: { status: "PENDING" },
+      where: { userId, status: "PENDING" },
       include: { plannedAccount: true },
       orderBy: { dueOn: "asc" },
     }),
-    db.transaction.count({ where: { voidedAt: null } }),
+    db.transaction.count({ where: { userId, voidedAt: null } }),
     resilientRead(() =>
       db.transaction.findMany({
+        where: { userId },
         include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
         orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
         take: 5,
@@ -198,15 +296,18 @@ export interface MovementFilters {
   categoryId?: string;
 }
 
-export async function getMovements(filters: MovementFilters) {
+export async function getMovements(userId: string, filters: MovementFilters) {
   const db = getDb();
   const { start, end } = monthBounds(filters.month);
+  // El accountId llega de la query string: se usa sólo para acotar dentro de lo
+  // que ya es del usuario, nunca para ampliar el alcance.
   const accountFilter = filters.accountId
     ? { OR: [{ sourceAccountId: filters.accountId }, { destinationAccountId: filters.accountId }] }
     : {};
   const [movements, accounts] = await Promise.all([
     db.transaction.findMany({
       where: {
+        userId,
         occurredOn: { gte: start, lt: end },
         ...(filters.type ? { type: filters.type } : {}),
         ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
@@ -215,7 +316,7 @@ export async function getMovements(filters: MovementFilters) {
       include: { sourceAccount: true, destinationAccount: true, category: true },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
     }),
-    db.account.findMany({ orderBy: { name: "asc" } }),
+    db.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
   ]);
   return {
     accounts,
@@ -234,12 +335,39 @@ export async function getMovements(filters: MovementFilters) {
   };
 }
 
-export async function getInvestments() {
-  const db = getDb();
-  return db.investment.findMany({
-    where: { status: "ACTIVE" },
+/** Movimiento por id, acotado al propietario: cambiar el id de la URL no alcanza. */
+export async function getOwnedMovement(userId: string, id: string) {
+  return getDb().transaction.findFirst({
+    where: { id, userId },
+    include: { sourceAccount: true, destinationAccount: true, category: true, correction: true, correctedFrom: true },
+  });
+}
+
+export async function getOwnedUpcomingPayment(userId: string, id: string) {
+  return getDb().upcomingPayment.findFirst({
+    where: { id, userId },
+    include: { plannedAccount: true, transaction: true },
+  });
+}
+
+export async function getInvestments(userId: string) {
+  return getDb().investment.findMany({
+    where: { userId, status: "ACTIVE" },
     orderBy: [{ currentValueCents: "desc" }, { createdAt: "asc" }],
   });
+}
+
+export async function getUpcomingPayments(userId: string) {
+  const db = getDb();
+  const [payments, accounts] = await Promise.all([
+    db.upcomingPayment.findMany({
+      where: { userId },
+      include: { plannedAccount: true },
+      orderBy: [{ status: "asc" }, { dueOn: "asc" }],
+    }),
+    db.account.findMany({ where: { userId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
+  ]);
+  return { payments, accounts };
 }
 
 export interface ConfirmedPayment {
@@ -262,23 +390,23 @@ export interface UpcomingData {
 }
 
 /** Lectura de /proximo: pendientes para la línea temporal y confirmados como historia. */
-export async function getUpcomingData(): Promise<UpcomingData> {
+export async function getUpcomingData(userId: string): Promise<UpcomingData> {
   const db = getDb();
   const today = todayInArgentina();
   const [accounts, pending, paid, paidCount] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     db.upcomingPayment.findMany({
-      where: { status: "PENDING" },
+      where: { userId, status: "PENDING" },
       include: { plannedAccount: true },
       orderBy: { dueOn: "asc" },
     }),
     db.upcomingPayment.findMany({
-      where: { status: "PAID" },
+      where: { userId, status: "PAID" },
       include: { plannedAccount: true },
       orderBy: [{ dueOn: "desc" }, { updatedAt: "desc" }],
       take: 5,
     }),
-    db.upcomingPayment.count({ where: { status: "PAID" } }),
+    db.upcomingPayment.count({ where: { userId, status: "PAID" } }),
   ]);
   const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
 
@@ -393,17 +521,18 @@ export interface ChangesData {
  * datos centrales; el desglose por categorías es secundario y puede degradar
  * declarándolo, porque el cambio total sigue siendo verdadero sin él.
  */
-export async function getChangesData(windowDays = 7): Promise<ChangesData> {
+export async function getChangesData(userId: string, windowDays = 7): Promise<ChangesData> {
   const db = getDb();
   const today = todayInArgentina();
   const period = recentPeriod(today, windowDays);
   const previous = precedingPeriod(period);
 
   const [accounts, transactions, oldest] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     resilientRead(() =>
       db.transaction.findMany({
         where: {
+          userId,
           voidedAt: null,
           occurredOn: { gte: new Date(`${previous.start}T00:00:00.000Z`), lt: shiftDays(period.end, 1) },
         },
@@ -414,7 +543,7 @@ export async function getChangesData(windowDays = 7): Promise<ChangesData> {
     ),
     resilientRead(() =>
       db.transaction.findFirst({
-        where: { voidedAt: null },
+        where: { userId, voidedAt: null },
         orderBy: { occurredOn: "asc" },
         select: { occurredOn: true },
       }),
@@ -469,15 +598,16 @@ export interface ProgressData {
  * activas contra los compromisos del horizonte, para que las dos pantallas no
  * digan números distintos de lo mismo.
  */
-export async function getProgressData(): Promise<ProgressData> {
+export async function getProgressData(userId: string): Promise<ProgressData> {
   const db = getDb();
   const today = todayInArgentina();
   const { current, previous, equivalent } = equivalentMonthPeriods(today);
 
   const [accounts, rows, pending] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     db.transaction.findMany({
       where: {
+        userId,
         voidedAt: null,
         occurredOn: {
           gte: new Date(`${previous.start}T00:00:00.000Z`),
@@ -488,7 +618,7 @@ export async function getProgressData(): Promise<ProgressData> {
     }),
     resilientRead(() =>
       db.upcomingPayment.findMany({
-        where: { status: "PENDING" },
+        where: { userId, status: "PENDING" },
         include: { plannedAccount: true },
         orderBy: { dueOn: "asc" },
       }),
@@ -534,12 +664,12 @@ export async function getProgressData(): Promise<ProgressData> {
  * y cuántos movimientos la tocaron. Sirve para decir "sin actividad registrada"
  * con evidencia, en vez de afirmar que una cuenta está desactualizada sin regla.
  */
-async function getAccountActivity(): Promise<
+async function getAccountActivity(userId: string): Promise<
   Map<string, { lastActivityOn: string | null; movementCount: number }>
 > {
   const db = getDb();
   const entries = await db.ledgerEntry.findMany({
-    where: { transaction: { voidedAt: null } },
+    where: { userId, transaction: { voidedAt: null } },
     select: { accountId: true, transaction: { select: { occurredOn: true } } },
   });
 
@@ -574,21 +704,21 @@ export interface RealityData {
  * secundarios: degradan a `null` para que la pantalla diga qué no pudo leer en
  * vez de mostrar un cero que se leería como "no tenés".
  */
-export async function getRealityData(): Promise<RealityData> {
+export async function getRealityData(userId: string): Promise<RealityData> {
   const db = getDb();
   const today = todayInArgentina();
   const period = monthPeriodDays(today);
 
   const [accounts, activity, investments, pending, movements] = await Promise.all([
-    getAccountsWithBalances(),
-    getAccountActivity(),
+    getAccountsWithBalances(userId),
+    getAccountActivity(userId),
     resilientRead(
-      () => getInvestments(),
+      () => getInvestments(userId),
       reportSecondaryRead("/mi-realidad", "investments"),
     ),
     resilientRead(() =>
       db.upcomingPayment.findMany({
-        where: { status: "PENDING" },
+        where: { userId, status: "PENDING" },
         include: { plannedAccount: true },
         orderBy: { dueOn: "asc" },
       }),
@@ -596,6 +726,7 @@ export async function getRealityData(): Promise<RealityData> {
     ),
     db.transaction.findMany({
       where: {
+        userId,
         occurredOn: {
           gte: new Date(`${period.start}T00:00:00.000Z`),
           lt: shiftDays(period.end, 1),
@@ -656,21 +787,22 @@ export interface CloseData {
  * cuenta para poder mostrar saldo inicial y final por cuenta sin recalcular
  * nada en la vista.
  */
-export async function getCloseData(month: string | undefined): Promise<CloseData> {
+export async function getCloseData(userId: string, month: string | undefined): Promise<CloseData> {
   const db = getDb();
   const today = todayInArgentina();
   const period = resolvePeriod(month, today);
   const periodStart = new Date(`${period.start}T00:00:00.000Z`);
 
   const [accounts, movements, entries, payments] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     db.transaction.findMany({
-      where: { occurredOn: { gte: periodStart } },
+      where: { userId, occurredOn: { gte: periodStart } },
       include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
     }),
     db.ledgerEntry.findMany({
       where: {
+        userId,
         transaction: { voidedAt: null, occurredOn: { gte: periodStart } },
       },
       select: {
@@ -681,7 +813,10 @@ export async function getCloseData(month: string | undefined): Promise<CloseData
     }),
     resilientRead(() =>
       db.upcomingPayment.findMany({
+        // `userId` va al lado de `OR`: Prisma los combina con AND, así que el
+        // propietario acota las dos ramas del OR, no compite con ellas.
         where: {
+          userId,
           OR: [
             { status: "PENDING" },
             {
@@ -700,7 +835,7 @@ export async function getCloseData(month: string | undefined): Promise<CloseData
     ),
   ]);
 
-  const activity = await getAccountActivity();
+  const activity = await getAccountActivity(userId);
   const within = new Map<string, bigint>();
   const after = new Map<string, bigint>();
   for (const entry of entries) {
@@ -736,7 +871,7 @@ export async function getCloseData(month: string | undefined): Promise<CloseData
   };
 }
 
-export async function getActData(): Promise<{
+export async function getActData(userId: string): Promise<{
   today: string;
   hasAccounts: boolean;
   movementCount: number;
@@ -753,13 +888,13 @@ export async function getActData(): Promise<{
   const db = getDb();
   const today = todayInArgentina();
   const [accounts, pending, movementCount] = await Promise.all([
-    getAccountsWithBalances(),
+    getAccountsWithBalances(userId),
     db.upcomingPayment.findMany({
-      where: { status: "PENDING" },
+      where: { userId, status: "PENDING" },
       include: { plannedAccount: true },
       orderBy: { dueOn: "asc" },
     }),
-    db.transaction.count({ where: { voidedAt: null } }),
+    db.transaction.count({ where: { userId, voidedAt: null } }),
   ]);
 
   const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));

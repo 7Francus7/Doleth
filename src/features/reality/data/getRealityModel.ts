@@ -441,8 +441,8 @@ function buildQuality(result: RealityResult): RealityQuality {
   };
 }
 
-export async function getRealityModel(): Promise<RealityViewModel> {
-  const data = await getRealityData();
+export async function getRealityModel(userId: string): Promise<RealityViewModel> {
+  const data = await getRealityData(userId);
   const result = computeReality({
     today: data.today,
     period: data.period,

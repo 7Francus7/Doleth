@@ -5,6 +5,7 @@ import { SensitiveAmount } from "../../components/privacy/AmountPrivacy";
 import { EmptyState } from "../../design-system/feedback";
 import { normalizeListPath } from "../../lib/navigation/scrollRestoration";
 import { getMovements } from "../../lib/finance/data";
+import { requireOnboardedUser } from "../../lib/auth/guards";
 import { formatDateAR, todayInArgentina } from "../../lib/finance/domain";
 import styles from "../../components/finance/finance.module.css";
 
@@ -14,6 +15,7 @@ export const metadata = { title: "Movimientos" };
 const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 
 export default async function MovementsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const user = await requireOnboardedUser("/movimientos");
   const query = await searchParams;
   const currentMonth = todayInArgentina().slice(0, 7);
   const month = first(query.month) && /^\d{4}-\d{2}$/.test(first(query.month)!) ? first(query.month)! : currentMonth;
@@ -22,7 +24,14 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
   const accountId = first(query.accountId) || undefined;
   const categoryId = first(query.categoryId) || undefined;
   const hasActiveFilters = month !== currentMonth || Boolean(type) || Boolean(accountId) || Boolean(categoryId);
-  const data = await getMovements({ month, ...(type ? { type } : {}), ...(accountId ? { accountId } : {}), ...(categoryId ? { categoryId } : {}) });
+  // Los filtros vienen de la query string: acotan dentro de lo que ya es del
+  // usuario, nunca amplían el alcance. El dueño lo pone `getMovements`.
+  const data = await getMovements(user.id, {
+    month,
+    ...(type ? { type } : {}),
+    ...(accountId ? { accountId } : {}),
+    ...(categoryId ? { categoryId } : {}),
+  });
   const listPath = normalizeListPath("/movimientos", {
     ...(month !== currentMonth ? { month } : {}),
     ...(type ? { type } : {}),

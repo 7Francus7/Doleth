@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "../components/finance/AppNav";
+import { AccountLink } from "../components/auth/AccountLink";
 import { AmountPrivacyProvider } from "../components/privacy/AmountPrivacy";
 import { PwaManager } from "../components/pwa/PwaManager";
 
@@ -78,6 +79,7 @@ export default function RootLayout({
       <body>
         <AmountPrivacyProvider>
           {children}
+          <AccountLink />
           <AppNav />
           <PwaManager />
         </AmountPrivacyProvider>

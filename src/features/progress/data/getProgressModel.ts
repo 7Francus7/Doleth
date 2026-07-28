@@ -158,8 +158,8 @@ function actionsFor(progress: ProgressComparison, hasAccounts: boolean): Progres
   return { primary: "update", primaryLabel: "Ver cómo se calculó", secondaryActions: secondary, state: "default" };
 }
 
-export async function getProgressModel(): Promise<ProgressViewModel> {
-  const data = await getProgressData();
+export async function getProgressModel(userId: string): Promise<ProgressViewModel> {
+  const data = await getProgressData(userId);
   const progress = compareProgressPeriods({
     movements: data.movements,
     current: data.current,

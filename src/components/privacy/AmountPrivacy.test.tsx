@@ -46,9 +46,10 @@ describe("privacidad visual de importes", () => {
   });
 
   it("cerrar sesión no envía la preferencia al servidor ni la borra", () => {
-    const source = readFileSync(join(process.cwd(), "src/app/actions/session.ts"), "utf8");
+    const source = readFileSync(join(process.cwd(), "src/app/auth/actions.ts"), "utf8");
     expect(source).not.toContain("localStorage");
     expect(source).not.toContain("doleth.hideAmounts");
-    expect(source).toContain('store.delete("doleth_session")');
+    // El cierre de sesión revoca la sesión en la base, no sólo la cookie.
+    expect(source).toContain("destroyCurrentSession()");
   });
 });

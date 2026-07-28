@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "11.15.1"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Verificaciones estáticas: no necesitan base.
+  # ---------------------------------------------------------------------------
+  static:
+    name: Lint y typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  # ---------------------------------------------------------------------------
+  # Pruebas contra PostgreSQL real. Las suites de aislamiento multiusuario son
+  # bloqueantes: DOLETH_REQUIRE_DB=1 hace que la falta de base sea un fallo duro
+  # en vez de un skip silencioso.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Pruebas (PostgreSQL real)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: doleth
+          POSTGRES_PASSWORD: doleth
+          POSTGRES_DB: doleth_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U doleth -d doleth_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Base efímera del runner. Nunca la de producción: este job no tiene
+      # acceso a ningún secreto de entorno productivo.
+      #
+      # `DATABASE_URL` NO se define a nivel de job a propósito: las pruebas sólo
+      # pueden ver `TEST_DATABASE_URL`. Los pasos que sí necesitan `DATABASE_URL`
+      # —migrar, auditar y limpiar— la declaran ellos mismos.
+      TEST_DATABASE_URL: postgresql://doleth:doleth@localhost:5432/doleth_ci
+      DOLETH_REQUIRE_DB: "1"
+      DOLETH_SESSION_SECRET: secreto-efimero-de-ci-con-mas-de-treinta-y-dos-caracteres
+      DOLETH_APP_URL: http://localhost:3000
+      DOLETH_EMAIL_TRANSPORT: console
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Aplicar migraciones desde cero
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: pnpm db:migrate
+
+      - name: Auditar el historial de migraciones
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: pnpm db:audit-migrations
+
+      - name: Pruebas
+        run: pnpm test
+
+      # Red de seguridad: si por cualquier motivo las suites bloqueantes se
+      # omitieran, el job tiene que fallar igual.
+      - name: Verificar que las suites bloqueantes se ejecutaron
+        run: pnpm test:isolation
+
+      - name: Limpiar la base efímera
+        if: always()
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' || true
+
+  # ---------------------------------------------------------------------------
+  # Build de producción.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [static]
+
+    env:
+      # Valores sintéticos: el build no se conecta a ninguna base ni envía correo.
+      DATABASE_URL: postgresql://doleth:doleth@localhost:5432/doleth_build
+      DOLETH_SESSION_SECRET: secreto-efimero-de-build-con-mas-de-treinta-y-dos-caracteres
+      DOLETH_APP_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
