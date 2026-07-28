@@ -25,8 +25,14 @@ Variables obligatorias:
 | Variable | Uso |
 |---|---|
 | `DATABASE_URL` | conexión PostgreSQL del entorno |
-| `DOLETH_ACCESS_PASSWORD` | clave privada, mínimo 12 caracteres |
 | `DOLETH_SESSION_SECRET` | firma de sesión, mínimo 32 caracteres aleatorios |
+| `RESEND_API_KEY` | proveedor de correo; obligatoria en producción |
+| `DOLETH_EMAIL_FROM` | remitente verificado en el proveedor |
+| `DOLETH_APP_URL` | URL pública, para armar los enlaces de los correos |
+
+Cada persona entra con su propia cuenta: correo y contraseña, con verificación y
+recuperación por correo real. La clave única compartida de la etapa de un solo
+usuario ya no existe. Ver `.env.example` para la lista completa.
 
 No se deben versionar valores reales. En producción, la cookie es `HttpOnly`,
 `SameSite=Lax` y `Secure` bajo HTTPS.

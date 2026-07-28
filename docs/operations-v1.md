@@ -55,8 +55,10 @@ productiva para pruebas de formularios.
 Variables obligatorias:
 
 - `DATABASE_URL`;
-- `DOLETH_ACCESS_PASSWORD`;
-- `DOLETH_SESSION_SECRET`.
+- `DOLETH_SESSION_SECRET`;
+- `RESEND_API_KEY`;
+- `DOLETH_EMAIL_FROM`;
+- `DOLETH_APP_URL`.
 
 La URL debe usar HTTPS. La rama productiva esperada es `main`. Las migraciones
 existentes se aplican con `pnpm db:migrate`; C7 no agrega migraciones.
@@ -69,8 +71,10 @@ existentes se aplican con `pnpm db:migrate`; C7 no agrega migraciones.
 - [ ] `DATABASE_URL` apunta a la base productiva esperada.
 - [ ] Existe backup verificable de la base antes del release.
 - [ ] Migraciones existentes aplicadas una sola vez.
-- [ ] `DOLETH_ACCESS_PASSWORD` tiene al menos 12 caracteres.
 - [ ] `DOLETH_SESSION_SECRET` es aleatorio y tiene al menos 32 caracteres.
+- [ ] El proveedor de correo está configurado y envía de verdad
+      (`RESEND_API_KEY`, `DOLETH_EMAIL_FROM` con dominio verificado, SPF y DKIM).
+- [ ] `DOLETH_APP_URL` apunta al dominio productivo real.
 - [ ] HTTPS activo.
 - [ ] Cookie `HttpOnly`, `Secure` y `SameSite=Lax`.
 - [ ] CSP, `DENY`, `nosniff`, `no-referrer` y Permissions Policy presentes.
