@@ -209,7 +209,8 @@ async function main() {
     let checksumsAfter: Checksums | null = null;
 
     try {
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(
+        async (tx) => {
         for (const table of financialTables) {
           const rows = await tx.$queryRawUnsafe<{ total: bigint }[]>(
             `WITH claimed AS (
@@ -265,7 +266,22 @@ async function main() {
             `El backfill alteró ${differences.length} valor(es) contable(s). Revirtiendo: no se escribió nada.`,
           );
         }
-      });
+        },
+        // El bloque hace las seis actualizaciones y, dentro de la misma
+        // transacción, tres recuentos completos y las sumas de control: más de
+        // treinta viajes a la base. Contra un Postgres administrado y remoto eso
+        // supera con facilidad los 5 s que Prisma da por omisión, y la
+        // transacción expira a mitad de la verificación. Expirar es seguro —no
+        // se confirma nada—, pero deja el backfill sin poder completarse nunca.
+        //
+        // El límite se sube para que las verificaciones puedan terminar. No se
+        // relaja ninguna: siguen siendo las mismas y siguen revirtiendo todo
+        // ante cualquier diferencia.
+        {
+          maxWait: Number(process.env.DOLETH_BACKFILL_MAX_WAIT_MS ?? 30_000),
+          timeout: Number(process.env.DOLETH_BACKFILL_TIMEOUT_MS ?? 120_000),
+        },
+      );
     } catch (error) {
       if (error instanceof BackfillAbort) {
         console.error(`\n✖ ${error.message}`);
