@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { MovementForm } from "../../../../components/finance/MovementForm";
 import { OperationalShell } from "../../../../components/finance/OperationalShell";
@@ -25,7 +25,17 @@ export default async function EditMovementPage({ params, searchParams }: { param
     db.account.findMany({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { name: "asc" } }),
     db.category.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } }),
   ]);
-  if (!movement || movement.voidedAt) notFound();
+  if (!movement) notFound();
+  if (movement.voidedAt) {
+    const replacement = await db.transaction.findFirst({
+      where: { userId: user.id, correctedFromId: movement.id },
+      select: { id: true },
+    });
+    if (replacement) {
+      redirect(`/movimientos/${replacement.id}?volver=${encodeURIComponent(returnTo)}`);
+    }
+    notFound();
+  }
 
   const occurredOn = movement.occurredOn.toISOString().slice(0, 10);
 
