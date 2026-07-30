@@ -16,9 +16,12 @@
  *  3. Si no hay ninguna de las dos, no hay base: Prisma no se inicializa y las
  *     suites que la necesitan se omiten. `DOLETH_REQUIRE_DB=1` convierte esa
  *     omisión en un fallo (ver `fixtures.ts`).
- *  4. La base de pruebas tiene que ser explícitamente de pruebas: loopback, o un
- *     nombre de base con marca de prueba. Cualquier otra cosa se rechaza.
+ *  4. La base tiene que declararse de prueba por nombre incluso en loopback.
+ *     Loopback reduce alcance de red, pero no demuestra que la base sea
+ *     descartable.
  *  5. Nunca puede apuntar al mismo destino que `DATABASE_URL`.
+ *  6. Nombres, hosts o parámetros marcados como producción se rechazan antes de
+ *     abrir una conexión.
  *
  * Ningún mensaje de error incluye usuario, contraseña ni la URL completa.
  */
@@ -45,13 +48,21 @@ export class TestDatabaseConfigError extends Error {
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0", "host.docker.internal"]);
 
-/** `doleth_ci`, `doleth-test`, `pruebas`… El nombre tiene que decir que es de prueba. */
-const TEST_DATABASE_NAME = /(^|[_-])(test|tests|testing|ci|prueba|pruebas)([_-]|$)/i;
+/** `doleth_ci`, `doleth-test`, `rehearsal`… El nombre tiene que declarar su propósito. */
+const TEST_DATABASE_NAME =
+  /(^|[_-])(test|tests|testing|ci|prueba|pruebas|rehearsal|temp|temporary|temporal)([_-]|$)/i;
+
+/** Bases administrativas o nombres usados habitualmente por una aplicación real. */
+const KNOWN_PRODUCTION_DATABASE = /^(postgres|neondb|doleth|production|produccion|prod|live|main)$/i;
+
+/** Señales explícitas. No intenta adivinar nombres opacos de proveedores. */
+const PRODUCTION_MARKER = /(^|[._-])(prod|production|produccion|live|main)([._-]|$)/i;
 
 interface ParsedTarget {
   host: string;
   port: string;
   database: string;
+  environmentLabels: string[];
 }
 
 function parse(raw: string): ParsedTarget | null {
@@ -62,6 +73,9 @@ function parse(raw: string): ParsedTarget | null {
       host: url.hostname.toLowerCase(),
       port: url.port || "5432",
       database: decodeURIComponent(url.pathname.replace(/^\//, "")),
+      environmentLabels: ["branch", "environment", "env", "endpoint"]
+        .map((key) => url.searchParams.get(key)?.toLowerCase())
+        .filter((value): value is string => Boolean(value)),
     };
   } catch {
     return null;
@@ -91,6 +105,7 @@ export function resolveTestDatabaseUrl(env: TestDatabaseEnv): string | null {
   const testUrl = env.TEST_DATABASE_URL?.trim();
   const productionUrl = env.DATABASE_URL?.trim();
   const inCi = env.CI === "true" || env.CI === "1";
+  const databaseRequired = env.DOLETH_REQUIRE_DB === "1";
 
   if (!testUrl) {
     if (productionUrl) {
@@ -101,9 +116,9 @@ export function resolveTestDatabaseUrl(env: TestDatabaseEnv): string | null {
           "Definí TEST_DATABASE_URL con una base de prueba descartable.",
       );
     }
-    if (inCi) {
+    if (inCi || databaseRequired) {
       throw new TestDatabaseConfigError(
-        "CI sin TEST_DATABASE_URL. Las suites de aislamiento multiusuario son bloqueantes " +
+        "Ejecución obligatoria sin TEST_DATABASE_URL. Las suites de aislamiento multiusuario son bloqueantes " +
           "y no pueden omitirse en el pipeline.",
       );
     }
@@ -138,11 +153,23 @@ export function resolveTestDatabaseUrl(env: TestDatabaseEnv): string | null {
     }
   }
 
-  const isLoopback = LOOPBACK_HOSTS.has(target.host);
-  if (!isLoopback && !TEST_DATABASE_NAME.test(target.database)) {
+  if (
+    KNOWN_PRODUCTION_DATABASE.test(target.database) ||
+    PRODUCTION_MARKER.test(target.database) ||
+    PRODUCTION_MARKER.test(target.host) ||
+    target.environmentLabels.some((label) => PRODUCTION_MARKER.test(label))
+  ) {
     throw new TestDatabaseConfigError(
-      `TEST_DATABASE_URL apunta a una base remota que no se declara de prueba (${describe(target)}). ` +
-        "Usá una base local, o una base cuyo nombre incluya 'test', 'ci' o 'pruebas'.",
+      `TEST_DATABASE_URL contiene una señal explícita de producción (${describe(target)}). ` +
+        "Creá una base descartable cuyo nombre declare 'test', 'ci', 'pruebas' o 'rehearsal'.",
+    );
+  }
+
+  const isLoopback = LOOPBACK_HOSTS.has(target.host);
+  if (!TEST_DATABASE_NAME.test(target.database)) {
+    throw new TestDatabaseConfigError(
+      `TEST_DATABASE_URL apunta a una base ${isLoopback ? "local" : "remota"} que no se declara de prueba ` +
+        `(${describe(target)}). Usá un nombre que incluya 'test', 'ci', 'pruebas' o 'rehearsal'.`,
     );
   }
 

@@ -91,12 +91,7 @@ export async function createTestUser(label: string): Promise<TestUser> {
       sourceAccountId: account.id,
       categoryId: category.id,
       idempotencyKey: `seed-${randomUUID()}`,
-      entries: {
-        create: createPostings("EXPENSE", 12_345n, account.id).map((posting) => ({
-          ...posting,
-          userId: user.id,
-        })),
-      },
+      entries: { create: createPostings("EXPENSE", 12_345n, account.id) },
     },
   });
 

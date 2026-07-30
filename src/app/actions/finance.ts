@@ -310,7 +310,10 @@ export async function createMovementAction(
           ...(categoryId ? { categoryId } : {}),
           ...(description ? { description } : {}),
           idempotencyKey,
-          entries: { create: postings.map((posting) => ({ ...posting, userId: user.id })) },
+          // La relación compuesta (transactionId, userId) hereda ambos valores
+          // del movimiento. Repetir userId dentro del nested create es inválido
+          // para Prisma y la FK compuesta igualmente verifica el owner.
+          entries: { create: postings },
         },
       });
       createdId = created.id;
@@ -465,7 +468,7 @@ export async function correctMovementAction(
           ...(description ? { description } : {}),
           idempotencyKey,
           correctedFromId: originalId,
-          entries: { create: postings.map((posting) => ({ ...posting, userId: user.id })) },
+          entries: { create: postings },
         },
       });
       replacementId = replacement.id;
@@ -623,12 +626,7 @@ export async function payUpcomingPaymentAction(
           idempotencyKey: `upcoming-payment:${payment.id}`,
           // `amountCents`, no `estimatedCents`: el importe se puede ajustar al
           // confirmar y el asiento tiene que reflejar lo que realmente salió.
-          entries: {
-            create: createPostings("EXPENSE", amountCents, payment.plannedAccountId).map((posting) => ({
-              ...posting,
-              userId: user.id,
-            })),
-          },
+          entries: { create: createPostings("EXPENSE", amountCents, payment.plannedAccountId) },
         },
       });
       // Igual que arriba: `payment` se trajo filtrando por dueño, así que la

@@ -1,6 +1,6 @@
 # Auditoría de integridad financiera
 
-Estado global: `READY_WITH_CONCERNS`.
+Estado global: `VERIFIED` en PostgreSQL temporal.
 
 ## Representación monetaria
 
@@ -13,11 +13,11 @@ Estado global: `READY_WITH_CONCERNS`.
 | Ingreso/gasto con signo coherente | `VERIFIED` | Dominio normaliza dirección y ledger firmado. |
 | Transferencia no crea dinero | `VERIFIED` en código | Débito y crédito de igual magnitud y signo opuesto. |
 | Transferencia atómica | `VERIFIED` en código | Transacción Prisma incluye movimiento y ambos asientos. |
-| Operación fallida sin escrituras parciales | `READY_WITH_CONCERNS` | Uso transaccional; falta prueba DB de fallo inducido en el entorno final. |
+| Operación fallida sin escrituras parciales | `VERIFIED` | Fallos inducidos de transferencia y corrección revirtieron movimiento, asientos y anulación. |
 | Corrección conserva original | `VERIFIED` | Original se anula y se crea reemplazo enlazado, en transacción. |
 | Anulación conserva evidencia | `VERIFIED` | No borra movimiento/asientos; marca `voidedAt`. |
 | Anulados no afectan saldos | `VERIFIED` en consultas/tests sin DB | Agregados filtran transacciones anuladas. |
-| Referencias del mismo owner | `READY_WITH_CONCERNS` | Validación de aplicación más nueva migración de FKs compuestas; falta rehearsal. |
+| Referencias del mismo owner | `VERIFIED` | Validación de aplicación y FKs compuestas probadas con `P2003`. |
 | Próximos pagos y categorías por owner | `READY_WITH_CONCERNS` | Filtros implementados y constraints agregadas. |
 | Idempotencia de comandos | `READY_WITH_CONCERNS` | Claves/ventanas de deduplicación reducen dobles envíos; no existe una clave idempotente universal para toda mutación. |
 | Reconciliación | `READY_WITH_CONCERNS` | Scripts/tests de auditoría; no hay job continuo ni alerta. |
@@ -75,11 +75,8 @@ No se infiere de esto el estado actual de la base.
 - No se verificaron restauración ni PITR.
 - No se ejecutó un cierre de saldos antes/después de migraciones sobre una copia productiva.
 
-## Validación requerida
+## Validación completada y pendiente
 
-1. Suite DB completa.
-2. Migraciones desde cero y desde estado legacy.
-3. Fallos inducidos dentro de transacciones.
-4. Reconciliación de conteos, sumas y checksums.
-5. Smoke con ingreso, gasto, transferencia, corrección y anulación.
-6. Restauración ensayada en una rama/base separada.
+Completado: suite DB, migraciones desde cero/legacy, fallos inducidos y reconciliación de checksums/saldos.
+
+Pendiente externo: smoke desplegado y restauración Neon/PITR.

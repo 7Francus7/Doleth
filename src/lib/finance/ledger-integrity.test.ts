@@ -131,6 +131,52 @@ describe.skipIf(!hasDatabase)("integridad contable con propiedad por usuario", (
     expect(await reconcile(usuario.id)).toBe(true);
   });
 
+  it("un fallo a mitad de una transferencia revierte movimiento y primer asiento", async () => {
+    const key = `failed-transfer-${randomUUID()}`;
+    const debitId = randomUUID();
+    const creditId = randomUUID();
+    const before = await getAccountsWithBalances(usuario.id);
+
+    await expect(
+      getDb().$transaction(async (tx) => {
+        const movement = await tx.transaction.create({
+          data: {
+            userId: usuario.id,
+            type: "TRANSFER",
+            amountCents: 25_000n,
+            occurredOn: new Date("2026-07-07T00:00:00.000Z"),
+            sourceAccountId: usuario.accountId,
+            destinationAccountId: usuario.secondAccountId,
+            idempotencyKey: key,
+          },
+        });
+        await tx.ledgerEntry.create({
+          data: {
+            id: debitId,
+            userId: usuario.id,
+            transactionId: movement.id,
+            accountId: usuario.accountId,
+            amountCents: -25_000n,
+          },
+        });
+        // Falla deliberada: la cuenta pertenece al vecino.
+        await tx.ledgerEntry.create({
+          data: {
+            id: creditId,
+            userId: usuario.id,
+            transactionId: movement.id,
+            accountId: vecino.accountId,
+            amountCents: 25_000n,
+          },
+        });
+      }),
+    ).rejects.toMatchObject({ code: "P2003" });
+
+    expect(await getDb().transaction.count({ where: { idempotencyKey: key } })).toBe(0);
+    expect(await getDb().ledgerEntry.count({ where: { id: { in: [debitId, creditId] } } })).toBe(0);
+    expect(await getAccountsWithBalances(usuario.id)).toEqual(before);
+  });
+
   it("anular devuelve el saldo pero conserva el movimiento visible", async () => {
     const clave = randomUUID();
     await createMovementAction(
@@ -206,6 +252,71 @@ describe.skipIf(!hasDatabase)("integridad contable con propiedad por usuario", (
     });
     expect(anulado.voidedAt).not.toBeNull();
     expect(anulado.correction?.userId).toBe(usuario.id);
+    expect(await reconcile(usuario.id)).toBe(true);
+  });
+
+  it("un fallo a mitad de una corrección conserva intacto el original", async () => {
+    const originalKey = `correction-origin-${randomUUID()}`;
+    const replacementKey = `failed-correction-${randomUUID()}`;
+    const validEntryId = randomUUID();
+
+    const created = await createMovementAction(
+      idle,
+      formData({
+        type: "EXPENSE",
+        amount: "800",
+        occurredOn: "2026-07-09",
+        sourceAccountId: usuario.accountId,
+        categoryId: usuario.categoryId,
+        idempotencyKey: originalKey,
+      }),
+    );
+    expect(created.ok).toBe(true);
+    const original = await getDb().transaction.findFirstOrThrow({
+      where: { userId: usuario.id, idempotencyKey: originalKey },
+    });
+
+    await expect(
+      getDb().$transaction(async (tx) => {
+        await tx.transaction.update({
+          where: { id: original.id },
+          data: { voidedAt: new Date(), voidReason: "corrección fallida deliberada" },
+        });
+        const replacement = await tx.transaction.create({
+          data: {
+            userId: usuario.id,
+            type: "EXPENSE",
+            amountCents: 900_00n,
+            occurredOn: original.occurredOn,
+            sourceAccountId: usuario.accountId,
+            categoryId: usuario.categoryId,
+            correctedFromId: original.id,
+            idempotencyKey: replacementKey,
+          },
+        });
+        await tx.ledgerEntry.create({
+          data: {
+            id: validEntryId,
+            userId: usuario.id,
+            transactionId: replacement.id,
+            accountId: usuario.accountId,
+            amountCents: -900_00n,
+          },
+        });
+        await tx.ledgerEntry.create({
+          data: {
+            userId: usuario.id,
+            transactionId: replacement.id,
+            accountId: vecino.accountId,
+            amountCents: 1n,
+          },
+        });
+      }),
+    ).rejects.toMatchObject({ code: "P2003" });
+
+    expect((await getDb().transaction.findUniqueOrThrow({ where: { id: original.id } })).voidedAt).toBeNull();
+    expect(await getDb().transaction.count({ where: { idempotencyKey: replacementKey } })).toBe(0);
+    expect(await getDb().ledgerEntry.count({ where: { id: validEntryId } })).toBe(0);
     expect(await reconcile(usuario.id)).toBe(true);
   });
 

@@ -13,19 +13,19 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 
 ## Validaciones automáticas
 
-- [ ] `pnpm install --frozen-lockfile`
-- [ ] `pnpm exec prisma validate`
-- [ ] `pnpm lint`
-- [ ] `pnpm typecheck`
-- [ ] `pnpm test`
-- [ ] `pnpm build`
-- [ ] `git diff --check`
-- [ ] `DOLETH_REQUIRE_DB=1 pnpm test`
-- [ ] `DOLETH_REQUIRE_DB=1 pnpm test:isolation`
-- [ ] `pnpm db:audit-migrations`
-- [ ] Migraciones desde base PostgreSQL vacía.
-- [ ] Rehearsal expand/backfill/contract con dataset legacy.
-- [ ] Prueba de rollback del lote/release.
+- [x] `pnpm install --frozen-lockfile`
+- [x] `pnpm exec prisma validate`
+- [x] `pnpm lint`
+- [x] `pnpm typecheck`
+- [x] `pnpm test` — 787/787 con PostgreSQL
+- [x] `pnpm build`
+- [x] `git diff --check`
+- [x] `DOLETH_REQUIRE_DB=1 pnpm test` — cero omitidos
+- [x] `DOLETH_REQUIRE_DB=1 pnpm test:isolation` — 52/52
+- [x] `pnpm db:audit-migrations`
+- [x] Migraciones desde base PostgreSQL vacía.
+- [x] Rehearsal expand/backfill/contract con dataset legacy.
+- [x] Rollback transaccional por fallos inducidos.
 
 ## Base de datos y ownership
 
@@ -38,10 +38,10 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 - [ ] Filas financieras con `userId IS NULL`: cero antes del contrato.
 - [ ] Owner del histórico confirmado por el usuario.
 - [ ] Checksums pre/post preservados.
-- [ ] Cero referencias cruzadas entre owners.
-- [ ] Todas las tablas financieras tienen `userId NOT NULL`.
-- [ ] Índices por `userId` presentes.
-- [ ] FKs compuestas de ownership aplicadas.
+- [x] Cero referencias cruzadas en escenario válido; escenario inválido abortado.
+- [x] Todas las tablas financieras tienen `userId NOT NULL` en esquema final.
+- [x] Índices por `userId` presentes.
+- [x] FKs compuestas de ownership aplicadas y probadas.
 - [ ] No se usó `db push` ni `migrate reset`.
 
 ## Variables e infraestructura

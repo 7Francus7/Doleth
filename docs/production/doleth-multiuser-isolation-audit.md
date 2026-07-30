@@ -1,6 +1,6 @@
 # Auditoría de aislamiento multiusuario
 
-Estado global: `READY_WITH_CONCERNS`.
+Estado global: `VERIFIED` en PostgreSQL temporal.
 
 ## Superficie revisada
 
@@ -80,11 +80,13 @@ Se agregaron pruebas para:
 - dos usuarios creando inversiones idénticas;
 - rechazo DB de transacción, ledger y próximo pago con referencias de otro owner.
 
-Resultado local:
+Resultado PostgreSQL 16.14 local:
 
-- tests sin DB: pasaron;
-- pruebas DB A/B: `BLOCKED`, omitidas por ausencia de `TEST_DATABASE_URL`;
-- constraints nuevas: `BLOCKED`, todavía no aplicadas en PostgreSQL desechable.
+- 787/787 tests pasaron, cero omitidos;
+- suite estricta: 52/52;
+- cuenta, categoría, ledger, próximo pago y update cross-owner: `P2003`;
+- lectura por ID ajeno: `null`;
+- relación válida permaneció intacta tras cada rechazo.
 
 ## Riesgos residuales
 
@@ -93,11 +95,6 @@ Resultado local:
 - Las respuestas de “no encontrado” deben conservarse para no revelar existencia.
 - Todo nuevo modelo financiero debe repetir owner no nulo, índice, filtro y test A/B.
 
-## Criterio de cierre
+## Pendiente externo
 
-Cambiar a `VERIFIED` solo después de:
-
-1. aplicar todas las migraciones en PostgreSQL temporal;
-2. ejecutar `DOLETH_REQUIRE_DB=1 pnpm test:isolation`;
-3. completar smoke A/B sobre preview;
-4. comprobar cero referencias cross-owner en preflight productivo.
+El aislamiento técnico quedó verificado en PostgreSQL temporal. Antes de producción todavía faltan smoke A/B sobre preview y preflight productivo read-only.

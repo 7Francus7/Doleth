@@ -26,6 +26,10 @@ describe("resolveTestDatabaseUrl", () => {
         TestDatabaseConfigError,
       );
     });
+
+    it("DOLETH_REQUIRE_DB=1 también exige la URL fuera de CI", () => {
+      expect(() => resolveTestDatabaseUrl({ DOLETH_REQUIRE_DB: "1" })).toThrow(TestDatabaseConfigError);
+    });
   });
 
   describe("b) sólo existe DATABASE_URL", () => {
@@ -57,8 +61,13 @@ describe("resolveTestDatabaseUrl", () => {
     });
 
     it("acepta loopback por IP", () => {
-      const url = "postgresql://doleth:doleth@127.0.0.1:5433/lo_que_sea";
+      const url = "postgresql://doleth:doleth@127.0.0.1:5433/lo_que_sea_test";
       expect(resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toBe(url);
+    });
+
+    it("rechaza una base local sin marca de prueba", () => {
+      const url = "postgresql://doleth:doleth@127.0.0.1:5433/lo_que_sea";
+      expect(() => resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toThrow(TestDatabaseConfigError);
     });
 
     it("acepta una base remota sólo si su nombre se declara de prueba", () => {
@@ -69,6 +78,24 @@ describe("resolveTestDatabaseUrl", () => {
     it("rechaza una base remota que no se declara de prueba", () => {
       const url = "postgresql://u:p@ep-otra-de-ejemplo.aws.neon.tech/neondb?sslmode=require";
       expect(() => resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toThrow(TestDatabaseConfigError);
+    });
+
+    it.each(["postgres", "neondb", "doleth", "doleth_prod"])(
+      "rechaza el nombre productivo %s incluso en loopback",
+      (database) => {
+        const url = `postgresql://doleth:doleth@127.0.0.1:5433/${database}`;
+        expect(() => resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toThrow(/producción/);
+      },
+    );
+
+    it("rechaza un host marcado como producción aunque la base diga test", () => {
+      const url = "postgresql://u:p@prod.db.example.test/doleth_test";
+      expect(() => resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toThrow(/producción/);
+    });
+
+    it("rechaza un parámetro de rama marcado como producción", () => {
+      const url = "postgresql://u:p@ep-temporal.example.test/doleth_test?branch=production";
+      expect(() => resolveTestDatabaseUrl({ TEST_DATABASE_URL: url })).toThrow(/producción/);
     });
 
     it("rechaza una URL que no es de PostgreSQL", () => {

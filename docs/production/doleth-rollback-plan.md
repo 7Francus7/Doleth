@@ -2,6 +2,19 @@
 
 Estado: `READY_WITH_CONCERNS`. Debe ensayarse antes del release.
 
+## Evidencia de rehearsal
+
+El 2026-07-29 se ensayó PostgreSQL 16.14 local y descartable:
+
+- expand → backfill → contract → FKs compuestas;
+- checksums y saldo preservados;
+- dry-run sin escrituras;
+- transferencia fallida sin movimiento ni asiento parcial;
+- corrección fallida con original intacto;
+- escenario cross-owner abortado por preflight.
+
+Esto verifica rollback transaccional. Restauración Neon/PITR sigue pendiente y debe comprobarse antes del release.
+
 ## Regla de seguridad
 
 El rollback de aplicación y el rollback de datos son decisiones separadas. No revertir migraciones destructivamente ni restaurar una base sin medir primero las escrituras posteriores.

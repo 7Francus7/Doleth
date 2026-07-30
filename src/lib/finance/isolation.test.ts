@@ -135,20 +135,34 @@ describe.skipIf(!hasDatabase)("aislamiento de datos entre usuarios · lectura", 
           idempotencyKey: key,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: "P2003" });
 
     expect(await getDb().transaction.count({ where: { idempotencyKey: key } })).toBe(0);
+
+    await expect(
+      getDb().transaction.create({
+        data: {
+          userId: alicia.id,
+          type: "EXPENSE",
+          amountCents: 100n,
+          occurredOn: new Date("2026-07-20T00:00:00.000Z"),
+          sourceAccountId: alicia.accountId,
+          categoryId: bruno.categoryId,
+          idempotencyKey: `${key}-category`,
+        },
+      }),
+    ).rejects.toMatchObject({ code: "P2003" });
 
     await expect(
       getDb().ledgerEntry.create({
         data: {
           userId: alicia.id,
-          transactionId: bruno.transactionId,
+          transactionId: alicia.transactionId,
           accountId: bruno.accountId,
           amountCents: -100n,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: "P2003" });
 
     await expect(
       getDb().upcomingPayment.create({
@@ -160,6 +174,16 @@ describe.skipIf(!hasDatabase)("aislamiento de datos entre usuarios · lectura", 
           plannedAccountId: bruno.accountId,
         },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: "P2003" });
+
+    await expect(
+      getDb().transaction.update({
+        where: { id: alicia.transactionId },
+        data: { sourceAccountId: bruno.accountId },
+      }),
+    ).rejects.toMatchObject({ code: "P2003" });
+
+    expect((await getDb().transaction.findUniqueOrThrow({ where: { id: alicia.transactionId } })).sourceAccountId)
+      .toBe(alicia.accountId);
   });
 });

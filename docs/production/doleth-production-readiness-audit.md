@@ -8,7 +8,7 @@ Base candidata: `integration/identity-over-corte-7` en `fc3f8196490b2fd496823fd7
 
 `BLOCKED`
 
-El candidato es la base correcta y supera `lint`, `typecheck`, tests sin base y `build`. La autenticación multiusuario y el modelo financiero están sustancialmente implementados. Aun así, no debe recibir dinero real hasta completar una prueba de migraciones sobre PostgreSQL, ejecutar la suite con base, verificar el estado actual de producción y completar un smoke real con dos usuarios y correo.
+El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck`, 787 tests con PostgreSQL y `build`. La autenticación multiusuario y el modelo financiero están sustancialmente implementados. Aun así, no debe recibir dinero real hasta verificar el estado actual de producción, backup/PITR, correo y smoke desplegado con dos usuarios.
 
 ## Evidencia Git
 
@@ -27,48 +27,41 @@ El candidato es la base correcta y supera `lint`, `typecheck`, tests sin base y 
 | Candidato Git | `VERIFIED` | Contenido y commits comparados; incluye corte 7 e identidad multiusuario. |
 | Autenticación en código | `READY_WITH_CONCERNS` | Registro, verificación, sesiones, recuperación, cambio de contraseña, tokens de un solo uso y rate limiting implementados; falta smoke real con proveedor de correo. |
 | Aislamiento en aplicación | `READY_WITH_CONCERNS` | Lecturas y mutaciones filtran por sesión y `userId`; se corrigieron dos deduplicaciones recientes sin owner. |
-| Aislamiento en base | `READY_WITH_CONCERNS` | Se agregó una migración de claves compuestas para impedir referencias entre owners; falta aplicarla en PostgreSQL desechable y ejecutar pruebas DB. |
-| Integridad financiera | `READY_WITH_CONCERNS` | Dinero en centavos `BigInt`, escrituras atómicas, anulaciones y correcciones trazables; falta suite DB y reconciliación de rehearsal. |
-| Migraciones productivas | `BLOCKED` | El flujo expand/backfill/contract requiere orquestación; la nueva migración no fue probada contra PostgreSQL real. |
+| Aislamiento en base | `VERIFIED` | FKs compuestas aplicadas en PostgreSQL 16.14; intentos A/B fallaron con `P2003`. |
+| Integridad financiera | `VERIFIED` en PostgreSQL | Centavos `BigInt`, transferencias, anulaciones, correcciones y fallos inducidos pasaron. |
+| Migraciones | `READY_WITH_CONCERNS` | Desde cero y legacy pasaron; producción aún requiere preflight, backup y orquestación expand/backfill/contract. |
 | Producción actual | `BLOCKED` | Vercel producción sigue en `main` antiguo con clave compartida. |
 | Neon | `INCONCLUSIVE` | No hubo acceso autorizado a proyecto, ramas, pooling, backups o PITR. |
 | Resend | `INCONCLUSIVE` | No se verificaron dominio, SPF, DKIM, remitente ni entrega real. |
-| QA automatizado sin DB | `VERIFIED` | `lint`, `typecheck`, 680 tests y `build` pasaron después de los cambios. |
-| QA con DB y navegador | `BLOCKED` | 97 tests quedaron omitidos sin `TEST_DATABASE_URL`; no se completó smoke A/B ni viewport. |
+| QA automatizado con DB | `VERIFIED` | `lint`, `typecheck`, 787/787 tests, 52/52 tests estrictos y `build` pasaron. |
+| QA de navegador | `BLOCKED` | No se completó smoke desplegado A/B, correo ni viewport. |
 | Descubrimiento Sandía | `INCONCLUSIVE` | Sitio público inspeccionado; no publica una opción verificable de exportación. |
 | Importador Sandía | `NOT_IMPLEMENTED` | Deliberadamente fuera de este corte; se creó especificación. |
 
 ## Bloqueantes
 
-### 1. Validación PostgreSQL pendiente
-
-- Problema: la suite DB, el rehearsal completo de migraciones y las nuevas FKs compuestas no fueron ejecutados.
-- Impacto: una incompatibilidad de migración o una referencia histórica inválida podría detener el release.
-- Resolución: crear una base temporal separada, ejecutar todas las migraciones desde cero, auditar migraciones y correr tests con `DOLETH_REQUIRE_DB=1`.
-- Validación: todos los comandos del checklist deben pasar y la base temporal debe poder descartarse.
-
-### 2. Estado productivo actual no verificado
+### 1. Estado productivo actual no verificado
 
 - Problema: no se consultaron directamente Neon, migraciones actuales, filas sin owner, backup ni PITR.
 - Impacto: no se puede calcular con certeza el impacto de aplicar migraciones.
 - Resolución: ejecutar solamente el preflight read-only y confirmar backup/PITR antes de cualquier escritura.
 - Validación: evidencia fechada de conteos, ownership, migraciones y punto de restauración.
 
-### 3. Producción despliega el código anterior
+### 2. Producción despliega el código anterior
 
 - Problema: `doleth.vercel.app` apunta a `main` en `a3c4a54`, que usa acceso compartido y no el candidato multiusuario.
 - Impacto: el producto público no ofrece el aislamiento auditado.
 - Resolución: después de cerrar los demás bloqueantes, publicar el candidato, abrir PR y usar preview protegida para el smoke.
 - Validación: deployment preview identifica el SHA aprobado y producción permanece intacta hasta autorización.
 
-### 4. Correo transaccional no verificado
+### 3. Correo transaccional no verificado
 
 - Problema: no hay evidencia de Resend, dominio, SPF/DKIM, remitente o callbacks reales.
 - Impacto: registro, verificación y recuperación pueden quedar inutilizables.
 - Resolución: verificar configuración externa sin revelar valores y enviar pruebas a dos direcciones controladas.
 - Validación: entrega, enlace absoluto correcto, expiración y reutilización rechazada.
 
-### 5. Smoke de extremo a extremo pendiente
+### 4. Smoke de extremo a extremo pendiente
 
 - Problema: no se completó el recorrido real con Usuario A y B, mobile, desktop, consola y logs.
 - Impacto: las pruebas unitarias no demuestran que todo el sistema desplegado funciona.
@@ -105,11 +98,10 @@ También se escapó el nuevo email antes de insertarlo en HTML y se impidió que
 
 Bloqueantes reales:
 
-1. rehearsal PostgreSQL y suite DB;
-2. preflight productivo read-only más backup/PITR;
-3. configuración Resend verificada;
-4. preview del SHA aprobado y smoke A/B completo;
-5. PR revisado sin merge automático.
+1. preflight productivo read-only más backup/PITR;
+2. configuración Resend verificada;
+3. preview del SHA aprobado y smoke A/B completo;
+4. PR revisado sin merge automático.
 
 Importantes no bloqueantes:
 

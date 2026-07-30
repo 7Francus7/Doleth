@@ -50,12 +50,7 @@ async function markUser(label: string): Promise<Marked> {
       sourceAccountId: user.accountId,
       destinationAccountId: user.secondAccountId,
       idempotencyKey: `transfer-${mark}`,
-      entries: {
-        create: createPostings("TRANSFER", 7_777n, user.accountId, user.secondAccountId).map((posting) => ({
-          ...posting,
-          userId: user.id,
-        })),
-      },
+      entries: { create: createPostings("TRANSFER", 7_777n, user.accountId, user.secondAccountId) },
     },
   });
 
@@ -71,12 +66,7 @@ async function markUser(label: string): Promise<Marked> {
       idempotencyKey: `voided-${mark}`,
       voidedAt: new Date("2026-07-15T00:00:00.000Z"),
       voidReason: "cargado por error",
-      entries: {
-        create: createPostings("EXPENSE", 4_444n, user.accountId).map((posting) => ({
-          ...posting,
-          userId: user.id,
-        })),
-      },
+      entries: { create: createPostings("EXPENSE", 4_444n, user.accountId) },
     },
   });
 
@@ -208,12 +198,19 @@ describe.skipIf(!hasDatabase)("aislamiento de la copia de datos entre usuarios",
     expect(totalA).toBe(150_000n - 12_345n);
   });
 
-  it("los cuatro CSV tampoco filtran", () => {
+  it("los cuatro CSV preservan el aislamiento", () => {
+    const markers: Record<ExportDataset, { own: string; foreign: string }> = {
+      movimientos: { own: a.mark, foreign: b.mark },
+      cuentas: { own: a.user.accountId, foreign: b.user.accountId },
+      "proximos-pagos": { own: a.mark, foreign: b.mark },
+      inversiones: { own: a.mark, foreign: b.mark },
+    };
+
     for (const dataset of DATASETS) {
       const propio = datasetRows(exportA, dataset);
       const csv = toSemicolonCsv(propio.headers, propio.rows);
-      expect(csv, dataset).toContain(a.mark);
-      expect(csv, dataset).not.toContain(b.mark);
+      expect(csv, dataset).toContain(markers[dataset].own);
+      expect(csv, dataset).not.toContain(markers[dataset].foreign);
     }
   });
 
