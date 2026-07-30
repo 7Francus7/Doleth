@@ -1,128 +1,145 @@
-# Checklist de producción de Doleth
+# Checklist de Doleth
 
-Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release en `BLOCKED`.
+Fecha: 2026-07-30
 
-## Código y Git
+Alcance aprobado: beta privada; Production todavía no autorizada.
 
-- [x] SHA de Preview registrado desde metadata de Vercel y comparado con el HEAD del PR.
-- [ ] Rama basada en `integration/identity-over-corte-7`.
-- [x] `main` y `origin/main` refrescados antes del PR.
-- [x] Working tree limpio antes del push.
-- [x] Sin secretos, `.env` ni JSON productivos en el commit.
-- [ ] PR revisado; merge automático desactivado.
+## Git y código
 
-## Validaciones automáticas
+- [x] Rama `codex/production-readiness-audit`.
+- [x] PR draft `#8`.
+- [x] Auto-merge desactivado.
+- [x] Commit funcional Preview:
+  `f3a7559931a108cb26c041d9d53f1bfbeae3d6c7`.
+- [x] Sin secretos ni archivos `.env` versionados.
+- [x] Scan de secretos limpio.
+- [ ] Merge a `main`: prohibido hasta aprobación.
 
-- [x] `pnpm install --frozen-lockfile`
-- [x] `pnpm exec prisma validate`
-- [x] `pnpm lint`
-- [x] `pnpm typecheck`
-- [x] `pnpm test` — 787/787 con PostgreSQL
-- [x] `pnpm build`
-- [x] `git diff --check`
-- [x] `DOLETH_REQUIRE_DB=1 pnpm test` — cero omitidos
-- [x] `DOLETH_REQUIRE_DB=1 pnpm test:isolation` — 52/52
-- [x] `pnpm db:audit-migrations`
-- [x] Migraciones desde base PostgreSQL vacía.
-- [x] Rehearsal expand/backfill/contract con dataset legacy.
-- [x] Rollback transaccional por fallos inducidos.
-- [x] Tooling productivo revisado; script histórico inseguro no ejecutado.
-- [x] Preflight Neon protegido por transacción read-only y test unitario.
+## QA obligatorio
 
-## Base de datos y ownership
+- [x] `pnpm install --frozen-lockfile`.
+- [x] `pnpm exec prisma validate`.
+- [x] `pnpm exec prisma generate`.
+- [x] `pnpm lint`.
+- [x] `pnpm typecheck`.
+- [x] `DOLETH_REQUIRE_DB=1 pnpm test`: 808/808.
+- [x] `DOLETH_REQUIRE_DB=1 pnpm test:isolation`: 52/52.
+- [x] `pnpm db:audit-migrations`: 6/6.
+- [x] `pnpm build`.
+- [x] `git diff --check`.
+- [x] Tests DB sin omisiones.
+- [ ] GitHub Actions: bloqueo externo de billing; jobs con 0 pasos.
 
-- [x] Proyecto, rama y base productiva identificados.
-- [x] Backup/PITR comprobado con timestamp y retención: ventana de 1 día; snapshots no configurados.
-- [x] Conexión runtime pooled de Preview configurada contra Neon temporal.
-- [x] Conexión directa de migraciones de Preview validada sin agregar `DIRECT_URL` a Vercel.
-- [x] Migraciones pendientes enumeradas: solo `202607290001_enforce_cross_owner_relations`.
-- [x] Conteos por tabla capturados.
-- [x] Filas financieras con `userId IS NULL`: cero antes del contrato.
-- [ ] Owner del histórico confirmado por el usuario.
-- [x] Checksums 5/5 preservados en la base temporal de Preview.
-- [x] Cero referencias cruzadas en escenario válido; escenario inválido abortado.
-- [x] Todas las tablas financieras tienen `userId NOT NULL` en esquema final.
-- [x] Índices por `userId` presentes en el esquema final/rehearsal.
-- [x] FKs compuestas de ownership aplicadas y probadas en rehearsal.
-- [ ] Las 5 claves compuestas y 8 FKs compuestas están aplicadas en producción.
-- [x] En este corte no se usó `db push`, `migrate reset`, migrate deploy, seed ni backfill.
+## Acceso privado
 
-## Variables e infraestructura
+- [x] Registro público oculto.
+- [x] Registro público rechazado en servidor.
+- [x] Invitación aleatoria y hash-only.
+- [x] Email vinculado.
+- [x] Vencimiento.
+- [x] Consumo atómico de un solo uso.
+- [x] Token manipulado rechazado.
+- [x] Token reutilizado rechazado.
+- [x] Token expirado rechazado en suite estricta.
+- [x] Fragmento retirado de la URL.
+- [x] Logs y documentación sin tokens.
+- [x] Sin endpoint administrativo público.
+- [x] Sin contraseña global.
 
-- [x] `DATABASE_URL` de Preview apunta al proyecto Neon temporal.
-- [x] `DOLETH_SESSION_SECRET` de Preview generado nuevamente y con scope separado.
-- [x] `DOLETH_APP_URL` de la rama Preview es HTTPS y coincide con su alias estable.
-- [ ] `RESEND_API_KEY`
-- [ ] `DOLETH_EMAIL_FROM`
-- [ ] `DOLETH_EMAIL_TRANSPORT=resend`
-- [ ] `DOLETH_ACCESS_PASSWORD` removida del candidato multiusuario.
-- [x] Variables críticas de Preview separadas de Production con overrides de rama.
-- [x] `TEST_DATABASE_URL` usó otra base del proyecto temporal y nunca Production.
-- [ ] Dominio Vercel correcto.
-- [x] Preview protegida.
-- [x] Deployment `READY` muestra el SHA aprobado.
-- [ ] Warning TLS de `pg` resuelto con Neon.
+## Recuperación administrativa
 
-Evidencia 2026-07-30:
+- [x] Solo administrador activo.
+- [x] Token hash-only de 30 minutos.
+- [x] Tokens anteriores invalidados.
+- [x] Sesiones revocadas al emitir.
+- [x] Sesiones revocadas al completar.
+- [x] Contraseña anterior rechazada.
+- [x] Contraseña nueva aceptada.
+- [x] Segundo uso rechazado.
+- [x] Auditoría sin token.
 
-- [x] Proyecto Vercel coincidente y deployment Production `READY`.
-- [x] SHA productivo actual: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
-- [x] `DATABASE_URL` existe por nombre en Production.
-- [ ] Valor de `DATABASE_URL` accesible al preflight: bloqueado por tipo `sensitive`.
-- [x] Sesión Neon autenticada sin revelar credenciales.
-- [x] Backup/PITR visible y fechado: punto más antiguo 2026-07-29 03:33 UTC.
-- [ ] Snapshot pre-release o rama de recuperación reciente creada con aprobación separada.
+## Preview y base
 
-## Email
+- [x] Proyecto Neon temporal independiente.
+- [x] Base de aplicación separada de tests.
+- [x] Preview usa exclusivamente `neondb` temporal.
+- [x] Tests usan exclusivamente `doleth_preview_tests`.
+- [x] Seis migraciones aplicadas en ambas.
+- [x] Checksums 6/6.
+- [x] `DATABASE_URL Preview != Production`.
+- [x] `DOLETH_SESSION_SECRET Preview != Production`.
+- [x] `DOLETH_APP_URL` de Preview separado.
+- [x] `DOLETH_ACCESS_MODE=private-beta` branch-only.
+- [x] Deployment Preview `READY`.
+- [x] Runtime 0 5xx y 0 errores/fatal.
+- [x] Neon temporal conservado.
 
-- [ ] Dominio remitente verificado.
-- [ ] SPF válido.
-- [ ] DKIM válido.
-- [ ] From permitido.
-- [ ] Registro entrega email real.
-- [ ] Recuperación entrega email real.
-- [ ] Cambio de email entrega avisos esperados.
-- [ ] Links usan la URL absoluta correcta.
-- [ ] Token usado no se reutiliza.
-- [ ] Token expirado falla.
-- [ ] Fallo de proveedor no deja estado inconsistente ni revela cuentas.
+## Smoke A
 
-## Smoke funcional A/B
+- [x] Invitación.
+- [x] Alta y login.
+- [x] Onboarding.
+- [x] Cuenta inicial.
+- [x] Categorías aisladas provisionadas.
+- [ ] Creación de categoría personalizada: no existe UI.
+- [x] Ingreso.
+- [x] Gasto.
+- [x] Segunda cuenta.
+- [x] Transferencia.
+- [x] Corrección auditable.
+- [x] Anulación.
+- [x] Próximo pago.
+- [x] Inversión.
+- [x] Ahora, Próximo, Cambios, Progreso y Mi realidad.
+- [x] Historial.
+- [x] Logout, reingreso y persistencia.
 
-- [ ] 1. Registrar Usuario A.
-- [ ] 2. Verificar correo A.
-- [ ] 3. Iniciar sesión A.
-- [ ] 4. Completar onboarding A.
-- [ ] 5. Crear cuenta A.
-- [ ] 6. Crear categorías A.
-- [ ] 7. Registrar ingreso A.
-- [ ] 8. Registrar gasto A.
-- [ ] 9. Crear segunda cuenta A.
-- [ ] 10. Transferir entre cuentas A.
-- [ ] 11. Corregir movimiento A.
-- [ ] 12. Anular movimiento A.
-- [ ] 13. Crear próximo pago A.
-- [ ] 14. Revisar dashboard A.
-- [ ] 15. Revisar historial A.
-- [ ] 16. Cerrar sesión A.
-- [ ] 17. Reingresar A.
-- [ ] 18. Confirmar persistencia A.
-- [ ] 19. Registrar Usuario B.
-- [ ] 20. Confirmar aislamiento A/B, incluidos IDs directos.
-- [ ] 21. Recuperar contraseña.
-- [ ] 22. Confirmar invalidación del token usado.
-- [ ] 23. Confirmar rechazo de enlace expirado.
-- [ ] 24. Verificar viewport 320 px.
-- [ ] 25. Verificar viewport 390 px.
-- [ ] 26. Verificar desktop.
-- [ ] 27. Consola del navegador sin errores.
-- [ ] 28. Logs de servidor sin errores y sin fixtures.
+## Smoke B y ownership
 
-## Go/No-Go
+- [x] Invitación distinta.
+- [x] Alta y onboarding.
+- [x] No ve datos de A.
+- [x] Lectura de IDs A rechazada.
+- [x] Edición de ID A rechazada.
+- [x] Corrección/anulación cross-owner rechazadas por tests estrictos.
+- [x] B crea datos propios.
+- [x] A no ve datos de B.
 
-- [ ] Release Manager: Go.
-- [ ] Ingeniería: Go.
-- [ ] Product owner: Go.
-- [ ] Plan de rollback accesible.
-- [ ] Persona con acceso a Neon disponible durante la ventana.
-- [ ] Autorización explícita para desplegar producción.
+## UX y observabilidad
+
+- [x] 320 px.
+- [x] 390 px.
+- [x] 1440 px.
+- [x] Sin overflow horizontal en tres rutas críticas.
+- [x] Consola sin errores.
+- [x] Capturas visualmente revisadas contra `DESIGN.md`.
+- [x] 500 registros runtime sin 5xx/error/fatal.
+- [x] Logs sin secretos, tokens ni correos de smoke.
+
+## Correo público
+
+- [ ] Dominio propio.
+- [ ] Resend verificado.
+- [ ] SPF.
+- [ ] DKIM.
+- [ ] Remitente permitido.
+- [ ] Entrega real.
+- [ ] Verificación por email.
+- [ ] Recuperación por email.
+- [ ] Cambio de email.
+- [ ] Smoke de correo A/B.
+
+Estas casillas no bloquean la beta privada; bloquean el lanzamiento público.
+
+## Production: gate posterior
+
+- [ ] Aprobación explícita del owner.
+- [ ] Punto de recuperación reciente en Neon.
+- [ ] Preflight read-only repetido.
+- [ ] Aplicar migraciones pendientes de forma controlada.
+- [ ] Post-checks de ownership, ledger y checksums.
+- [ ] Merge manual del PR.
+- [ ] Deployment exacto del SHA aprobado.
+- [ ] Registro público sigue deshabilitado.
+
+Estado actual: no merge, no migraciones Production, no deployment Production.

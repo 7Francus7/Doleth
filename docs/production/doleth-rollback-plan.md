@@ -1,130 +1,104 @@
 # Plan de rollback de Doleth
 
-Estado: `READY_WITH_CONCERNS`. Debe ensayarse antes del release.
+Estado: `READY_WITH_CONCERNS`. Production no fue modificada en este corte.
 
-## Evidencia de rehearsal
+## Regla principal
 
-El 2026-07-29 se ensayó PostgreSQL 16.14 local y descartable:
+El rollback de aplicación y el de datos son decisiones separadas. No ejecutar
+SQL inverso ni restaurar Neon sin medir primero las escrituras posteriores.
 
-- expand → backfill → contract → FKs compuestas;
-- checksums y saldo preservados;
-- dry-run sin escrituras;
-- transferencia fallida sin movimiento ni asiento parcial;
-- corrección fallida con original intacto;
-- escenario cross-owner abortado por preflight.
+## Recurso temporal
 
-Esto verifica rollback transaccional. La consola Neon confirmó PITR con una ventana de un día; no se ejecutó un restore.
+El proyecto `doleth-preview-e15754b-20260730` es independiente de Production.
+Contiene:
 
-## Estado Neon al 2026-07-30
+- `neondb`, con seis migraciones y datos controlados de smoke;
+- `doleth_preview_tests`, con seis migraciones y fixtures descartables.
 
-`NEON_PREFLIGHT_VERIFIED_WITH_CONCERNS`.
+Debe conservarse hasta aprobación o rechazo del release. No es un backup de
+Production y no debe promoverse.
 
-La rama `production`, default y protegida, fue inspeccionada en la consola autenticada sin leer la connection string. PITR ofrece una ventana de un día desde 2026-07-29 03:33 UTC. No hay snapshots ni schedule de snapshots.
+## Antes de un release productivo privado
 
-No aprobar release todavía. Antes de una migración debe crearse con autorización separada una rama o snapshot de recuperación reciente; pooling/TLS runtime, Resend y preview continúan pendientes.
-
-## Regla de seguridad
-
-El rollback de aplicación y el rollback de datos son decisiones separadas. No revertir migraciones destructivamente ni restaurar una base sin medir primero las escrituras posteriores.
+1. registrar deployment y SHA productivos actuales;
+2. crear un punto de recuperación o branch Neon reciente;
+3. validar el punto con consultas read-only;
+4. capturar conteos, owners nulos, cruces, checksums y ledger;
+5. confirmar quién puede promover Vercel y quién puede restaurar Neon;
+6. preparar el deployment anterior;
+7. confirmar `DOLETH_ACCESS_MODE=private-beta`;
+8. confirmar que el registro público permanece cerrado.
 
 ## Disparadores
 
-- login, verificación o recuperación no funcionan;
-- fuga o referencia cruzada entre usuarios;
+- login o invitaciones no funcionan;
+- una invitación se reutiliza;
+- recuperación no revoca sesiones;
+- fuga A/B o acceso por ID ajeno;
 - saldos o ledger inconsistentes;
-- tasa anormal de errores de base;
-- migración detenida o checksums alterados;
-- correo envía links al dominio equivocado;
-- el deployment no corresponde al SHA aprobado.
+- migración fallida o checksum alterado;
+- tasa anormal de 5xx;
+- deployment distinto del SHA aprobado;
+- registro público habilitado por error.
 
 Una sospecha de fuga multiusuario exige detener el release inmediatamente.
 
-## Antes del release
+## Fallo antes de migrar
 
-1. Registrar deployment productivo anterior y su SHA.
-2. Confirmar proyecto y rama Neon.
-3. Confirmar backup/PITR, retención y hora UTC exacta del punto recuperable.
-4. Crear con aprobación separada un branch de recuperación previo a migraciones.
-5. Validar ese branch con consultas read-only, sin promoverlo.
-6. Preservar la connection string anterior en el password manager, fuera del repositorio.
-7. Capturar conteos, filas sin owner y checksums.
-8. Confirmar que la aplicación anterior tolera las columnas nuevas de la fase expand.
-9. Preparar un deployment rollback de la versión anterior.
-10. Identificar quién puede promover deployment y quién puede restaurar Neon.
+1. cancelar;
+2. mantener deployment y base actuales;
+3. preservar logs sin secretos;
+4. corregir en la rama y repetir QA/Preview.
 
-## Fallo antes de escribir datos
+## Fallo de migración
 
-1. Cancelar migración o deployment.
-2. Mantener la versión anterior.
-3. Preservar logs.
-4. Corregir en una rama y repetir rehearsal.
+1. no desplegar la app nueva;
+2. comprobar estado de `_prisma_migrations`;
+3. verificar si PostgreSQL revirtió la transacción;
+4. no usar `migrate resolve` hasta demostrar rollback completo;
+5. corregir datos solo mediante un procedimiento revisado;
+6. repetir rehearsal en un recurso aislado.
 
-## Fallo durante expansión
+## Fallo después del deployment sin escrituras incompatibles
 
-La expansión agrega tablas/columnas y debe ser compatible hacia atrás.
+1. volver al deployment productivo anterior;
+2. confirmar login y lecturas;
+3. mantener migraciones aditivas;
+4. no quitar columnas durante el incidente;
+5. abrir incidente y preservar evidencia.
 
-1. No ejecutar backfill ni contrato.
-2. Volver a promover el deployment anterior si la app nueva ya estaba activa.
-3. Dejar columnas aditivas en sitio; no quitarlas durante el incidente.
-4. Diagnosticar y repetir después de validar.
+## Fallo después de escrituras
 
-## Fallo durante backfill
+1. bloquear mutaciones;
+2. capturar timestamp y última escritura válida;
+3. evaluar forward-fix primero;
+4. cuantificar el delta antes de PITR;
+5. restaurar primero en una rama/base nueva;
+6. reemplazar Production solo con aprobación explícita.
 
-1. Detener nuevas escrituras si no estaban congeladas.
-2. No reasignar a otro usuario.
-3. Comparar `OwnerBackfillRun`, conteos y checksums.
-4. Si la transacción falló, confirmar que no dejó cambios parciales.
-5. Si terminó con owner incorrecto, no improvisar un update inverso: restaurar una copia en una rama aislada, medir el delta y aprobar un plan específico.
+## Fallo específico de acceso privado
 
-El script solo reclama filas con owner nulo y ahora el modo `--dry-run` no escribe.
-
-## Fallo en contrato o FKs compuestas
-
-1. No marcar manualmente la migración como aplicada.
-2. Leer el error y ejecutar auditorías read-only de nulos/referencias cruzadas.
-3. Si Prisma registró una migración fallida, usar `prisma migrate resolve --rolled-back <migración>` solo después de verificar que la transacción revirtió por completo.
-4. Corregir los datos mediante un procedimiento revisado.
-5. Repetir `prisma migrate deploy`.
-
-## Fallo después del deployment
-
-Si no hay escrituras incompatibles:
-
-1. Promover el deployment productivo anterior desde Vercel.
-2. Confirmar login y lecturas.
-3. Conservar las migraciones aditivas; no ejecutar SQL inverso.
-4. Abrir incidente y preservar logs.
-
-Si ya hubo escrituras:
-
-1. Poner la aplicación en modo de mantenimiento o bloquear mutaciones.
-2. Capturar timestamp y última escritura válida.
-3. Evaluar forward-fix primero.
-4. Usar PITR solo con aprobación, después de cuantificar datos que se perderían.
-5. Restaurar a una rama/base nueva antes de reemplazar producción, cuando Neon lo permita.
+- revocar invitaciones pendientes afectadas;
+- revocar sesiones de usuarios comprometidos;
+- emitir recuperación administrativa solo después de verificar identidad;
+- no elegir contraseñas por los usuarios;
+- mantener tokens fuera de logs y tickets;
+- comprobar que `emailVerifiedAt` no fue falsificado.
 
 ## Verificación posterior
 
-- deployment y SHA correctos;
+- SHA/deployment correcto;
 - autenticación disponible;
-- conteos y checksums coherentes;
-- cero owners nulos;
-- cero referencias cross-owner;
-- balance agregado igual al esperado;
-- movimientos anulados excluidos;
-- logs sin errores nuevos;
+- registro público cerrado;
+- migraciones y checksums coherentes;
+- cero owners nulos y cero cruces;
+- ledger y saldos esperados;
+- anulados excluidos;
+- logs sin nuevos errores;
 - incidente documentado.
 
-## Recurso temporal de Preview
+## Deuda para release público
 
-El proyecto Neon `doleth-preview-e15754b-20260730` es independiente de Production y debe conservarse hasta la aprobación o rechazo explícito del release. Contiene solamente las cinco migraciones y datos de smoke controlados.
-
-Si el Preview falla:
-
-1. no promover ni fusionar el PR;
-2. preservar deployment, logs y base temporal para diagnóstico;
-3. corregir en la misma rama y desplegar un SHA nuevo;
-4. repetir los gates afectados;
-5. eliminar el proyecto temporal únicamente después de la decisión del owner.
-
-Este recurso no es un backup de Production y no sustituye el snapshot o branch de recuperación obligatorio antes del release productivo.
+El rollback público debe incorporar fallos de Resend, dominio, SPF/DKIM,
+verificación, recuperación y cambio de email. Esa cobertura no existe todavía y
+no debe presentarse como resuelta.

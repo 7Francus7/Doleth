@@ -1,108 +1,99 @@
 # Plan de release de Doleth
 
-Estado: `BLOCKED` hasta cerrar los gates 1 a 5.
-Base: `codex/production-readiness-audit`; el SHA de release se toma del HEAD del PR y debe coincidir con la metadata de Vercel.
+Estado del candidato: `PRIVATE_BETA_READY_WITH_CONCERNS`
+
+Production: `NOT_AUTHORIZED`
 
 ## Principios
 
-- No escribir en producción antes de un preflight read-only y backup/PITR confirmado.
-- No usar `prisma db push` ni `prisma migrate reset`.
-- No desplegar producción desde un working tree o SHA no auditado.
-- Separar base de test, preview y producción.
-- Aplicar migraciones con `prisma migrate deploy`; nunca desde el build de cada función.
-- Mantener la producción actual disponible durante el rehearsal.
+- separar Preview, tests y Production;
+- no usar `db push`, `migrate reset`, seeds ni backfills improvisados;
+- no migrar ni desplegar Production sin aprobación explícita;
+- crear un punto de recuperación reciente antes de la primera escritura;
+- mantener `DOLETH_ACCESS_MODE=private-beta`;
+- no habilitar registro público hasta resolver correo real.
 
-## Gate 1 — Cerrar el candidato
+## Gate 1 — Candidato
 
-Responsable: Ingeniería.
+- [x] Rama y PR draft.
+- [x] QA local completo.
+- [x] Secret scan.
+- [x] Preview del SHA funcional.
+- [x] Smoke A/B.
+- [x] Runtime y responsive.
+- [ ] Revisión humana del PR.
 
-1. Revisar los cambios de auditoría.
-2. Ejecutar `pnpm install --frozen-lockfile`.
-3. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
-4. Confirmar `git diff --check`.
-5. Confirmar que no hay secretos ni archivos de evidencia en el commit.
+GitHub Actions no puede ejecutar por bloqueo de billing. La evidencia local no
+elimina ese problema externo, pero cubre lint, tipos, build y DB real.
 
-Salida: commit inmutable aprobado.
+## Gate 2 — Infraestructura privada
 
-## Gate 2 — Rehearsal de base
+- [x] Neon temporal para Preview.
+- [x] Base de aplicación y tests separadas.
+- [x] Variables branch-only.
+- [x] Secreto de sesión exclusivo.
+- [x] Registro público cerrado.
+- [x] Infraestructura temporal retenida.
 
-Responsable: Ingeniería/DBA.
+## Gate 3 — Aprobación del owner
 
-1. Crear una rama/base PostgreSQL temporal, sin datos productivos salvo copia autorizada y sanitizada.
-2. Configurar `DATABASE_URL` y `TEST_DATABASE_URL` solamente en el proceso.
-3. Ejecutar desde base vacía:
+Antes de Production, presentar:
 
-```bash
-pnpm exec prisma migrate deploy
-pnpm db:audit-migrations
-DOLETH_REQUIRE_DB=1 pnpm test
-DOLETH_REQUIRE_DB=1 pnpm test:isolation
-```
+- este informe;
+- PR draft;
+- SHA final;
+- migraciones pendientes;
+- plan de rollback;
+- limitaciones de correo y categorías custom.
 
-4. Probar también el recorrido legacy:
-   - aplicar migraciones hasta la expansión multiusuario;
-   - ejecutar preflight;
-   - hacer `backfill:owner --dry-run` y comprobar cero escrituras;
-   - ejecutar backfill con un owner controlado;
-   - aplicar contrato de ownership y FKs compuestas;
-   - repetir auditoría y checksums.
-5. Descartar la base temporal.
+Salida: aprobación o rechazo explícito. El estado actual no implica aprobación.
 
-Salida: transcript sin secretos, todas las pruebas verdes.
+## Gate 4 — Punto de recuperación y preflight
 
-Estado: `VERIFIED` el 2026-07-29 con PostgreSQL 16.14 descartable, 787/787 tests y 52/52 tests estrictos.
+Con aprobación:
 
-## Gate 3 — Preparación externa
+1. registrar SHA y deployment productivo actuales;
+2. crear una rama o punto de recuperación Neon reciente;
+3. validar el recurso de recuperación con consultas read-only;
+4. repetir `pnpm db:preflight:neon-readonly`;
+5. capturar conteos, owners nulos, referencias cross-owner, checksums y ledger;
+6. cancelar ante cualquier ambigüedad.
 
-Responsables: owner de infraestructura y owner del producto.
+## Gate 5 — Migraciones Production
 
-- Neon: proyecto/rama correctos, pooling para runtime, conexión apropiada para migraciones, backup/PITR y límites confirmados.
-- Resend: dominio verificado, SPF, DKIM, remitente permitido y entrega real.
-- Vercel: variables separadas por Production/Preview, dominio, SHA y protección de preview.
-- Vercel CLI 58.4.0 está autenticada y enlazada. Las variables de Preview se administraron como `sensitive` por API/CLI sin leer ni exportar valores existentes.
+Production tiene pendiente la migración de ownership compuesto del candidato
+original y, después de este PR, la migración de acceso privado.
 
-Salida: checklist de infraestructura firmado, sin valores sensibles.
+1. cargar la conexión solo en el proceso aprobado;
+2. ejecutar `pnpm exec prisma migrate deploy`;
+3. ejecutar `pnpm db:audit-migrations`;
+4. repetir checks read-only de ownership y ledger;
+5. no resolver migraciones fallidas manualmente sin comprobar rollback
+   transaccional.
 
-Estado Neon: `NEON_PREFLIGHT_VERIFIED_WITH_CONCERNS`. Datos, ownership, ledger, checksums y PITR fueron verificados read-only. La migración de FKs compuestas está pendiente, no hay snapshots programados y pooling/TLS runtime siguen inconclusos porque no se leyó `DATABASE_URL`.
+## Gate 6 — Release productivo privado
 
-## Gate 4 — Preflight productivo
+1. confirmar `DOLETH_ACCESS_MODE=private-beta` en Production;
+2. confirmar que registro, recuperación por email y cambio de email siguen
+   deshabilitados;
+3. revisar y fusionar manualmente el PR;
+4. desplegar exactamente el SHA aprobado;
+5. ejecutar smoke reducido con datos controlados;
+6. observar logs y respuestas 5xx;
+7. conservar el punto de recuperación durante la ventana acordada.
 
-Responsable: Release Manager/DBA.
+No usar `vercel promote` ni desplegar desde otro SHA sin repetir la aprobación.
 
-1. Congelar escrituras de la versión anterior si el backfill lo requiere.
-2. Confirmar punto de restauración reciente.
-3. Consultar migraciones pendientes.
-4. Ejecutar `pnpm db:preflight:neon-readonly`, revisado para abortar si la transacción no es read-only.
-5. Registrar conteos por tabla, filas sin owner, owner histórico y checksums.
-6. Si existe cualquier ambigüedad de ownership, cancelar.
+## Lanzamiento público posterior
 
-Salida: decisión Go/No-Go explícita.
+Es otro release y requiere:
 
-## Gate 5 — Preview final
-
-Responsable: QA/Product.
-
-1. Publicar la rama aprobada y abrir PR a `main`.
-2. Desplegar preview protegida conectada a base de prueba, no producción.
-3. Ejecutar el smoke de 28 pasos del checklist.
-4. Confirmar email, A/B, mobile 320/390, desktop, consola y logs.
-5. Revisar el PR; no fusionar automáticamente.
-
-Salida: evidencia funcional y aprobación.
-
-## Release productivo — requiere autorización posterior
-
-1. Anunciar ventana y responsables.
-2. Aplicar expansión si todavía no está aplicada.
-3. Ejecutar backfill únicamente con evidencia y owner confirmado.
-4. Resolver cualquier migración de contrato fallida de forma documentada y volver a ejecutar `prisma migrate deploy`.
-5. Aplicar FKs compuestas.
-6. Ejecutar post-checks read-only.
-7. Fusionar el PR aprobado.
-8. Desplegar exactamente el SHA aprobado.
-9. Ejecutar smoke reducido sin operaciones destructivas.
-10. Observar logs, autenticación y errores de base.
-
-## Estrategia Git
-
-El candidato contiene a `main`; no requiere merge inverso. El camino seguro es el PR draft `#8` desde la rama auditada hacia `main`, actualmente con 39 commits. Si `main` avanza antes del release, integrar esos cambios en la rama candidata y repetir todos los gates.
+1. dominio propio;
+2. Resend verificado;
+3. SPF/DKIM;
+4. entrega real;
+5. verificación y recuperación por email;
+6. cambio de email;
+7. smoke con dos buzones;
+8. cambio deliberado a `DOLETH_ACCESS_MODE=public`;
+9. nueva auditoría y aprobación.

@@ -1,122 +1,104 @@
-# Auditoría de preparación productiva de Doleth
+# Auditoría de preparación de Doleth
 
 Fecha: 2026-07-30
-Rama auditada: `codex/production-readiness-audit`
-Base candidata: rehearsal PostgreSQL verificado en `af60b682235c2387950226df3da818bee6253277`
 
-## Veredicto
+Rama: `codex/production-readiness-audit`
 
-`BLOCKED`
+PR: `#8`, draft, sin auto-merge
 
-El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck`, 787 tests con PostgreSQL y `build`. El preflight actual de Neon confirmó datos, ownership, ledger, checksums y PITR en modo read-only. Aun así, no debe recibir dinero real hasta aplicar de forma controlada la migración pendiente, preparar recuperación pre-release, verificar correo y completar el smoke desplegado con dos usuarios.
+## Veredicto del alcance actual
 
-## Evidencia Git
+`PRIVATE_BETA_READY_WITH_CONCERNS`
 
-- `main` y `origin/main`: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
-- Candidato funcional publicado: `6b9b3b5ead26135cbbb53c2dbb7168f6307afb5d`; los commits posteriores agregan evidencia documental al mismo PR.
-- Divergencia: candidato 39 commits por delante y 0 por detrás de `main`.
-- El working tree original se preservó. Contenía tres JSON sin seguimiento en `evidencia/`.
-- No había stashes.
-- La auditoría se realizó en un worktree separado.
-- La rama fue publicada y se abrió el PR draft `#8`. No se hizo merge ni se desplegó producción.
+La Preview privada funciona con invitaciones de un solo uso, recuperación
+administrativa, dos usuarios aislados y las funciones financieras del release.
+Esto no equivale a aprobación de Production ni de lanzamiento público.
 
 ## Estado por área
 
 | Área | Estado | Evidencia |
 |---|---|---|
-| Candidato Git | `VERIFIED` | Contenido y commits comparados; incluye corte 7 e identidad multiusuario. |
-| Autenticación en código | `READY_WITH_CONCERNS` | Registro, verificación, sesiones, recuperación, cambio de contraseña, tokens de un solo uso y rate limiting implementados; falta smoke real con proveedor de correo. |
-| Aislamiento en aplicación | `READY_WITH_CONCERNS` | Lecturas y mutaciones filtran por sesión y `userId`; se corrigieron dos deduplicaciones recientes sin owner. |
-| Aislamiento en base | `VERIFIED` | FKs compuestas aplicadas en PostgreSQL 16.14; intentos A/B fallaron con `P2003`. |
-| Integridad financiera | `VERIFIED` en PostgreSQL | Centavos `BigInt`, transferencias, anulaciones, correcciones y fallos inducidos pasaron. |
-| Migraciones | `READY_WITH_CONCERNS` | Desde cero y legacy pasaron; producción aún requiere preflight, backup y orquestación expand/backfill/contract. |
-| Producción actual | `BLOCKED` | Vercel producción sigue en `main` antiguo con clave compartida. |
-| Neon | `VERIFIED_WITH_CONCERNS` | Rama `production` protegida; datos, ownership, ledger, checksums y PITR verificados read-only. Quinta migración pendiente, ventana PITR de 1 día y sin snapshots. |
-| Vercel | `VERIFIED_WITH_CONCERNS` | Proyecto único, Production `READY`, `main` en `a3c4a54`; Node.js 24.x; consulta de 7 días devolvió 0 errores y 0 warnings. Valores sensibles no fueron leídos. |
-| Resend | `INCONCLUSIVE` | No se verificaron dominio, SPF, DKIM, remitente ni entrega real. |
-| QA automatizado con DB | `VERIFIED` | `lint`, `typecheck`, 787/787 tests, 52/52 tests estrictos y `build` pasaron. |
-| QA de navegador | `BLOCKED` | No se completó smoke desplegado A/B, correo ni viewport. |
-| Descubrimiento Sandía | `INCONCLUSIVE` | Sitio público inspeccionado; no publica una opción verificable de exportación. |
-| Importador Sandía | `NOT_IMPLEMENTED` | Deliberadamente fuera de este corte; se creó especificación. |
+| Acceso privado | `VERIFIED` | Invitaciones hash-only, email-bound, expiración, consumo atómico |
+| Registro público | `DISABLED` | Bloqueo server-side y UI honesta |
+| Recuperación | `VERIFIED` | 30 min, un uso, sesiones revocadas, contraseña anterior rechazada |
+| Aislamiento | `VERIFIED` | UI A/B, acceso por ID y 52/52 tests estrictos |
+| Integridad financiera | `VERIFIED` | Ingreso, gasto, transferencia, corrección, anulación, pago e inversión |
+| Preview | `READY` | SHA funcional `f3a7559931a108cb26c041d9d53f1bfbeae3d6c7` |
+| Neon temporal | `VERIFIED` | Dos bases separadas; seis migraciones y checksums 6/6 |
+| QA | `VERIFIED` | 808/808 tests con DB; build, lint y tipos verdes |
+| Runtime | `VERIFIED` | 500 registros; 0 5xx; 0 error/fatal; 0 secretos |
+| Responsive | `VERIFIED` | 320, 390 y 1440 px sin overflow |
+| Correo | `DEFERRED` | No hay entrega real; Resend no está resuelto |
+| GitHub Actions | `BLOCKED_EXTERNAL` | Jobs con 0 pasos por cuenta bloqueada por billing |
+| Production | `UNTOUCHED` | 0 escrituras, 0 migraciones, 0 deploys |
 
-## Bloqueantes
+## QA exacto
 
-### 1. Contrato de ownership productivo pendiente
+- `pnpm install --frozen-lockfile`: sin cambios;
+- `pnpm exec prisma validate`: válido;
+- `pnpm exec prisma generate`: válido;
+- `pnpm lint`: verde;
+- `pnpm typecheck`: verde;
+- `pnpm test` con `DOLETH_REQUIRE_DB=1`: 53 archivos, 808 tests;
+- `pnpm test:isolation` con `DOLETH_REQUIRE_DB=1`: 5 archivos, 52 tests;
+- `pnpm db:audit-migrations`: 6/6 consistente;
+- `pnpm build`: verde;
+- `git diff --check`: verde;
+- scan de 27 archivos de código: 0 literales con forma de credencial;
+- build/runtime Vercel: 0 patrones de credenciales.
 
-- Problema: el preflight read-only confirmó que `202607290001_enforce_cross_owner_relations` está pendiente; faltan las 5 claves compuestas y 8 FKs compuestas esperadas.
-- Impacto: los datos actuales están limpios, pero la base todavía no impone todas las relaciones de ownership del candidato.
-- Resolución: preparar la migración para la ventana de release, después de un snapshot o branch de recuperación autorizado. No ejecutarla durante este preflight.
-- Validación: repetir checksums, cross-owner, catálogo y ledger después del cambio.
+El warning de `pg` sobre el cambio futuro de semántica de `sslmode=require`
+permanece como deuda; la conexión actual se comporta como `verify-full`.
 
-### 2. Producción despliega el código anterior
+## Seguridad del acceso
 
-- Problema: `doleth.vercel.app` apunta a `main` en `a3c4a54`, que usa acceso compartido y no el candidato multiusuario.
-- Impacto: el producto público no ofrece el aislamiento auditado.
-- Resolución: después de cerrar los demás bloqueantes, publicar el candidato, abrir PR y usar preview protegida para el smoke.
-- Validación: deployment preview identifica el SHA aprobado y producción permanece intacta hasta autorización.
+- no hay contraseña global;
+- no hay endpoint administrativo web;
+- las escrituras del operador exigen cuatro barreras explícitas;
+- el hostname de la base debe coincidir exactamente con el esperado;
+- los tokens no se guardan en claro;
+- los fragmentos se eliminan antes del submit;
+- eventos de auditoría guardan IDs/contexto, nunca tokens;
+- la activación beta no falsifica `emailVerifiedAt`.
 
-### 3. Correo transaccional no verificado
+## Hallazgos del smoke
 
-- Problema: no hay evidencia de Resend, dominio, SPF/DKIM, remitente o callbacks reales.
-- Impacto: registro, verificación y recuperación pueden quedar inutilizables.
-- Resolución: verificar configuración externa sin revelar valores y enviar pruebas a dos direcciones controladas.
-- Validación: entrega, enlace absoluto correcto, expiración y reutilización rechazada.
+Tres defectos se detectaron y corrigieron antes del veredicto:
 
-### 4. Smoke de extremo a extremo pendiente
+1. contexto `server-only` del CLI;
+2. retorno `void` del advisory lock de bootstrap;
+3. redirect posterior a una corrección auditable.
 
-- Problema: no se completó el recorrido real con Usuario A y B, mobile, desktop, consola y logs.
-- Impacto: las pruebas unitarias no demuestran que todo el sistema desplegado funciona.
-- Resolución: seguir el checklist sobre la preview aprobada y una base de prueba separada.
-- Validación: evidencia de los 28 pasos sin fuga A/B ni errores de servidor.
+Los tres fueron repetidos con resultado verde.
 
-## Evidencia histórica preservada
+## Concerns aceptados para beta privada
 
-Los JSON locales sin seguimiento muestran un backfill ejecutado el 2026-07-28:
+- correo transaccional inexistente por decisión explícita;
+- CRUD de categorías personalizadas ausente; onboarding crea categorías
+  aisladas por usuario;
+- CI remoto bloqueado por billing, compensado por QA local completo;
+- rate limiter de ventana fija;
+- CSP con `unsafe-inline`;
+- warning TLS futuro de `pg`;
+- sin reconciliación financiera operativa continua.
 
-- 1 cuenta, 13 categorías, 1 transacción y 1 asiento pasaron de `userId` nulo al owner indicado.
-- No quedaron filas sin owner ni filas asignadas a otros usuarios en esas seis tablas.
-- Los checksums funcionales antes/después coinciden; solo cambió la captura temporal.
-- El preflight posterior mantuvo los mismos conteos.
+## Bloqueantes para lanzamiento público
 
-Esta evidencia histórica coincide con el preflight actual: los mismos conteos, cero owners nulos, cero huérfanos y cero cruces de propietario.
+1. dominio propio;
+2. Resend verificado;
+3. SPF y DKIM;
+4. entrega real a dos buzones controlados;
+5. verificación y recuperación por email;
+6. smoke de correo;
+7. revisión de categoría custom si se declara parte del producto público.
 
-## Riesgos no bloqueantes
+## Production
 
-- El rate limiter usa ventana fija y puede permitir ráfagas en el borde de ventana.
-- La CSP permite `unsafe-inline`, compatible con la aplicación actual pero mejorable.
-- El saldo inicial vive en la cuenta y no como asiento; el saldo se reconstruye como saldo inicial más ledger vivo, no desde ledger puro.
-- No hay job operativo de reconciliación continua.
-- El `sslmode=require` reportó un warning de `pg`; debe acordarse el modo TLS con Neon.
-- `prisma.config.ts` tiene una URL local de fallback: es conveniente exigir `DATABASE_URL` explícita en operaciones.
+- SHA actual: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`;
+- la migración de ownership compuesto sigue pendiente;
+- la migración de acceso privado también queda pendiente después de este PR;
+- no se creó todavía el punto de recuperación requerido;
+- no se hizo merge ni deployment.
 
-## Defecto de build corregido
-
-Una compilación limpia no pudo resolver `server-only`. Aunque Next.js maneja su semántica, el paquete se importa directamente en el repositorio. Se agregó `server-only@0.0.1` como dependencia explícita y el build volvió a pasar.
-
-También se escapó el nuevo email antes de insertarlo en HTML y se impidió que una sesión ajena consuma un token de cambio de correo antes de validar su owner.
-
-## Alcance mínimo de lanzamiento
-
-Bloqueantes reales:
-
-1. snapshot/branch de recuperación previo y aplicación controlada de la migración pendiente;
-2. configuración Resend verificada;
-3. preview del SHA aprobado y smoke A/B completo;
-4. PR revisado sin merge automático.
-
-Importantes no bloqueantes:
-
-- endurecer CSP;
-- mejorar rate limiting;
-- reconciliación operativa;
-- resolver warning TLS;
-- revisión legal de privacidad, términos y retención.
-
-Mejoras futuras que no deben retrasar el lanzamiento:
-
-- importador Sandía;
-- conexión bancaria;
-- IA;
-- aplicación nativa;
-- presupuestos o reportes avanzados;
-- pagos, suscripciones, equipos o multimoneda avanzada.
+El release productivo privado requiere aprobación posterior, un punto de
+recuperación Neon reciente y `DOLETH_ACCESS_MODE=private-beta`.

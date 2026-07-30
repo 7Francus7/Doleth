@@ -1,12 +1,14 @@
 # Smoke de Preview de Doleth
 
-Fecha del corte: 2026-07-30
+Fecha: 2026-07-30
 
 Rama: `codex/production-readiness-audit`
 
-Commit funcional auditado: `6b9b3b5ead26135cbbb53c2dbb7168f6307afb5d`
+Commit funcional: `f3a7559931a108cb26c041d9d53f1bfbeae3d6c7`
 
 PR: `#8`, draft, sin auto-merge
+
+Resultado: `PRIVATE_BETA_READY_WITH_CONCERNS`
 
 ## Deployment
 
@@ -14,106 +16,106 @@ PR: `#8`, draft, sin auto-merge
 |---|---|
 | Proyecto | `doleth` |
 | Environment | `Preview` |
+| Target | `preview` |
 | Estado | `READY` |
-| Fuente | Redeploy del deployment Git del mismo SHA |
-| Framework | Next.js |
-| Node.js | `24.x` |
-| Región | `iad1` |
-| SHA | Debe coincidir exactamente con el HEAD del PR; registrar desde metadata de Vercel en el informe final. |
-| Rama | `codex/production-readiness-audit` |
-| Alias | Alias estable de la rama; no registrar aquí URLs con tokens |
-| Protección | Activa |
-| Build errors | `0` |
-| Runtime error/warning/fatal inicial | `0` |
-| HTTP raíz | Redirección esperada a inicio de sesión; destino final `200` |
+| Deployment funcional | `doleth-4jlp5055m-francos-projects-a897d8f4.vercel.app` |
+| Rama/SHA | Coinciden con la rama y commit funcional indicados arriba |
+| Build | 170 líneas revisadas; 0 errores; 0 patrones de credenciales |
+| Runtime posterior | 500 registros; 0 estados 5xx; 0 `error`/`fatal`; 0 patrones de credenciales |
+| Production deploy | `NO` |
 
-## Separación de datos
+## Infraestructura aislada
 
-- Neon Preview es un proyecto independiente: `doleth-preview-e15754b-20260730`.
-- La base de aplicación contiene 12 tablas, 5 migraciones aplicadas y cero datos reales al iniciar el smoke.
-- La base de tests es distinta de la base de aplicación.
-- `DATABASE_URL`, `DOLETH_SESSION_SECRET` y `DOLETH_APP_URL` tienen overrides `sensitive` exclusivos de la rama Preview.
-- El secreto de sesión fue generado nuevamente para Preview.
-- La quinta migración está aplicada en Preview y sigue pendiente en Production.
-- Neon Production no recibió migraciones ni escrituras.
-- Vercel Production no recibió deployment, promoción ni cambios de variables durante este corte.
+- proyecto Neon temporal: `doleth-preview-e15754b-20260730`;
+- base de aplicación: `neondb`;
+- base estricta de tests: `doleth_preview_tests`;
+- seis migraciones aplicadas y checksums 6/6 consistentes en ambas bases;
+- las primeras cinco son las migraciones del candidato original y la sexta agrega
+  el acceso de beta privada;
+- `DATABASE_URL`, `DOLETH_SESSION_SECRET`, `DOLETH_APP_URL` y
+  `DOLETH_ACCESS_MODE` tienen overrides Preview de esta rama;
+- `DATABASE_URL Preview != DATABASE_URL Production`;
+- `DOLETH_SESSION_SECRET Preview != DOLETH_SESSION_SECRET Production`;
+- Production: 0 escrituras, 0 migraciones y 0 deployments.
 
-## Infraestructura temporal
-
-- Propósito: ejecutar Preview y smoke A/B sin acceso a datos reales.
-- Owner operativo: Release Manager/owner del proyecto Doleth.
-- Retención: conservar hasta aprobación o rechazo explícito del release.
-- Eliminación: después de la decisión, confirmar que no se necesita evidencia, quitar los overrides Preview relacionados y eliminar únicamente el proyecto Neon temporal desde su consola.
-- Prohibido: eliminar o modificar el proyecto Neon Production.
-
-## Smoke Usuario A
+## Usuario A
 
 | Paso | Estado | Evidencia segura |
 |---|---|---|
-| Registro | `PENDING` | — |
-| Verificación de email | `PENDING` | — |
-| Login | `PENDING` | — |
-| Onboarding | `PENDING` | — |
-| Crear cuenta y categoría | `PENDING` | — |
-| Ingreso y gasto | `PENDING` | — |
-| Segunda cuenta y transferencia | `PENDING` | — |
-| Corrección y anulación | `PENDING` | — |
-| Próximo pago e inversión | `PENDING` | — |
-| Ahora, Próximo, Cambios, Progreso y Mi realidad | `PENDING` | — |
-| Historial | `PENDING` | — |
-| Logout, reingreso y persistencia | `PENDING` | — |
+| Invitación vinculada y fragmento retirado | `PASS` | El hash desapareció antes del submit |
+| Email incorrecto | `PASS` | Rechazado sin consumir la invitación |
+| Cuenta y login | `PASS` | Cuenta activa; email no marcado como verificado |
+| Onboarding | `PASS` | Cuenta inicial y saldo persistidos |
+| Categorías | `PASS_WITH_CONCERN` | Categorías aisladas creadas por onboarding; no existe CRUD custom |
+| Ingreso y gasto | `PASS` | Ambos visibles en el ledger |
+| Segunda cuenta y transferencia | `PASS` | Total patrimonial no cambió por la transferencia |
+| Corrección auditable | `PASS` | Original anulado y reemplazo vigente |
+| Redirect tras corrección | `PASS` | Defecto detectado, corregido y repetido en Preview |
+| Anulación | `PASS` | Movimiento conservado en historial y excluido de saldos |
+| Próximo pago | `PASS` | Compromiso visible sin descontar hasta confirmación |
+| Inversión | `PASS` | Aporte y valor actual visibles |
+| Ahora/Próximo/Cambios/Progreso/Mi realidad | `PASS` | Rutas y encabezados verificados |
+| Historial | `PASS` | Vigentes, corregidos y anulados visibles |
+| Logout/reingreso/persistencia | `PASS` | Cuentas y datos persistieron |
 
-## Smoke Usuario B y aislamiento
+## Usuario B y aislamiento
 
 | Paso | Estado | Evidencia segura |
 |---|---|---|
-| Registro, verificación, login y onboarding | `PENDING` | — |
-| No ve datos de A | `PENDING` | — |
-| Lectura por URL/ID de A rechazada | `PENDING` | — |
-| Edición, anulación y corrección de A rechazadas | `PENDING` | — |
-| Datos propios de B | `PENDING` | — |
-| A no ve datos de B | `PENDING` | — |
+| Invitación distinta | `PASS` | Token diferente y un solo uso |
+| Onboarding | `PASS` | Cuenta propia creada |
+| Listados | `PASS` | No mostró cuentas, movimientos, pagos ni inversiones de A |
+| Recursos A por ID | `PASS` | Movimientos y próximo pago respondieron `not found` |
+| Edición A por ID | `PASS` | Ruta `/editar` respondió `not found` |
+| Mutaciones cross-owner | `PASS` | Suite estricta de autorización/aislamiento verde |
+| Datos propios | `PASS` | B registró su propio gasto |
+| A no ve B | `PASS` | Listado y acceso directo rechazados |
 
-## Recuperación y tokens
-
-| Control | Estado |
-|---|---|
-| Recuperación de A | `PENDING` |
-| Segundo uso rechazado | `PENDING` |
-| Contraseña anterior rechazada | `PENDING` |
-| Contraseña nueva aceptada | `PENDING` |
-| Sesiones anteriores revocadas según diseño | `PENDING` |
-| Token expirado rechazado | `PENDING` |
-| Sesión ajena no consume token | `PENDING` |
-
-## UX y runtime
+## Invitaciones y recuperación
 
 | Control | Estado |
 |---|---|
-| Mobile 320 px | `PENDING` |
-| Mobile 390 px | `PENDING` |
-| Desktop | `PENDING` |
-| Overflow horizontal | `PENDING` |
-| Navegación y estados vacíos | `PENDING` |
-| Errores de formulario | `PENDING` |
-| Consola | `PENDING` |
-| Logs posteriores al smoke | `PENDING` |
-| Fixtures visibles | `PENDING` |
-| Links a Production | `PENDING` |
-| Escrituras en Neon Production | `0` hasta este punto |
+| Registro directo sin invitación | `PASS` |
+| Invitación reutilizada | `PASS` |
+| Invitación manipulada | `PASS` |
+| Email diferente | `PASS` |
+| Invitación expirada | `PASS` en suite DB estricta |
+| Token almacenado como hash | `PASS` |
+| Token ausente de URL/logs/documentación | `PASS` |
+| Recuperación administrativa | `PASS` |
+| Sesiones revocadas al emitir | `PASS` |
+| Contraseña anterior rechazada | `PASS` |
+| Contraseña nueva aceptada | `PASS` |
+| Segundo uso de recuperación | `PASS` |
 
-## Migración en Preview
+## UX
 
-- Cinco migraciones aplicadas una vez.
-- Segunda ejecución: sin migraciones pendientes.
-- Cinco claves compuestas y ocho foreign keys compuestas presentes.
-- Checksums 5/5 consistentes.
-- Cero filas reales antes del smoke.
-- Suma del ledger inicial: cero.
-- Production continúa pendiente e intacta.
+Se ejecutó el mismo build de producción contra Neon temporal en Chromium aislado
+porque Deployment Protection impide el acceso de un navegador sin sesión Vercel.
+No se copiaron cookies de Vercel.
 
-## Estado actual
+| Viewport | Rutas | Overflow | Consola |
+|---|---:|---:|---:|
+| 320 × 800 | 3 | 0 | 0 errores |
+| 390 × 844 | 3 | 0 | 0 errores |
+| 1440 × 900 | 3 | 0 | 0 errores |
 
-`IN_PROGRESS`
+Rutas: `/ahora`, `/movimientos/nuevo` y `/configuracion/cuenta`. Las capturas
+quedaron fuera del repositorio y no contienen secretos.
 
-Faltan acceso autenticado a Vercel para el navegador protegido, Resend, entrega real y smoke A/B. No aprobar producción con esta bitácora incompleta.
+## Hallazgos corregidos durante el smoke
+
+1. El CLI no podía importar el módulo protegido por `server-only` fuera de
+   Next.js. Se ejecuta ahora con condición explícita de servidor.
+2. Prisma no deserializaba el retorno `void` del advisory lock del bootstrap. Se
+   convirtió el retorno a texto sin retirar el lock.
+3. Después de corregir un movimiento, el refresh podía mostrar 404 porque el
+   original ya estaba anulado. La ruta redirige ahora al reemplazo auditable.
+
+## Limitaciones
+
+- no existe correo transaccional real;
+- Resend, dominio, SPF y DKIM siguen pendientes;
+- no existe creación de categorías personalizadas en UI;
+- GitHub Actions no ejecuta pasos por bloqueo de billing de la cuenta;
+- el warning futuro de semántica TLS de `pg` sigue pendiente.
