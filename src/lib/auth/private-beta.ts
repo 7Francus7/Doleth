@@ -50,7 +50,9 @@ export async function bootstrapPrivateBetaAdmin(
   const now = new Date();
 
   const user = await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('doleth-private-beta-bootstrap'))`;
+    await tx.$queryRaw`
+      SELECT pg_advisory_xact_lock(hashtext('doleth-private-beta-bootstrap'))::text AS lock_result
+    `;
     if ((await tx.user.count()) !== 0) throw new PrivateBetaAccessError("bootstrap_not_empty");
 
     const created = await tx.user.create({
