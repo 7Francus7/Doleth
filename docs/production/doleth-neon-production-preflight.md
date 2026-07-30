@@ -1,202 +1,189 @@
-# Preflight de Neon Production
+# Preflight read-only de Neon Production
 
-Fecha local: 2026-07-30 00:10 ART
+Fecha local: 2026-07-30 00:33 ART
 
-Fecha UTC: 2026-07-30 03:10 UTC
+Fecha UTC: 2026-07-30 03:33 UTC
 
-Commit auditado: `af60b682235c2387950226df3da818bee6253277`
+Commit auditado: `055e3443956079de72e7200a83174a378bfda05f`
 
 Rama: `codex/production-readiness-audit`
 
-## Veredicto
+## 1. Veredicto
 
-`BLOCKED_NO_NEON_ACCESS`
+Neon: `NEON_PREFLIGHT_VERIFIED_WITH_CONCERNS`.
 
-No se obtuvo una connection string productiva autorizada ni una sesión autenticada en Neon. El proceso se detuvo antes de abrir una conexión PostgreSQL. Producción no fue modificada.
+Release completo: `BLOCKED`.
 
-## Fase 0
+La rama productiva correcta fue identificada y el estado actual de datos, migraciones, ownership, ledger, catálogo y recuperación se inspeccionó sin leer connection strings. La quinta migración local sigue pendiente. No se ejecutaron migraciones, DDL persistente, backfills, seeds, restores, branches, snapshots ni deployments.
 
-- Repositorio, rama y HEAD coincidieron con el corte solicitado.
-- Worktree inicial limpio.
-- `main` y `origin/main` permanecieron en `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
-- No se ejecutó push, PR, merge, migración ni deploy.
-- No había `DATABASE_URL`, `DIRECT_URL`, `NEON_API_KEY` ni `VERCEL_TOKEN` en el proceso local.
-- No se mostró ningún valor sensible.
+## 2. Identidad del entorno
 
-## Identidad disponible desde Vercel
-
-| Propiedad | Evidencia redactada |
+| Propiedad | Evidencia no sensible |
 |---|---|
-| Proveedor de deployment | Vercel |
-| Proyecto | `d****h`, coincidencia única |
-| Framework | Next.js |
-| Runtime Node.js | `24.x` |
-| Deployment Production | `READY` |
-| Deployment creado | `2026-07-27T20:10:39Z` |
-| Commit desplegado | `a3c4a54fb20c20749222f9eaf02b23db4444a62f` |
-| Rama desplegada | `main` |
-| Host | `dol….app` |
-| Errores runtime, últimos 7 días | `0` entradas devueltas |
-| Warnings runtime, últimos 7 días | `0` entradas devueltas |
-| Producción modificada | `NO` |
+| Proyecto | Doleth |
+| Rama Neon | `production`, default y protegida |
+| Base | `neondb` |
+| Región | AWS US East 1, N. Virginia |
+| PostgreSQL | `18.4` |
+| Compute | autoscaling `0.25` a `8` CU |
+| Deployment Vercel Production | `READY` |
+| Rama/SHA desplegados | `main` / `a3c4a54fb20c20749222f9eaf02b23db4444a62f` |
+| Runtime | Node.js `24.x` |
 
-Variables productivas confirmadas únicamente por nombre:
+No se registraron IDs de proyecto, branch o endpoint, ni host, usuario, password o connection string.
 
-- `DATABASE_URL`;
-- `DOLETH_ACCESS_PASSWORD`;
-- `DOLETH_APP_URL`;
-- `DOLETH_EMAIL_FROM`;
-- `DOLETH_EMAIL_TRANSPORT`;
-- `DOLETH_SESSION_SECRET`;
-- `RESEND_API_KEY`.
+## 3. Garantía read-only
 
-`DIRECT_URL` no existe. `DATABASE_URL` está marcada `sensitive`: la API lista su existencia, pero no entrega valor, y `vercel env run -e production` no la inyectó al proceso de auditoría.
+Cada lectura SQL se ejecutó con:
 
-## Acceso Neon
+```sql
+BEGIN;
+SET TRANSACTION READ ONLY;
+SET LOCAL statement_timeout = '5s';
+SET LOCAL lock_timeout = '2s';
+-- SELECT agregado o de catálogo
+ROLLBACK;
+```
 
-| Vía | Resultado |
-|---|---|
-| Neon CLI/API local | No configurada |
-| `DATABASE_URL` local | Ausente |
-| Vercel CLI | Autenticada; metadata accesible |
-| Vercel Production env | Nombre visible; valor `sensitive` no recuperable |
-| Consola Neon | Login requerido; no había sesión autenticada |
-| Conexión PostgreSQL | No iniciada |
+La sesión informó `transaction_read_only=on`, `statement_timeout=5s` y `lock_timeout=2s`.
 
-Dos invocaciones controladas del preflight abortaron en configuración por ausencia de `DATABASE_URL`. Ninguna alcanzó `pool.connect()`.
-
-## Inspección de tooling
-
-El script histórico `prisma/ops/preflight.ts` no se ejecutó en producción:
-
-- no fija `default_transaction_read_only`;
-- no abre una transacción `READ ONLY`;
-- imprime IDs, nombres de cuentas e importes exactos;
-- puede escribir un archivo local de evidencia con información financiera.
-
-Se creó `prisma/ops/neon-production-preflight.ts`, separado y sin Prisma mutations. Antes de habilitar su ejecución se revisaron sus 900 líneas y todas las consultas.
-
-Protecciones del nuevo script:
-
-1. una conexión y `max=1`;
-2. `SET default_transaction_read_only = on`;
-3. `BEGIN`;
-4. `SET TRANSACTION READ ONLY`;
-5. `statement_timeout = 5s`;
-6. `lock_timeout = 2s`;
-7. `idle_in_transaction_session_timeout = 30s`;
-8. prueba de rechazo de escritura con SQLSTATE esperado `25006`;
-9. solo agregados y catálogo;
-10. `ROLLBACK` obligatorio;
-11. salida redactada sin IDs, nombres, emails, descripciones ni importes individuales.
-
-El único `CREATE TABLE` del script es una sonda con nombre aleatorio ejecutada después de confirmar `transaction_read_only=on`. Si PostgreSQL no la rechaza, el script hace `ROLLBACK` y aborta antes del análisis.
-
-## Garantía read-only de este corte
+Como prueba negativa, dentro de la misma transacción se intentó crear una tabla sonda. PostgreSQL rechazó el DDL con SQLSTATE `25006`, `cannot execute CREATE TABLE in a read-only transaction`. Después se ejecutó `ROLLBACK` explícito y se confirmó el cierre de la transacción.
 
 | Control | Resultado |
 |---|---|
-| Conexiones PostgreSQL abiertas | `0` |
-| Transacciones iniciadas | `0` |
-| Consultas productivas ejecutadas | `0` |
 | Migraciones ejecutadas | `0` |
-| Escrituras persistentes | `0` |
-| Variables Vercel modificadas | `0` |
+| Escrituras persistentes en PostgreSQL | `0` |
+| Restores/branches/snapshots creados | `0` |
+| Variables modificadas | `0` |
 | Deployments creados | `0` |
+| Credenciales mostradas o guardadas | `0` |
 
-La prueba PostgreSQL de rechazo de escritura queda `INCONCLUSIVE` porque no fue posible conectarse.
+El historial automático del SQL Editor conservó el texto no sensible de las consultas. Esto es metadata de consola, no una escritura en la base productiva.
 
-## Migraciones
+## 4. Migraciones
 
-No se consultó `_prisma_migrations`.
+Se comparó `_prisma_migrations` con los SHA-256 de los cinco `migration.sql` locales.
 
-| Migración | Filesystem | Producción | Checksum | Estado |
-|---|---:|---:|---:|---|
-| `202607210001_vertical_007` | Sí | Desconocido | No comparado | `INCONCLUSIVE` |
-| `202607220001_investments` | Sí | Desconocido | No comparado | `INCONCLUSIVE` |
-| `202607270001_multiuser_identity` | Sí | Desconocido | No comparado | `INCONCLUSIVE` |
-| `202607280001_require_financial_ownership` | Sí | Desconocido | No comparado | `INCONCLUSIVE` |
-| `202607290001_enforce_cross_owner_relations` | Sí | Desconocido | No comparado | `INCONCLUSIVE` |
+| Migración | Producción | Checksum | Estado |
+|---|---:|---:|---|
+| `202607210001_vertical_007` | aplicada | coincide | `APPLIED_MATCHING` |
+| `202607220001_investments` | aplicada | coincide | `APPLIED_MATCHING` |
+| `202607270001_multiuser_identity` | aplicada | coincide | `APPLIED_MATCHING` |
+| `202607280001_require_financial_ownership` | aplicada | coincide | `APPLIED_MATCHING_WITH_PRIOR_ROLLBACK` |
+| `202607290001_enforce_cross_owner_relations` | ausente | n/a | `PENDING` |
 
-## Ownership, integridad y esquema
+Hay cinco registros productivos para cuatro nombres de migración. La migración de contrato de ownership tiene un intento anterior marcado rolled back y un intento posterior exitoso con el mismo checksum. No hay migraciones incompletas. No se ejecutó `migrate deploy` ni `migrate resolve`.
 
-Sin conexión no se midieron:
+## 5. Ownership
 
-- conteos por tabla;
-- owners, nulos u huérfanos;
-- distribución `OWNER_n`;
-- referencias cross-owner;
-- movimientos y ledger;
-- transferencias, correcciones o anulaciones;
-- saldos reconstruibles;
-- `NOT NULL`, índices o foreign keys reales;
-- tipos monetarios productivos.
+| Modelo | Filas | Owners | `userId` nulo | Owner huérfano | IDs duplicados | Cross-owner |
+|---|---:|---:|---:|---:|---:|---:|
+| `Account` | 1 | 1 | 0 | 0 | 0 | 0 |
+| `AuthEvent` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `AuthToken` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `Category` | 13 | 1 | 0 | 0 | 0 | 0 |
+| `Investment` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `LedgerEntry` | 1 | 1 | 0 | 0 | 0 | 0 |
+| `Session` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `Transaction` | 1 | 1 | 0 | 0 | 0 | 0 |
+| `UpcomingPayment` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `User` | 1 | 1 | 0 | 0 | 0 | 0 |
 
-Todos permanecen `INCONCLUSIVE`. No se reutilizó evidencia histórica como si describiera el estado actual.
+Distribución anonimizada: `OWNER_1` posee 1 cuenta, 13 categorías, 1 transacción y 1 asiento.
 
-## TLS, pooling y latencia
+Las 16 verificaciones detalladas de relaciones account/transaction/category/correction/upcoming devolvieron cero huérfanos y cero referencias cross-owner.
 
-`INCONCLUSIVE`.
+## 6. Integridad financiera
 
-La metadata Vercel no permite demostrar host Neon, región, endpoint, pooling, TLS efectivo, versión PostgreSQL, conexiones ni latencia sin una conexión o acceso al proyecto Neon.
+| Control | Resultado |
+|---|---|
+| Movimientos / activos / anulados | `1 / 1 / 0` |
+| Asientos / débitos / créditos / ceros | `1 / 1 / 0 / 0` |
+| Movimiento sin ledger | `0` |
+| Asiento sin movimiento | `0` |
+| Transferencia incompleta o desbalanceada | `0 / 0` |
+| Movimiento no-transfer con cantidad de asientos inválida | `0` |
+| Corrección inválida | `0` |
+| Movimiento futuro | `0` |
+| Importe de movimiento inválido | `0` |
+| Próximo pago inválido | `0` |
+| Inversión inválida | `0` |
+| Saldos reconstruibles | `MATCH` |
+| Anulados excluidos de agregación | `MATCH` |
 
-## Backup y recuperación
+No se mostraron importes, descripciones, IDs ni nombres.
+
+## 7. Esquema real
+
+- Las seis tablas financieras tienen `userId NOT NULL`.
+- Las seis columnas monetarias esperadas son PostgreSQL `int8`.
+- Existen 12 índices que incluyen `userId`.
+- Faltan exactamente las 5 claves/índices compuestos creados por `202607290001_enforce_cross_owner_relations`.
+- Existen 17 foreign keys.
+- Faltan exactamente las 8 foreign keys compuestas de relaciones financieras creadas por esa misma migración.
+
+La ausencia coincide con el único migration file pendiente y no con drift desconocido. Los datos actuales satisfacen las precondiciones de cross-owner, pero esto no autoriza aplicar la migración.
+
+## 8. Neon operativo
+
+| Control | Resultado |
+|---|---|
+| Estado de la plataforma | `All OK` en consola |
+| Rama protegida | sí |
+| PostgreSQL | `18.4` |
+| Límite `max_connections` informado | `901` |
+| Conexiones observadas a la base durante la consulta | `1` |
+| Tiempo de lote de catálogo observado en SQL Editor | `214–343 ms` |
+| Pooling de `DATABASE_URL` runtime | `INCONCLUSIVE` |
+| TLS de `DATABASE_URL` runtime | `INCONCLUSIVE` |
+
+La conexión interna del SQL Editor no representa la conexión de la aplicación y `pg_stat_ssl` no reportó TLS para esa sesión. No se abrió el modal de credenciales ni se leyó `DATABASE_URL`; por eso no se usa esa observación para afirmar que el runtime tenga o no TLS o pooling. Los tiempos incluyen UI/red y no son un benchmark de Vercel.
+
+## 9. Backup y recuperación
 
 | Control | Clasificación |
 |---|---|
-| Backup automático actual | `INCONCLUSIVE` |
-| Retención | `INCONCLUSIVE` |
-| PITR | `INCONCLUSIVE` |
-| Último punto recuperable | `INCONCLUSIVE` |
-| Branch/snapshot restaurable | `INCONCLUSIVE` |
-| Límites del plan | `INCONCLUSIVE` |
+| Restore point-in-time | `PITR_VERIFIED` |
+| Retención | `1 día` |
+| Punto más antiguo visible | 2026-07-29 00:33 ART / 03:33 UTC |
+| Rama de recuperación histórica listada | sí |
+| Snapshots | ninguno |
+| Schedule de snapshots | no configurado |
+| Restore probado | no, por restricción read-only |
 
-Usar Neon no constituye evidencia automática de backup. No se inició restauración ni creación de branch.
+La consola permite restaurar la rama a cualquier punto de la ventana informada. No se pulsó `Preview data` ni `Restore`. La ventana de un día es corta y no sustituye un snapshot pre-release aprobado; antes de una migración debe crearse una rama o snapshot recuperable mediante un cambio separado y autorizado.
 
-## Handoff seguro para habilitar acceso
+## 10. Vercel
 
-Opción recomendada:
+- Proyecto único coincidente.
+- Production `READY`, rama `main`, SHA `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
+- Consulta de logs de los últimos siete días: 0 resultados `error`, 0 resultados `warning`.
+- `DATABASE_URL` existe por nombre y es `sensitive`; `DIRECT_URL` no existe.
+- Los valores sensibles no fueron leídos.
+- No se creó preview, deployment, PR ni cambio de variable.
 
-1. Abrir la pestaña de login de Neon conservada en el navegador interno de Codex.
-2. Iniciar sesión manualmente. No entregar email, contraseña, OTP ni connection string por chat.
-3. Seleccionar el proyecto Doleth y su rama productiva correcta.
-4. Confirmar visualmente que la cuenta puede ver branches, restore/PITR y SQL Editor.
-5. Volver a esta tarea y responder únicamente `Neon listo`.
+## 11. Cambios
 
-Alternativa operada por el owner:
+Este corte solo actualiza tooling y documentación locales de auditoría. El tooling guardado en `055e344` no necesitó una connection string para esta inspección en consola.
 
-1. Obtener la connection string desde Neon mediante password manager o consola.
-2. Definirla solo en el proceso de una terminal segura, nunca en `.env` ni en el chat.
-3. Ejecutar desde este commit:
+Contra Neon, Vercel y producción: ninguna modificación.
 
-```powershell
-$env:DATABASE_URL = '<valor obtenido fuera del chat>'
-pnpm db:preflight:neon-readonly
-Remove-Item Env:DATABASE_URL
-```
+## 12. Riesgos pendientes
 
-4. Conservar solamente la línea JSON redactada.
-5. Verificar backup/PITR en la consola Neon; la consulta SQL no sustituye esa evidencia.
+1. La migración `202607290001_enforce_cross_owner_relations` aún no está aplicada.
+2. No está confirmado que la URL runtime sea pooled ni cuál es su política TLS efectiva.
+3. No hay snapshots ni schedule; PITR retiene solo un día.
+4. Resend, SPF, DKIM, remitente y entrega real siguen sin verificar.
+5. Falta preview del SHA aprobado y smoke A/B completo.
+6. Producción continúa en el SHA anterior con el modelo de acceso compartido.
 
-## Plan exacto de backup previo al release
+## 13. Git
 
-No ejecutar todavía. Cuando exista acceso:
+- Worktree limpio antes de esta actualización documental.
+- `main` y `origin/main`: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
+- Commit de tooling de preflight: `055e3443956079de72e7200a83174a378bfda05f`.
+- Sin push, PR, merge ni deploy.
 
-1. Registrar deployment y SHA productivo actual.
-2. Confirmar proyecto y rama Neon.
-3. Confirmar último punto PITR y retención con timestamp UTC.
-4. Crear, con aprobación separada, un branch de recuperación previo a migraciones.
-5. Abrir el branch de recuperación en modo read-only y validar conteos/checksums agregados.
-6. Guardar la connection string anterior en el password manager, fuera del repositorio.
-7. Preparar `pnpm exec prisma migrate deploy`; no ejecutarlo durante el preflight.
-8. Repetir migraciones, ownership, cross-owner, ledger y constraints después del cambio.
-9. Hacer rollback ante checksum divergente, owner ambiguo, inconsistencia cross-owner o contable.
-10. Restaurar primero a una rama nueva y volver a promover el deployment anterior; nunca sobrescribir producción durante diagnóstico.
+## 14. Próximo paso exacto
 
-## Consultas ejecutadas
-
-Contra Neon/PostgreSQL: ninguna.
-
-Contra Vercel: exclusivamente operaciones GET/list y `env run` sin variable sensible disponible. Contra consola Neon: navegación hasta login, sin autenticación.
-
-La consulta puntual de logs Production de los últimos siete días devolvió cero entradas con nivel `error` y cero con nivel `warning`. Esto no sustituye un smoke ni demuestra tráfico.
+**verificar Resend y publicar la rama para generar una preview del SHA aprobado, sin merge a producción.**

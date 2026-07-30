@@ -8,7 +8,7 @@ Base candidata: rehearsal PostgreSQL verificado en `af60b682235c2387950226df3da8
 
 `BLOCKED`
 
-El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck`, 787 tests con PostgreSQL y `build`. La autenticación multiusuario y el modelo financiero están sustancialmente implementados. Aun así, no debe recibir dinero real hasta verificar el estado actual de producción, backup/PITR, correo y smoke desplegado con dos usuarios.
+El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck`, 787 tests con PostgreSQL y `build`. El preflight actual de Neon confirmó datos, ownership, ledger, checksums y PITR en modo read-only. Aun así, no debe recibir dinero real hasta aplicar de forma controlada la migración pendiente, preparar recuperación pre-release, verificar correo y completar el smoke desplegado con dos usuarios.
 
 ## Evidencia Git
 
@@ -31,7 +31,7 @@ El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck
 | Integridad financiera | `VERIFIED` en PostgreSQL | Centavos `BigInt`, transferencias, anulaciones, correcciones y fallos inducidos pasaron. |
 | Migraciones | `READY_WITH_CONCERNS` | Desde cero y legacy pasaron; producción aún requiere preflight, backup y orquestación expand/backfill/contract. |
 | Producción actual | `BLOCKED` | Vercel producción sigue en `main` antiguo con clave compartida. |
-| Neon | `BLOCKED_NO_NEON_ACCESS` | Vercel confirma `DATABASE_URL` Production por nombre, pero es `sensitive` y no fue entregada al proceso; consola Neon requiere login. |
+| Neon | `VERIFIED_WITH_CONCERNS` | Rama `production` protegida; datos, ownership, ledger, checksums y PITR verificados read-only. Quinta migración pendiente, ventana PITR de 1 día y sin snapshots. |
 | Vercel | `VERIFIED_WITH_CONCERNS` | Proyecto único, Production `READY`, `main` en `a3c4a54`; Node.js 24.x; consulta de 7 días devolvió 0 errores y 0 warnings. Valores sensibles no fueron leídos. |
 | Resend | `INCONCLUSIVE` | No se verificaron dominio, SPF, DKIM, remitente ni entrega real. |
 | QA automatizado con DB | `VERIFIED` | `lint`, `typecheck`, 787/787 tests, 52/52 tests estrictos y `build` pasaron. |
@@ -41,12 +41,12 @@ El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck
 
 ## Bloqueantes
 
-### 1. Estado productivo actual no verificado
+### 1. Contrato de ownership productivo pendiente
 
-- Problema: el 2026-07-30 se verificó acceso Vercel, pero `DATABASE_URL` sensible no se pudo recuperar y la consola Neon no tenía sesión autenticada. Cero conexiones PostgreSQL fueron abiertas.
-- Impacto: no se puede calcular con certeza el impacto de aplicar migraciones.
-- Resolución: el owner debe iniciar sesión manualmente en la pestaña Neon conservada y responder `Neon listo`, sin compartir secretos. Luego ejecutar `db:preflight:neon-readonly` y verificar backup/PITR.
-- Validación: evidencia fechada de conteos, ownership, migraciones y punto de restauración.
+- Problema: el preflight read-only confirmó que `202607290001_enforce_cross_owner_relations` está pendiente; faltan las 5 claves compuestas y 8 FKs compuestas esperadas.
+- Impacto: los datos actuales están limpios, pero la base todavía no impone todas las relaciones de ownership del candidato.
+- Resolución: preparar la migración para la ventana de release, después de un snapshot o branch de recuperación autorizado. No ejecutarla durante este preflight.
+- Validación: repetir checksums, cross-owner, catálogo y ledger después del cambio.
 
 ### 2. Producción despliega el código anterior
 
@@ -78,7 +78,7 @@ Los JSON locales sin seguimiento muestran un backfill ejecutado el 2026-07-28:
 - Los checksums funcionales antes/después coinciden; solo cambió la captura temporal.
 - El preflight posterior mantuvo los mismos conteos.
 
-Esta evidencia es `VERIFIED` para aquel evento, pero el estado actual de Neon sigue `INCONCLUSIVE`.
+Esta evidencia histórica coincide con el preflight actual: los mismos conteos, cero owners nulos, cero huérfanos y cero cruces de propietario.
 
 ## Riesgos no bloqueantes
 
@@ -99,7 +99,7 @@ También se escapó el nuevo email antes de insertarlo en HTML y se impidió que
 
 Bloqueantes reales:
 
-1. preflight productivo read-only más backup/PITR;
+1. snapshot/branch de recuperación previo y aplicación controlada de la migración pendiente;
 2. configuración Resend verificada;
 3. preview del SHA aprobado y smoke A/B completo;
 4. PR revisado sin merge automático.

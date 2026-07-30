@@ -31,19 +31,20 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 
 ## Base de datos y ownership
 
-- [ ] Proyecto, rama y base productiva identificados.
-- [ ] Backup/PITR comprobado con timestamp y retención.
+- [x] Proyecto, rama y base productiva identificados.
+- [x] Backup/PITR comprobado con timestamp y retención: ventana de 1 día; snapshots no configurados.
 - [ ] Conexión runtime pooled confirmada.
 - [ ] Conexión de migraciones compatible confirmada.
-- [ ] Migraciones pendientes enumeradas.
-- [ ] Conteos por tabla capturados.
-- [ ] Filas financieras con `userId IS NULL`: cero antes del contrato.
+- [x] Migraciones pendientes enumeradas: solo `202607290001_enforce_cross_owner_relations`.
+- [x] Conteos por tabla capturados.
+- [x] Filas financieras con `userId IS NULL`: cero antes del contrato.
 - [ ] Owner del histórico confirmado por el usuario.
 - [ ] Checksums pre/post preservados.
 - [x] Cero referencias cruzadas en escenario válido; escenario inválido abortado.
 - [x] Todas las tablas financieras tienen `userId NOT NULL` en esquema final.
-- [x] Índices por `userId` presentes.
-- [x] FKs compuestas de ownership aplicadas y probadas.
+- [x] Índices por `userId` presentes en el esquema final/rehearsal.
+- [x] FKs compuestas de ownership aplicadas y probadas en rehearsal.
+- [ ] Las 5 claves compuestas y 8 FKs compuestas están aplicadas en producción.
 - [x] En este corte no se usó `db push`, `migrate reset`, migrate deploy, seed ni backfill.
 
 ## Variables e infraestructura
@@ -68,8 +69,9 @@ Evidencia 2026-07-30:
 - [x] SHA productivo actual: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
 - [x] `DATABASE_URL` existe por nombre en Production.
 - [ ] Valor de `DATABASE_URL` accesible al preflight: bloqueado por tipo `sensitive`.
-- [ ] Sesión Neon autenticada.
-- [ ] Backup/PITR visible y fechado.
+- [x] Sesión Neon autenticada sin revelar credenciales.
+- [x] Backup/PITR visible y fechado: punto más antiguo 2026-07-29 03:33 UTC.
+- [ ] Snapshot pre-release o rama de recuperación reciente creada con aprobación separada.
 
 ## Email
 

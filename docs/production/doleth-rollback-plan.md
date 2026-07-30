@@ -13,15 +13,15 @@ El 2026-07-29 se ensayó PostgreSQL 16.14 local y descartable:
 - corrección fallida con original intacto;
 - escenario cross-owner abortado por preflight.
 
-Esto verifica rollback transaccional. Restauración Neon/PITR sigue pendiente y debe comprobarse antes del release.
+Esto verifica rollback transaccional. La consola Neon confirmó PITR con una ventana de un día; no se ejecutó un restore.
 
 ## Estado Neon al 2026-07-30
 
-`BLOCKED_NO_NEON_ACCESS`.
+`NEON_PREFLIGHT_VERIFIED_WITH_CONCERNS`.
 
-Vercel confirmó el deployment productivo y la existencia nominal de `DATABASE_URL`, pero la variable `sensitive` no fue entregada al proceso. La consola Neon exigió login. No se verificaron retención, PITR ni último punto recuperable y no se abrió ninguna conexión PostgreSQL.
+La rama `production`, default y protegida, fue inspeccionada en la consola autenticada sin leer la connection string. PITR ofrece una ventana de un día desde 2026-07-29 03:33 UTC. No hay snapshots ni schedule de snapshots.
 
-No aprobar release hasta obtener evidencia actual. El owner debe iniciar sesión manualmente en Neon sin compartir secretos y confirmar que puede ver branches, restore/PITR y SQL Editor.
+No aprobar release todavía. Antes de una migración debe crearse con autorización separada una rama o snapshot de recuperación reciente; pooling/TLS runtime, Resend y preview continúan pendientes.
 
 ## Regla de seguridad
 

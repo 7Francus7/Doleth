@@ -1,7 +1,7 @@
 # Plan de release de Doleth
 
 Estado: `BLOCKED` hasta cerrar los gates 1 a 5.
-Base: `codex/production-readiness-audit` (`af60b682235c2387950226df3da818bee6253277` al iniciar preflight Neon).
+Base: `codex/production-readiness-audit` (`055e3443956079de72e7200a83174a378bfda05f` durante el preflight Neon).
 
 ## Principios
 
@@ -59,11 +59,11 @@ Responsables: owner de infraestructura y owner del producto.
 - Neon: proyecto/rama correctos, pooling para runtime, conexión apropiada para migraciones, backup/PITR y límites confirmados.
 - Resend: dominio verificado, SPF, DKIM, remitente permitido y entrega real.
 - Vercel: variables separadas por Production/Preview, dominio, SHA y protección de preview.
-- Vercel CLI 57 ya está instalada y autenticada. No intentar convertir `DATABASE_URL` `sensitive` en una variable legible.
+- Vercel CLI no está instalada en este entorno. La inspección previa usó acceso read-only de plataforma; no intentar convertir `DATABASE_URL` `sensitive` en una variable legible.
 
 Salida: checklist de infraestructura firmado, sin valores sensibles.
 
-Estado Neon: `BLOCKED_NO_NEON_ACCESS`. El owner debe iniciar sesión manualmente en la consola Neon conservada; no compartir credenciales ni URLs por chat.
+Estado Neon: `NEON_PREFLIGHT_VERIFIED_WITH_CONCERNS`. Datos, ownership, ledger, checksums y PITR fueron verificados read-only. La migración de FKs compuestas está pendiente, no hay snapshots programados y pooling/TLS runtime siguen inconclusos porque no se leyó `DATABASE_URL`.
 
 ## Gate 4 — Preflight productivo
 
