@@ -141,7 +141,15 @@ export async function createInvestmentAction(
     if (note && note.length > 160) throw new Error("La nota admite hasta 160 caracteres.");
 
     const recentInvestment = await getDb().investment.findFirst({
-      where: { name, kind, currency, investedCents, currentValueCents, createdAt: { gte: recentThreshold() } },
+      where: {
+        userId: user.id,
+        name,
+        kind,
+        currency,
+        investedCents,
+        currentValueCents,
+        createdAt: { gte: recentThreshold() },
+      },
     });
     if (recentInvestment) return { ok: true, message: "Inversión ya registrada. No se creó un duplicado." };
 
@@ -191,7 +199,14 @@ export async function createAccountAction(
     if (currency !== "ARS") throw new Error("Este corte consolida cuentas en ARS. Otras monedas requieren conversión explícita.");
 
     const recentAccount = await getDb().account.findFirst({
-      where: { name, type: type as "CASH", currency, initialBalanceCents, createdAt: { gte: recentThreshold() } },
+      where: {
+        userId: user.id,
+        name,
+        type: type as "CASH",
+        currency,
+        initialBalanceCents,
+        createdAt: { gte: recentThreshold() },
+      },
     });
     if (recentAccount) return { ok: true, message: "Cuenta ya registrada. No se creó un duplicado." };
 

@@ -266,6 +266,12 @@ describe.skipIf(!hasDatabase)("acciones de la cuenta", () => {
       expect(estado.status).toBe("error");
       expect((await getDb().user.findUniqueOrThrow({ where: { id: victima.id } })).email).toBe(victima.email);
       expect((await getDb().user.findUniqueOrThrow({ where: { id: ajeno.id } })).email).toBe(ajeno.email);
+
+      cookieJar.clear();
+      await createSession(ajeno.id);
+      const confirmacionLegitima = await confirmEmailChangeAction(emptyAccountState, formData({ token }));
+      expect(confirmacionLegitima.status).toBe("success");
+      expect((await getDb().user.findUniqueOrThrow({ where: { id: ajeno.id } })).email).toBe(nuevo);
     });
   });
 

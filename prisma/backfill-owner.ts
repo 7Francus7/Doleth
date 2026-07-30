@@ -193,13 +193,6 @@ async function main() {
 
     if (dryRun) {
       console.info(`\n--dry-run: se modificarían ${total(before)} filas. No se escribió nada.`);
-      await prisma.ownerBackfillRun.create({
-        data: {
-          ownerUserId: owner.id,
-          dryRun: true,
-          counts: JSON.stringify({ before, ownedBefore, othersBefore }),
-        },
-      });
       return;
     }
 

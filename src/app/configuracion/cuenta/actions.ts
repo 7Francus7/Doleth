@@ -16,7 +16,7 @@ import { UnauthorizedError, requireSessionForAction } from "../../../lib/auth/gu
 import { hashPassword, verifyPassword } from "../../../lib/auth/password";
 import { RATE_LIMITS, consumeRateLimit, retryMessage } from "../../../lib/auth/rate-limit";
 import { destroyCurrentSession, getSession, revokeUserSessions } from "../../../lib/auth/session";
-import { consumeToken, issueToken } from "../../../lib/auth/tokens";
+import { consumeToken, inspectToken, issueToken } from "../../../lib/auth/tokens";
 import {
   emailError,
   isSupportedCurrency,
@@ -182,9 +182,13 @@ export async function confirmEmailChangeAction(
 ): Promise<AccountState> {
   try {
     const { user } = await requireSessionForAction();
-    const lookup = await consumeToken(text(formData, "token"), "EMAIL_CHANGE");
+    const rawToken = text(formData, "token");
+    const inspected = await inspectToken(rawToken, "EMAIL_CHANGE");
+    if (!inspected.ok) return failure("Este enlace ya no sirve. Pedí el cambio otra vez desde tu cuenta.");
+    if (inspected.token.userId !== user.id) return failure("Este enlace no corresponde a tu cuenta.");
+
+    const lookup = await consumeToken(rawToken, "EMAIL_CHANGE");
     if (!lookup.ok) return failure("Este enlace ya no sirve. Pedí el cambio otra vez desde tu cuenta.");
-    if (lookup.token.userId !== user.id) return failure("Este enlace no corresponde a tu cuenta.");
 
     const newEmail = lookup.token.newEmail;
     if (!newEmail) return failure("Este enlace está incompleto. Pedí el cambio otra vez.");

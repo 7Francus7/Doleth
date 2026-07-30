@@ -83,6 +83,19 @@ const BRAND_BACKGROUND = "#F7F5F1";
 const BRAND_INK = "#1B1A17";
 const BRAND_ACCENT = "#184E47";
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+    return entities[character] ?? character;
+  });
+}
+
 function layout(options: { heading: string; body: string; ctaLabel: string; ctaHref: string; footer: string }): string {
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Doleth</title></head>
@@ -150,12 +163,13 @@ export function emailChangeEmail(to: string, token: string, expiresInMinutes: nu
 
 export function emailChangeNoticeEmail(to: string, newEmail: string): EmailMessage {
   const href = `${appUrl()}/configuracion/cuenta`;
+  const safeNewEmail = escapeHtml(newEmail);
   return {
     to,
     subject: "Se pidió cambiar el correo de tu cuenta de Doleth",
     html: layout({
       heading: "Se pidió cambiar tu correo",
-      body: `Alguien con acceso a tu cuenta pidió mover el inicio de sesión a <strong>${newEmail}</strong>. Si fuiste vos, no hace falta hacer nada más.`,
+      body: `Alguien con acceso a tu cuenta pidió mover el inicio de sesión a <strong>${safeNewEmail}</strong>. Si fuiste vos, no hace falta hacer nada más.`,
       ctaLabel: "Revisar mi cuenta",
       ctaHref: href,
       footer: "Si no reconocés este pedido, cambiá tu contraseña ahora mismo: eso cierra todas las sesiones abiertas.",

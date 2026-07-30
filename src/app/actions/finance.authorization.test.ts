@@ -39,6 +39,7 @@ const {
   archiveInvestmentAction,
   correctMovementAction,
   createAccountAction,
+  createInvestmentAction,
   createMovementAction,
   createUpcomingPaymentAction,
   payUpcomingPaymentAction,
@@ -268,6 +269,41 @@ describe.skipIf(!hasDatabase)("autorización de las acciones financieras", () =>
       orderBy: { createdAt: "desc" },
     });
     expect(cuenta.userId).toBe(alicia.id);
+  });
+
+  it("una cuenta identica reciente de otro usuario no bloquea la creacion", async () => {
+    const fields = {
+      name: `Compartida ${randomUUID()}`,
+      type: "BANK",
+      currency: "ARS",
+      initialBalance: "2500",
+    };
+
+    currentUserId.value = alicia.id;
+    expect((await createAccountAction(idle, formData(fields))).ok).toBe(true);
+
+    currentUserId.value = bruno.id;
+    expect((await createAccountAction(idle, formData(fields))).ok).toBe(true);
+
+    expect(await getDb().account.count({ where: { name: fields.name } })).toBe(2);
+  });
+
+  it("una inversion identica reciente de otro usuario no bloquea la creacion", async () => {
+    const fields = {
+      name: `Fondo compartido ${randomUUID()}`,
+      kind: "FUND",
+      currency: "ARS",
+      invested: "1000",
+      currentValue: "1200",
+    };
+
+    currentUserId.value = alicia.id;
+    expect((await createInvestmentAction(idle, formData(fields))).ok).toBe(true);
+
+    currentUserId.value = bruno.id;
+    expect((await createInvestmentAction(idle, formData(fields))).ok).toBe(true);
+
+    expect(await getDb().investment.count({ where: { name: fields.name } })).toBe(2);
   });
 
   it("los asientos del ledger también guardan el propietario", async () => {

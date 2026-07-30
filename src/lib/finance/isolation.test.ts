@@ -119,4 +119,47 @@ describe.skipIf(!hasDatabase)("aislamiento de datos entre usuarios · lectura", 
       await deleteTestUser(nuevo.id);
     }
   });
+
+  it("PostgreSQL rechaza referencias financieras con propietarios cruzados", async () => {
+    const key = `cross-owner-${Date.now()}`;
+
+    await expect(
+      getDb().transaction.create({
+        data: {
+          userId: alicia.id,
+          type: "EXPENSE",
+          amountCents: 100n,
+          occurredOn: new Date("2026-07-20T00:00:00.000Z"),
+          sourceAccountId: bruno.accountId,
+          categoryId: alicia.categoryId,
+          idempotencyKey: key,
+        },
+      }),
+    ).rejects.toThrow();
+
+    expect(await getDb().transaction.count({ where: { idempotencyKey: key } })).toBe(0);
+
+    await expect(
+      getDb().ledgerEntry.create({
+        data: {
+          userId: alicia.id,
+          transactionId: bruno.transactionId,
+          accountId: bruno.accountId,
+          amountCents: -100n,
+        },
+      }),
+    ).rejects.toThrow();
+
+    await expect(
+      getDb().upcomingPayment.create({
+        data: {
+          userId: alicia.id,
+          concept: "Referencia cruzada",
+          estimatedCents: 100n,
+          dueOn: new Date("2026-08-01T00:00:00.000Z"),
+          plannedAccountId: bruno.accountId,
+        },
+      }),
+    ).rejects.toThrow();
+  });
 });
