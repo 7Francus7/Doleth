@@ -135,7 +135,7 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
 
   afterAll(async () => {
     for (const id of createdUserIds) await deleteTestUser(id).catch(() => undefined);
-  });
+  }, 120_000);
 
   // -------------------------------------------------------------------------
   describe("registro", () => {

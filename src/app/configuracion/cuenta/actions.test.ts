@@ -82,7 +82,7 @@ describe.skipIf(!hasDatabase)("acciones de la cuenta", () => {
 
   afterAll(async () => {
     for (const id of createdUserIds) await deleteTestUser(id).catch(() => undefined);
-  });
+  }, 120_000);
 
   // -------------------------------------------------------------------------
   describe("sesión", () => {
