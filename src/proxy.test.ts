@@ -28,7 +28,15 @@ describe("proxy", () => {
   process.env.DOLETH_SESSION_SECRET = SECRET;
 
   it("deja pasar las rutas públicas sin sesión", async () => {
-    for (const path of ["/", "/iniciar-sesion", "/crear-cuenta", "/terminos", "/privacidad"]) {
+    for (const path of [
+      "/",
+      "/iniciar-sesion",
+      "/crear-cuenta",
+      "/invitacion",
+      "/acceso-temporal",
+      "/terminos",
+      "/privacidad",
+    ]) {
       const response = await proxy(request(path));
       expect(response.status, path).toBe(200);
     }

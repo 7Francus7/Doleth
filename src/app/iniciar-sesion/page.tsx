@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthShell } from "../../components/auth/AuthShell";
 import { LoginForm } from "../../components/auth/LoginForm";
+import { accessMode } from "../../lib/auth/config";
 import { getOptionalUser } from "../../lib/auth/guards";
 import { safeInternalPath } from "../../lib/auth/redirect";
 
@@ -32,7 +33,7 @@ export default async function LoginPage({
       intro="Tus cuentas, movimientos y compromisos siguen donde los dejaste."
       title="Entrar a Doleth"
     >
-      <LoginForm destination={destination} />
+      <LoginForm destination={destination} privateBeta={accessMode() === "private-beta"} />
     </AuthShell>
   );
 }

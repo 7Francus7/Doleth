@@ -26,6 +26,24 @@ export function isProduction(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+export type AccessMode = "private-beta" | "public";
+
+/**
+ * Fail-closed: sin configuraciÃ³n explÃ­cita no existe registro pÃºblico.
+ * El lanzamiento pÃºblico futuro tendrÃ¡ que habilitarlo deliberadamente.
+ */
+export function accessMode(): AccessMode {
+  const configured = process.env.DOLETH_ACCESS_MODE?.trim() || "private-beta";
+  if (configured !== "private-beta" && configured !== "public") {
+    throw new ConfigurationError("DOLETH_ACCESS_MODE debe ser private-beta o public.");
+  }
+  return configured;
+}
+
+export function publicEmailAuthEnabled(): boolean {
+  return accessMode() === "public";
+}
+
 function canonicalHttpsUrl(raw: string, variable: string): string {
   let parsed: URL;
   try {
@@ -75,3 +93,5 @@ export function appUrl(): string {
 export const EMAIL_VERIFICATION_TTL_MINUTES = 60 * 24;
 export const PASSWORD_RESET_TTL_MINUTES = 60;
 export const EMAIL_CHANGE_TTL_MINUTES = 60;
+export const PRIVATE_BETA_INVITE_TTL_MINUTES = 60 * 24 * 7;
+export const ADMIN_PASSWORD_RESET_TTL_MINUTES = 30;

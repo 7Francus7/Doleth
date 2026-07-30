@@ -57,8 +57,10 @@ vi.mock("../../lib/auth/email", async () => {
 });
 
 const {
+  administrativeResetPasswordAction,
   loginAction,
   registerAction,
+  registerWithInvitationAction,
   requestPasswordResetAction,
   resendVerificationAction,
   resetPasswordAction,
@@ -123,6 +125,7 @@ async function clearRateLimits() {
 
 describe.skipIf(!hasDatabase)("flujos de identidad", () => {
   beforeEach(async () => {
+    process.env.DOLETH_ACCESS_MODE = "public";
     cookieJar.clear();
     sentEmails.length = 0;
     emailShouldFail = false;
@@ -587,6 +590,245 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
         if (state.status === "error") mensaje = state.message;
       }
       expect(mensaje).toMatch(/demasiados intentos/i);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  describe("beta privada", () => {
+    async function activeAdmin(label: string) {
+      const { hashPassword } = await import("../../lib/auth/password");
+      const admin = await getDb().user.create({
+        data: {
+          name: "Administradora de prueba",
+          email: freshEmail(label),
+          passwordHash: await hashPassword(PASSWORD),
+          status: "ACTIVE",
+          role: "ADMIN",
+          privateBetaActivatedAt: new Date(),
+        },
+      });
+      createdUserIds.push(admin.id);
+      return admin;
+    }
+
+    it("cierra el registro directo en servidor sin crear usuario ni enviar correo", async () => {
+      process.env.DOLETH_ACCESS_MODE = "private-beta";
+      const email = freshEmail("beta-registro-cerrado");
+      const state = await registerAction(
+        emptyAuthState,
+        formData({
+          name: "Persona",
+          email,
+          password: PASSWORD,
+          passwordConfirmation: PASSWORD,
+          acceptedTerms: "on",
+        }),
+      );
+
+      expect(state.status).toBe("error");
+      expect(state.message).toMatch(/beta privada/i);
+      expect(await getDb().user.findUnique({ where: { email } })).toBeNull();
+      expect(sentEmails).toHaveLength(0);
+    });
+
+    it("consume una invitación vinculada, activa la beta sin afirmar que verificó el correo", async () => {
+      process.env.DOLETH_ACCESS_MODE = "private-beta";
+      const admin = await activeAdmin("beta-admin-alta");
+      const email = freshEmail("beta-invitada");
+      const { createPrivateBetaInvitation } = await import("../../lib/auth/private-beta");
+      const { sha256Hex } = await import("../../lib/auth/crypto");
+      const issued = await createPrivateBetaInvitation(getDb(), {
+        actorEmail: admin.email,
+        invitedEmail: email,
+      });
+
+      const stored = await getDb().privateBetaInvite.findUniqueOrThrow({
+        where: { tokenHash: await sha256Hex(issued.token) },
+      });
+      expect(stored.tokenHash).not.toBe(issued.token);
+
+      expect(
+        await expectRedirect(
+          registerWithInvitationAction(
+            emptyAuthState,
+            formData({
+              token: issued.token,
+              name: "Persona invitada",
+              email,
+              password: PASSWORD,
+              passwordConfirmation: PASSWORD,
+              acceptedTerms: "on",
+            }),
+          ),
+        ),
+      ).toBe("/onboarding");
+
+      const user = await getDb().user.findUniqueOrThrow({ where: { email } });
+      createdUserIds.push(user.id);
+      expect(user.status).toBe("ACTIVE");
+      expect(user.emailVerifiedAt).toBeNull();
+      expect(user.privateBetaActivatedAt).not.toBeNull();
+      expect(sentEmails).toHaveLength(0);
+
+      const consumed = await getDb().privateBetaInvite.findUniqueOrThrow({ where: { id: stored.id } });
+      expect(consumed.consumedAt).not.toBeNull();
+      expect(consumed.consumedById).toBe(user.id);
+
+      const serialized = JSON.stringify(
+        await getDb().authEvent.findMany({
+          where: { OR: [{ userId: admin.id }, { userId: user.id }] },
+        }),
+      );
+      expect(serialized).not.toContain(issued.token);
+    });
+
+    it("rechaza invitaciones reutilizadas, vencidas, manipuladas o usadas por otro correo", async () => {
+      process.env.DOLETH_ACCESS_MODE = "private-beta";
+      const admin = await activeAdmin("beta-admin-rechazos");
+      const invitedEmail = freshEmail("beta-destino");
+      const { createPrivateBetaInvitation } = await import("../../lib/auth/private-beta");
+
+      const mismatch = await createPrivateBetaInvitation(getDb(), {
+        actorEmail: admin.email,
+        invitedEmail,
+      });
+      const mismatchState = await registerWithInvitationAction(
+        emptyAuthState,
+        formData({
+          token: mismatch.token,
+          name: "Correo distinto",
+          email: freshEmail("beta-otro"),
+          password: PASSWORD,
+          passwordConfirmation: PASSWORD,
+          acceptedTerms: "on",
+        }),
+      );
+      expect(mismatchState.message).toMatch(/otro correo/i);
+
+      const manipulatedState = await registerWithInvitationAction(
+        emptyAuthState,
+        formData({
+          token: `${mismatch.token}x`,
+          name: "Token manipulado",
+          email: invitedEmail,
+          password: PASSWORD,
+          passwordConfirmation: PASSWORD,
+          acceptedTerms: "on",
+        }),
+      );
+      expect(manipulatedState.message).toMatch(/no es válida/i);
+
+      const expired = await createPrivateBetaInvitation(getDb(), {
+        actorEmail: admin.email,
+        invitedEmail: freshEmail("beta-vencida"),
+        ttlMinutes: -1,
+      });
+      const expiredState = await registerWithInvitationAction(
+        emptyAuthState,
+        formData({
+          token: expired.token,
+          name: "Token vencido",
+          email: (await getDb().privateBetaInvite.findUniqueOrThrow({
+            where: { tokenHash: await (await import("../../lib/auth/crypto")).sha256Hex(expired.token) },
+          })).email,
+          password: PASSWORD,
+          passwordConfirmation: PASSWORD,
+          acceptedTerms: "on",
+        }),
+      );
+      expect(expiredState.message).toMatch(/venció/i);
+
+      const usedEmail = freshEmail("beta-usada");
+      const used = await createPrivateBetaInvitation(getDb(), {
+        actorEmail: admin.email,
+        invitedEmail: usedEmail,
+      });
+      await expectRedirect(
+        registerWithInvitationAction(
+          emptyAuthState,
+          formData({
+            token: used.token,
+            name: "Primer uso",
+            email: usedEmail,
+            password: PASSWORD,
+            passwordConfirmation: PASSWORD,
+            acceptedTerms: "on",
+          }),
+        ),
+      );
+      const created = await getDb().user.findUniqueOrThrow({ where: { email: usedEmail } });
+      createdUserIds.push(created.id);
+
+      const reusedState = await registerWithInvitationAction(
+        emptyAuthState,
+        formData({
+          token: used.token,
+          name: "Segundo uso",
+          email: usedEmail,
+          password: PASSWORD,
+          passwordConfirmation: PASSWORD,
+          acceptedTerms: "on",
+        }),
+      );
+      expect(reusedState.message).toMatch(/ya fue utilizada/i);
+    });
+
+    it("la recuperación administrativa revoca sesiones y cambia la clave con token de un solo uso", async () => {
+      process.env.DOLETH_ACCESS_MODE = "private-beta";
+      const admin = await activeAdmin("beta-admin-reset");
+      const { hashPassword, verifyPassword } = await import("../../lib/auth/password");
+      const target = await getDb().user.create({
+        data: {
+          name: "Persona a recuperar",
+          email: freshEmail("beta-reset"),
+          passwordHash: await hashPassword(PASSWORD),
+          status: "ACTIVE",
+          privateBetaActivatedAt: new Date(),
+        },
+      });
+      createdUserIds.push(target.id);
+
+      const { createSession } = await import("../../lib/auth/session");
+      await createSession(target.id);
+      await createSession(target.id);
+
+      const { issueAdministrativeRecovery } = await import("../../lib/auth/private-beta");
+      const issued = await issueAdministrativeRecovery(getDb(), {
+        actorEmail: admin.email,
+        targetEmail: target.email,
+      });
+      expect(issued.revokedSessions).toBe(2);
+      expect(await getDb().session.count({ where: { userId: target.id, revokedAt: null } })).toBe(0);
+
+      const nextPassword = "clave nueva privada 2026";
+      expect(
+        await expectRedirect(
+          administrativeResetPasswordAction(
+            emptyAuthState,
+            formData({
+              token: issued.token,
+              password: nextPassword,
+              passwordConfirmation: nextPassword,
+            }),
+          ),
+        ),
+      ).toBe("/restablecer-contrasena/listo");
+
+      const updated = await getDb().user.findUniqueOrThrow({ where: { id: target.id } });
+      expect((await verifyPassword(PASSWORD, updated.passwordHash)).valid).toBe(false);
+      expect((await verifyPassword(nextPassword, updated.passwordHash)).valid).toBe(true);
+      expect(updated.emailVerifiedAt).toBeNull();
+
+      const reused = await administrativeResetPasswordAction(
+        emptyAuthState,
+        formData({
+          token: issued.token,
+          password: "otra clave privada 2026",
+          passwordConfirmation: "otra clave privada 2026",
+        }),
+      );
+      expect(reused.status).toBe("error");
+      expect(reused.message).toMatch(/ya no sirve/i);
     });
   });
 

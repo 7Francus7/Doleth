@@ -6,6 +6,7 @@ import { recordAuthEvent } from "../../lib/auth/audit";
 import {
   EMAIL_VERIFICATION_TTL_MINUTES,
   PASSWORD_RESET_TTL_MINUTES,
+  publicEmailAuthEnabled,
 } from "../../lib/auth/config";
 import {
   EmailDeliveryError,
@@ -15,6 +16,11 @@ import {
   verificationEmail,
 } from "../../lib/auth/email";
 import { consumeTimingDecoy, hashPassword, verifyPassword } from "../../lib/auth/password";
+import {
+  PrivateBetaAccessError,
+  completeAdministrativeRecovery,
+  consumePrivateBetaInvitation,
+} from "../../lib/auth/private-beta";
 import {
   RATE_LIMITS,
   clearRateLimit,
@@ -52,6 +58,8 @@ const failure = (message: string, errors: FieldErrors = {}): AuthFormState => ({
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
 const GENERIC_FAILURE = "No pudimos completar la operación. Probá de nuevo en un momento.";
+const PRIVATE_BETA_MESSAGE =
+  "Doleth está en beta privada. Para crear una cuenta necesitás una invitación personal.";
 
 /** Traduce cualquier excepción a un mensaje seguro: nunca se filtra un stack trace. */
 function safeMessage(error: unknown): string {
@@ -67,6 +75,8 @@ function safeMessage(error: unknown): string {
 // ---------------------------------------------------------------------------
 
 export async function registerAction(_previous: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  if (!publicEmailAuthEnabled()) return failure(PRIVATE_BETA_MESSAGE);
+
   const input = {
     name: text(formData, "name"),
     email: text(formData, "email"),
@@ -117,6 +127,8 @@ export async function resendVerificationAction(
   _previous: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  if (!publicEmailAuthEnabled()) return failure(PRIVATE_BETA_MESSAGE);
+
   const email = normalizeEmail(text(formData, "email"));
   const neutral: AuthFormState = {
     status: "success",
@@ -283,6 +295,10 @@ export async function requestPasswordResetAction(
   _previous: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  if (!publicEmailAuthEnabled()) {
+    return failure("La recuperación por correo no está disponible durante la beta privada.");
+  }
+
   const email = normalizeEmail(text(formData, "email"));
   if (!email) return failure("Ingresá tu correo.", { email: "Ingresá tu correo." });
 
@@ -358,6 +374,115 @@ export async function resetPasswordAction(_previous: AuthFormState, formData: Fo
     // El aviso es informativo: si falla, el cambio ya es válido igual.
     await sendEmail(passwordChangedEmail(user.email)).catch(() => undefined);
   } catch (error) {
+    return failure(safeMessage(error));
+  }
+
+  redirect("/restablecer-contrasena/listo");
+}
+
+// ---------------------------------------------------------------------------
+// Beta privada: invitaciones y recuperación administrativa
+// ---------------------------------------------------------------------------
+
+function privateBetaFailure(error: unknown): AuthFormState {
+  if (!(error instanceof PrivateBetaAccessError)) return failure(safeMessage(error));
+
+  switch (error.code) {
+    case "email_mismatch":
+      return failure("Esta invitación corresponde a otro correo.", {
+        email: "Usá exactamente el correo al que fue dirigida la invitación.",
+      });
+    case "expired":
+      return failure("La invitación venció. Pedile una nueva a quien te invitó.");
+    case "used":
+      return failure("Esta invitación ya fue utilizada.");
+    case "existing_user":
+      return failure("No pudimos crear la cuenta con esta invitación.");
+    default:
+      return failure("Esta invitación no es válida.");
+  }
+}
+
+export async function registerWithInvitationAction(
+  _previous: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const token = text(formData, "token");
+  const input = {
+    name: text(formData, "name"),
+    email: text(formData, "email"),
+    password: String(formData.get("password") ?? ""),
+    passwordConfirmation: String(formData.get("passwordConfirmation") ?? ""),
+    acceptedTerms: formData.get("acceptedTerms") === "on",
+  };
+  const validation = validateRegistration(input);
+  if (!validation.ok) return failure("Revisá los datos marcados.", validation.errors);
+  if (!token) return failure("Abrí el enlace privado completo que recibiste.");
+
+  const { name, email, password } = validation.values;
+  let userId: string;
+
+  try {
+    const subject = await requestSubject();
+    const limit = await consumeRateLimit(RATE_LIMITS.privateBetaInvite, subject);
+    if (!limit.allowed) return failure(retryMessage(limit.retryAfterSeconds));
+
+    const result = await consumePrivateBetaInvitation(getDb(), {
+      token,
+      email,
+      name,
+      passwordHash: await hashPassword(password),
+      acceptedTermsAt: new Date(),
+    });
+    userId = result.user.id;
+    await clearRateLimit(RATE_LIMITS.privateBetaInvite, subject);
+  } catch (error) {
+    await recordAuthEvent({
+      type: "PRIVATE_BETA_INVITATION_REJECTED",
+      email,
+      success: false,
+      context: error instanceof PrivateBetaAccessError ? error.code : "error_interno",
+    });
+    return privateBetaFailure(error);
+  }
+
+  try {
+    await createSession(userId);
+    await getDb().user.update({ where: { id: userId }, data: { lastLoginAt: new Date() } });
+  } catch {
+    // La cuenta y la invitación ya quedaron confirmadas atómicamente. Si sólo
+    // falla la sesión, el usuario puede entrar con la contraseña recién elegida.
+    redirect("/iniciar-sesion");
+  }
+
+  redirect("/onboarding");
+}
+
+export async function administrativeResetPasswordAction(
+  _previous: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const token = text(formData, "token");
+  const validation = validateNewPassword({
+    password: String(formData.get("password") ?? ""),
+    passwordConfirmation: String(formData.get("passwordConfirmation") ?? ""),
+  });
+  if (!validation.ok) return failure("Revisá los datos marcados.", validation.errors);
+  if (!token) return failure("Abrí el enlace temporal completo que te compartió el administrador.");
+
+  try {
+    await completeAdministrativeRecovery(getDb(), {
+      token,
+      passwordHash: await hashPassword(validation.values.password),
+    });
+  } catch (error) {
+    if (error instanceof PrivateBetaAccessError) {
+      return failure(
+        error.code === "expired"
+          ? "El enlace temporal venció. Pedile uno nuevo al administrador."
+          : "Este enlace temporal ya no sirve. Pedile uno nuevo al administrador.",
+      );
+    }
     return failure(safeMessage(error));
   }
 

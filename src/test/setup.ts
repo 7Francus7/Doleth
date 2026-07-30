@@ -27,3 +27,4 @@ if (testDatabaseUrl) {
 process.env.DOLETH_SESSION_SECRET ??= "secreto-de-pruebas-con-mas-de-treinta-y-dos-caracteres";
 process.env.DOLETH_APP_URL ??= "http://localhost:3000";
 process.env.DOLETH_EMAIL_TRANSPORT ??= "console";
+process.env.DOLETH_ACCESS_MODE ??= "public";

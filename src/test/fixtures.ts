@@ -140,6 +140,9 @@ export async function deleteTestUser(userId: string): Promise<void> {
   await db.category.deleteMany({ where: { userId } });
   await db.session.deleteMany({ where: { userId } });
   await db.authToken.deleteMany({ where: { userId } });
+  await db.privateBetaInvite.deleteMany({
+    where: { OR: [{ createdById: userId }, { consumedById: userId }] },
+  });
   await db.authEvent.deleteMany({ where: { userId } });
   await db.user.delete({ where: { id: userId } });
 }

@@ -23,6 +23,7 @@ export const RATE_LIMITS = {
   login: { name: "login", limit: 8, windowSeconds: 15 * 60 },
   loginPerIp: { name: "login-ip", limit: 30, windowSeconds: 15 * 60 },
   register: { name: "register", limit: 5, windowSeconds: 60 * 60 },
+  privateBetaInvite: { name: "private-beta-invite", limit: 10, windowSeconds: 60 * 60 },
   passwordReset: { name: "password-reset", limit: 5, windowSeconds: 60 * 60 },
   verificationResend: { name: "verification-resend", limit: 4, windowSeconds: 60 * 60 },
   emailChange: { name: "email-change", limit: 5, windowSeconds: 60 * 60 },

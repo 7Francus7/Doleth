@@ -9,6 +9,7 @@ import {
   SessionsSection,
 } from "../../../components/auth/AccountSettings";
 import { requireSession } from "../../../lib/auth/guards";
+import { publicEmailAuthEnabled } from "../../../lib/auth/config";
 import { PLAN_LABELS, SUBSCRIPTION_LABELS, resolveEntitlements } from "../../../lib/auth/plan";
 import { listActiveSessions } from "../../../lib/auth/session";
 import { signOutAction } from "./actions";
@@ -67,6 +68,8 @@ export default async function AccountSettingsPage() {
   const [sessions] = await Promise.all([listActiveSessions(user.id)]);
   const entitlements = resolveEntitlements(user);
   const verified = user.emailVerifiedAt !== null;
+  const emailFeaturesEnabled = publicEmailAuthEnabled();
+  const privateBetaAccess = user.privateBetaActivatedAt !== null;
 
   return (
     <OperationalShell
@@ -91,8 +94,8 @@ export default async function AccountSettingsPage() {
             <div className={styles.summaryRow}>
               <dt>Estado del correo</dt>
               <dd>
-                <span className={styles.pill} data-tone={verified ? "stable" : "attention"}>
-                  {verified ? "Confirmado" : "Sin confirmar"}
+                <span className={styles.pill} data-tone={verified || privateBetaAccess ? "stable" : "attention"}>
+                  {verified ? "Confirmado" : privateBetaAccess ? "Acceso de beta privada" : "Sin confirmar"}
                 </span>
               </dd>
             </div>
@@ -131,12 +134,23 @@ export default async function AccountSettingsPage() {
           <ChangePasswordSection />
         </Section>
 
-        <Section
-          intro="El correo se mueve recién cuando confirmás la dirección nueva. Avisamos también a la anterior."
-          title="Cambiar de correo"
-        >
-          <ChangeEmailSection currentEmail={user.email} />
-        </Section>
+        {emailFeaturesEnabled ? (
+          <Section
+            intro="El correo se mueve recién cuando confirmás la dirección nueva. Avisamos también a la anterior."
+            title="Cambiar de correo"
+          >
+            <ChangeEmailSection currentEmail={user.email} />
+          </Section>
+        ) : (
+          <Section
+            intro="Durante la beta privada los cambios de correo se gestionan de forma administrativa."
+            title="Correo de acceso"
+          >
+            <p className={styles.sectionIntro}>
+              No hay correo transaccional activo. Tu dirección permanece fija hasta habilitar verificación real.
+            </p>
+          </Section>
+        )}
 
         <Section intro="Cada navegador donde entraste abre una sesión propia." title="Sesiones abiertas">
           <SessionsSection

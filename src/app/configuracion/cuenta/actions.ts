@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDb } from "../../../lib/db";
 import { recordAuthEvent } from "../../../lib/auth/audit";
-import { EMAIL_CHANGE_TTL_MINUTES } from "../../../lib/auth/config";
+import { EMAIL_CHANGE_TTL_MINUTES, publicEmailAuthEnabled } from "../../../lib/auth/config";
 import {
   EmailDeliveryError,
   emailChangeEmail,
@@ -122,7 +122,9 @@ export async function changePasswordAction(_previous: AccountState, formData: Fo
       recordAuthEvent({ type: "PASSWORD_CHANGED", userId: user.id }),
       recordAuthEvent({ type: "SESSIONS_REVOKED", userId: user.id, context: `cambio_password:${revoked}` }),
     ]);
-    await sendEmail(passwordChangedEmail(user.email)).catch(() => undefined);
+    if (publicEmailAuthEnabled()) {
+      await sendEmail(passwordChangedEmail(user.email)).catch(() => undefined);
+    }
 
     revalidatePath("/configuracion/cuenta");
     return success(
@@ -139,6 +141,10 @@ export async function requestEmailChangeAction(
   _previous: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
+  if (!publicEmailAuthEnabled()) {
+    return failure("El cambio de correo no está disponible durante la beta privada.");
+  }
+
   try {
     const { user } = await requireSessionForAction();
     const password = String(formData.get("currentPassword") ?? "");
@@ -180,6 +186,10 @@ export async function confirmEmailChangeAction(
   _previous: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
+  if (!publicEmailAuthEnabled()) {
+    return failure("El cambio de correo no está disponible durante la beta privada.");
+  }
+
   try {
     const { user } = await requireSessionForAction();
     const rawToken = text(formData, "token");

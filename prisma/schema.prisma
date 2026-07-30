@@ -40,10 +40,16 @@ enum AuthTokenPurpose {
   EMAIL_VERIFICATION
   PASSWORD_RESET
   EMAIL_CHANGE
+  ADMIN_PASSWORD_RESET
 }
 
 enum AuthEventType {
   ACCOUNT_CREATED
+  PRIVATE_BETA_ADMIN_BOOTSTRAPPED
+  PRIVATE_BETA_INVITATION_CREATED
+  PRIVATE_BETA_INVITATION_CONSUMED
+  PRIVATE_BETA_INVITATION_REJECTED
+  ADMIN_PASSWORD_RESET_ISSUED
   EMAIL_VERIFIED
   VERIFICATION_RESENT
   LOGIN_SUCCEEDED
@@ -62,39 +68,42 @@ enum AuthEventType {
 }
 
 model User {
-  id                    String             @id @default(cuid())
-  name                  String
-  email                 String             @unique
-  passwordHash          String
-  status                UserStatus         @default(PENDING_VERIFICATION)
-  role                  UserRole           @default(USER)
-  emailVerifiedAt       DateTime?
-  passwordChangedAt     DateTime           @default(now())
-  lastLoginAt           DateTime?
-  onboardingCompletedAt DateTime?
-  onboardingStep        Int                @default(0)
-  primaryCurrency       String             @default("ARS")
-  timeZone              String             @default("America/Argentina/Cordoba")
-  locale                String             @default("es-AR")
-  planKey               PlanKey            @default(BASE)
-  subscriptionStatus    SubscriptionStatus @default(FREE)
-  subscriptionStartedAt DateTime?
-  subscriptionEndsAt    DateTime?
-  trialEndsAt           DateTime?
-  deletionRequestedAt   DateTime?
-  acceptedTermsAt       DateTime?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  id                     String             @id @default(cuid())
+  name                   String
+  email                  String             @unique
+  passwordHash           String
+  status                 UserStatus         @default(PENDING_VERIFICATION)
+  role                   UserRole           @default(USER)
+  emailVerifiedAt        DateTime?
+  passwordChangedAt      DateTime           @default(now())
+  lastLoginAt            DateTime?
+  onboardingCompletedAt  DateTime?
+  onboardingStep         Int                @default(0)
+  primaryCurrency        String             @default("ARS")
+  timeZone               String             @default("America/Argentina/Cordoba")
+  locale                 String             @default("es-AR")
+  planKey                PlanKey            @default(BASE)
+  subscriptionStatus     SubscriptionStatus @default(FREE)
+  subscriptionStartedAt  DateTime?
+  subscriptionEndsAt     DateTime?
+  trialEndsAt            DateTime?
+  deletionRequestedAt    DateTime?
+  privateBetaActivatedAt DateTime?
+  acceptedTermsAt        DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  sessions         Session[]
-  authTokens       AuthToken[]
-  authEvents       AuthEvent[]
-  accounts         Account[]
-  categories       Category[]
-  transactions     Transaction[]
-  ledgerEntries    LedgerEntry[]
-  investments      Investment[]
-  upcomingPayments UpcomingPayment[]
+  sessions                  Session[]
+  authTokens                AuthToken[]
+  authEvents                AuthEvent[]
+  privateBetaInvitesCreated PrivateBetaInvite[] @relation("PrivateBetaInviteCreator")
+  privateBetaInviteConsumed PrivateBetaInvite?  @relation("PrivateBetaInviteConsumer")
+  accounts                  Account[]
+  categories                Category[]
+  transactions              Transaction[]
+  ledgerEntries             LedgerEntry[]
+  investments               Investment[]
+  upcomingPayments          UpcomingPayment[]
 
   @@index([status])
 }
@@ -144,6 +153,24 @@ model AuthEvent {
 
   @@index([userId, createdAt])
   @@index([type, createdAt])
+}
+
+model PrivateBetaInvite {
+  id           String    @id @default(cuid())
+  tokenHash    String    @unique
+  email        String
+  createdById  String
+  consumedById String?   @unique
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  createdBy    User      @relation("PrivateBetaInviteCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  consumedBy   User?     @relation("PrivateBetaInviteConsumer", fields: [consumedById], references: [id], onDelete: SetNull)
+
+  @@index([email, expiresAt])
+  @@index([createdById, createdAt])
+  @@index([expiresAt])
 }
 
 model RateLimitCounter {

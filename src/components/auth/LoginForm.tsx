@@ -7,7 +7,7 @@ import { emptyAuthState } from "../../lib/auth/form-state";
 import { AuthSubmit, PasswordField, TextField } from "./fields";
 import styles from "./auth.module.css";
 
-export function LoginForm({ destination }: { destination: string }) {
+export function LoginForm({ destination, privateBeta = false }: { destination: string; privateBeta?: boolean }) {
   const [state, action] = useActionState(loginAction, emptyAuthState);
   const needsVerification = Boolean(state.errors.unverified);
 
@@ -53,10 +53,10 @@ export function LoginForm({ destination }: { destination: string }) {
 
       <div className={styles.footerLinks}>
         <Link className={styles.link} href="/olvide-mi-contrasena">
-          Olvidé mi contraseña
+          {privateBeta ? "Necesito recuperar el acceso" : "Olvidé mi contraseña"}
         </Link>
         <Link className={styles.link} href="/crear-cuenta">
-          Crear una cuenta
+          {privateBeta ? "Doleth está en beta privada" : "Crear una cuenta"}
         </Link>
       </div>
     </div>

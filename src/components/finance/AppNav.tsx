@@ -14,6 +14,8 @@ const HIDDEN_ON = new Set([
   "/iniciar-sesion",
   "/crear-cuenta",
   "/crear-cuenta/revisa-tu-correo",
+  "/invitacion",
+  "/acceso-temporal",
   "/verificar-email",
   "/olvide-mi-contrasena",
   "/restablecer-contrasena",
