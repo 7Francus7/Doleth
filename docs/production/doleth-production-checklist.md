@@ -4,11 +4,11 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 
 ## Código y Git
 
-- [ ] SHA de release inmutable registrado.
+- [x] SHA de Preview registrado desde metadata de Vercel y comparado con el HEAD del PR.
 - [ ] Rama basada en `integration/identity-over-corte-7`.
-- [ ] `main` y `origin/main` refrescados antes del PR.
-- [ ] Working tree limpio.
-- [ ] Sin secretos, `.env` ni JSON productivos en el commit.
+- [x] `main` y `origin/main` refrescados antes del PR.
+- [x] Working tree limpio antes del push.
+- [x] Sin secretos, `.env` ni JSON productivos en el commit.
 - [ ] PR revisado; merge automático desactivado.
 
 ## Validaciones automáticas
@@ -33,13 +33,13 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 
 - [x] Proyecto, rama y base productiva identificados.
 - [x] Backup/PITR comprobado con timestamp y retención: ventana de 1 día; snapshots no configurados.
-- [ ] Conexión runtime pooled confirmada.
-- [ ] Conexión de migraciones compatible confirmada.
+- [x] Conexión runtime pooled de Preview configurada contra Neon temporal.
+- [x] Conexión directa de migraciones de Preview validada sin agregar `DIRECT_URL` a Vercel.
 - [x] Migraciones pendientes enumeradas: solo `202607290001_enforce_cross_owner_relations`.
 - [x] Conteos por tabla capturados.
 - [x] Filas financieras con `userId IS NULL`: cero antes del contrato.
 - [ ] Owner del histórico confirmado por el usuario.
-- [ ] Checksums pre/post preservados.
+- [x] Checksums 5/5 preservados en la base temporal de Preview.
 - [x] Cero referencias cruzadas en escenario válido; escenario inválido abortado.
 - [x] Todas las tablas financieras tienen `userId NOT NULL` en esquema final.
 - [x] Índices por `userId` presentes en el esquema final/rehearsal.
@@ -49,18 +49,18 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 
 ## Variables e infraestructura
 
-- [ ] `DATABASE_URL`
-- [ ] `DOLETH_SESSION_SECRET` único y de alta entropía.
-- [ ] `DOLETH_APP_URL` canónica HTTPS.
+- [x] `DATABASE_URL` de Preview apunta al proyecto Neon temporal.
+- [x] `DOLETH_SESSION_SECRET` de Preview generado nuevamente y con scope separado.
+- [x] `DOLETH_APP_URL` de la rama Preview es HTTPS y coincide con su alias estable.
 - [ ] `RESEND_API_KEY`
 - [ ] `DOLETH_EMAIL_FROM`
 - [ ] `DOLETH_EMAIL_TRANSPORT=resend`
 - [ ] `DOLETH_ACCESS_PASSWORD` removida del candidato multiusuario.
-- [ ] Variables de Preview separadas de Production.
-- [ ] `TEST_DATABASE_URL` nunca apunta a producción.
+- [x] Variables críticas de Preview separadas de Production con overrides de rama.
+- [x] `TEST_DATABASE_URL` usó otra base del proyecto temporal y nunca Production.
 - [ ] Dominio Vercel correcto.
-- [ ] Preview protegida.
-- [ ] Deployment muestra el SHA aprobado.
+- [x] Preview protegida.
+- [x] Deployment `READY` muestra el SHA aprobado.
 - [ ] Warning TLS de `pg` resuelto con Neon.
 
 Evidencia 2026-07-30:

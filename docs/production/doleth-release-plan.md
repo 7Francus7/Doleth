@@ -1,7 +1,7 @@
 # Plan de release de Doleth
 
 Estado: `BLOCKED` hasta cerrar los gates 1 a 5.
-Base: `codex/production-readiness-audit` (`055e3443956079de72e7200a83174a378bfda05f` durante el preflight Neon).
+Base: `codex/production-readiness-audit`; el SHA de release se toma del HEAD del PR y debe coincidir con la metadata de Vercel.
 
 ## Principios
 
@@ -59,7 +59,7 @@ Responsables: owner de infraestructura y owner del producto.
 - Neon: proyecto/rama correctos, pooling para runtime, conexión apropiada para migraciones, backup/PITR y límites confirmados.
 - Resend: dominio verificado, SPF, DKIM, remitente permitido y entrega real.
 - Vercel: variables separadas por Production/Preview, dominio, SHA y protección de preview.
-- Vercel CLI no está instalada en este entorno. La inspección previa usó acceso read-only de plataforma; no intentar convertir `DATABASE_URL` `sensitive` en una variable legible.
+- Vercel CLI 58.4.0 está autenticada y enlazada. Las variables de Preview se administraron como `sensitive` por API/CLI sin leer ni exportar valores existentes.
 
 Salida: checklist de infraestructura firmado, sin valores sensibles.
 
@@ -105,4 +105,4 @@ Salida: evidencia funcional y aprobación.
 
 ## Estrategia Git
 
-El candidato contiene a `main`; no requiere merge inverso. El camino seguro es un PR desde la rama auditada hacia `main`, mostrando los 33 commits y las correcciones de auditoría. Si `main` avanza antes del release, integrar esos cambios en la rama candidata y repetir todos los gates.
+El candidato contiene a `main`; no requiere merge inverso. El camino seguro es el PR draft `#8` desde la rama auditada hacia `main`, actualmente con 39 commits. Si `main` avanza antes del release, integrar esos cambios en la rama candidata y repetir todos los gates.

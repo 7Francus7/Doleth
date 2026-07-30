@@ -13,12 +13,12 @@ El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck
 ## Evidencia Git
 
 - `main` y `origin/main`: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
-- Candidato: `fc3f8196490b2fd496823fd7e1b10bf559a2dfc1`.
-- Divergencia: candidato 33 commits por delante y 0 por detrás de `main`.
+- Candidato funcional publicado: `6b9b3b5ead26135cbbb53c2dbb7168f6307afb5d`; los commits posteriores agregan evidencia documental al mismo PR.
+- Divergencia: candidato 39 commits por delante y 0 por detrás de `main`.
 - El working tree original se preservó. Contenía tres JSON sin seguimiento en `evidencia/`.
 - No había stashes.
 - La auditoría se realizó en un worktree separado.
-- No se publicó rama, no se abrió PR, no se hizo merge y no se desplegó producción.
+- La rama fue publicada y se abrió el PR draft `#8`. No se hizo merge ni se desplegó producción.
 
 ## Estado por área
 

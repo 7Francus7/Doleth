@@ -114,3 +114,17 @@ Si ya hubo escrituras:
 - movimientos anulados excluidos;
 - logs sin errores nuevos;
 - incidente documentado.
+
+## Recurso temporal de Preview
+
+El proyecto Neon `doleth-preview-e15754b-20260730` es independiente de Production y debe conservarse hasta la aprobación o rechazo explícito del release. Contiene solamente las cinco migraciones y datos de smoke controlados.
+
+Si el Preview falla:
+
+1. no promover ni fusionar el PR;
+2. preservar deployment, logs y base temporal para diagnóstico;
+3. corregir en la misma rama y desplegar un SHA nuevo;
+4. repetir los gates afectados;
+5. eliminar el proyecto temporal únicamente después de la decisión del owner.
+
+Este recurso no es un backup de Production y no sustituye el snapshot o branch de recuperación obligatorio antes del release productivo.
