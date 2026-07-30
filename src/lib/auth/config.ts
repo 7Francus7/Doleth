@@ -26,12 +26,48 @@ export function isProduction(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+function canonicalHttpsUrl(raw: string, variable: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new ConfigurationError(`${variable} no contiene una URL válida.`);
+  }
+
+  if (isProduction() && parsed.protocol !== "https:") {
+    throw new ConfigurationError(`${variable} debe usar HTTPS en un deployment.`);
+  }
+  if (parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname && parsed.pathname !== "/")) {
+    throw new ConfigurationError(`${variable} debe contener sólo el origen público, sin credenciales, path, query ni hash.`);
+  }
+  return parsed.origin;
+}
+
 /** URL pública, sin barra final. Se usa para armar los enlaces de los correos. */
 export function appUrl(): string {
   const configured = process.env.DOLETH_APP_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, "");
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  const target = process.env.VERCEL_TARGET_ENV ?? process.env.VERCEL_ENV;
+  const isPreview = target === "preview";
+  const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim().toLowerCase();
+
+  if (configured) {
+    const canonical = canonicalHttpsUrl(configured, "DOLETH_APP_URL");
+    if (isPreview && productionHost && new URL(canonical).host.toLowerCase() === productionHost) {
+      throw new ConfigurationError("DOLETH_APP_URL de Preview no puede apuntar al host productivo.");
+    }
+    return canonical;
+  }
+
+  if (isPreview) {
+    const previewHost = process.env.VERCEL_URL?.trim();
+    if (!previewHost) {
+      throw new ConfigurationError("VERCEL_URL es obligatoria en Preview cuando DOLETH_APP_URL no está configurada.");
+    }
+    return canonicalHttpsUrl(`https://${previewHost}`, "VERCEL_URL");
+  }
+
+  if (productionHost) return canonicalHttpsUrl(`https://${productionHost}`, "VERCEL_PROJECT_PRODUCTION_URL");
+  if (process.env.VERCEL_URL) return canonicalHttpsUrl(`https://${process.env.VERCEL_URL}`, "VERCEL_URL");
   if (!isProduction()) return "http://localhost:3000";
   throw new ConfigurationError("DOLETH_APP_URL es obligatoria en producción para armar los enlaces de correo.");
 }
