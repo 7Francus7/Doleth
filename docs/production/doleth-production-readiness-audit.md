@@ -1,8 +1,8 @@
 # Auditoría de preparación productiva de Doleth
 
-Fecha: 2026-07-29
+Fecha: 2026-07-30
 Rama auditada: `codex/production-readiness-audit`
-Base candidata: `integration/identity-over-corte-7` en `fc3f8196490b2fd496823fd7e1b10bf559a2dfc1`
+Base candidata: rehearsal PostgreSQL verificado en `af60b682235c2387950226df3da818bee6253277`
 
 ## Veredicto
 
@@ -31,7 +31,8 @@ El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck
 | Integridad financiera | `VERIFIED` en PostgreSQL | Centavos `BigInt`, transferencias, anulaciones, correcciones y fallos inducidos pasaron. |
 | Migraciones | `READY_WITH_CONCERNS` | Desde cero y legacy pasaron; producción aún requiere preflight, backup y orquestación expand/backfill/contract. |
 | Producción actual | `BLOCKED` | Vercel producción sigue en `main` antiguo con clave compartida. |
-| Neon | `INCONCLUSIVE` | No hubo acceso autorizado a proyecto, ramas, pooling, backups o PITR. |
+| Neon | `BLOCKED_NO_NEON_ACCESS` | Vercel confirma `DATABASE_URL` Production por nombre, pero es `sensitive` y no fue entregada al proceso; consola Neon requiere login. |
+| Vercel | `VERIFIED_WITH_CONCERNS` | Proyecto único, Production `READY`, `main` en `a3c4a54`; Node.js 24.x; consulta de 7 días devolvió 0 errores y 0 warnings. Valores sensibles no fueron leídos. |
 | Resend | `INCONCLUSIVE` | No se verificaron dominio, SPF, DKIM, remitente ni entrega real. |
 | QA automatizado con DB | `VERIFIED` | `lint`, `typecheck`, 787/787 tests, 52/52 tests estrictos y `build` pasaron. |
 | QA de navegador | `BLOCKED` | No se completó smoke desplegado A/B, correo ni viewport. |
@@ -42,9 +43,9 @@ El candidato es la base correcta y supera migraciones reales, `lint`, `typecheck
 
 ### 1. Estado productivo actual no verificado
 
-- Problema: no se consultaron directamente Neon, migraciones actuales, filas sin owner, backup ni PITR.
+- Problema: el 2026-07-30 se verificó acceso Vercel, pero `DATABASE_URL` sensible no se pudo recuperar y la consola Neon no tenía sesión autenticada. Cero conexiones PostgreSQL fueron abiertas.
 - Impacto: no se puede calcular con certeza el impacto de aplicar migraciones.
-- Resolución: ejecutar solamente el preflight read-only y confirmar backup/PITR antes de cualquier escritura.
+- Resolución: el owner debe iniciar sesión manualmente en la pestaña Neon conservada y responder `Neon listo`, sin compartir secretos. Luego ejecutar `db:preflight:neon-readonly` y verificar backup/PITR.
 - Validación: evidencia fechada de conteos, ownership, migraciones y punto de restauración.
 
 ### 2. Producción despliega el código anterior

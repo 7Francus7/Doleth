@@ -15,6 +15,14 @@ El 2026-07-29 se ensayó PostgreSQL 16.14 local y descartable:
 
 Esto verifica rollback transaccional. Restauración Neon/PITR sigue pendiente y debe comprobarse antes del release.
 
+## Estado Neon al 2026-07-30
+
+`BLOCKED_NO_NEON_ACCESS`.
+
+Vercel confirmó el deployment productivo y la existencia nominal de `DATABASE_URL`, pero la variable `sensitive` no fue entregada al proceso. La consola Neon exigió login. No se verificaron retención, PITR ni último punto recuperable y no se abrió ninguna conexión PostgreSQL.
+
+No aprobar release hasta obtener evidencia actual. El owner debe iniciar sesión manualmente en Neon sin compartir secretos y confirmar que puede ver branches, restore/PITR y SQL Editor.
+
 ## Regla de seguridad
 
 El rollback de aplicación y el rollback de datos son decisiones separadas. No revertir migraciones destructivamente ni restaurar una base sin medir primero las escrituras posteriores.
@@ -34,11 +42,15 @@ Una sospecha de fuga multiusuario exige detener el release inmediatamente.
 ## Antes del release
 
 1. Registrar deployment productivo anterior y su SHA.
-2. Confirmar backup/PITR y hora exacta del punto recuperable.
-3. Capturar conteos, filas sin owner y checksums.
-4. Confirmar que la aplicación anterior tolera las columnas nuevas de la fase expand.
-5. Preparar un deployment rollback de la versión anterior.
-6. Identificar quién puede promover deployment y quién puede restaurar Neon.
+2. Confirmar proyecto y rama Neon.
+3. Confirmar backup/PITR, retención y hora UTC exacta del punto recuperable.
+4. Crear con aprobación separada un branch de recuperación previo a migraciones.
+5. Validar ese branch con consultas read-only, sin promoverlo.
+6. Preservar la connection string anterior en el password manager, fuera del repositorio.
+7. Capturar conteos, filas sin owner y checksums.
+8. Confirmar que la aplicación anterior tolera las columnas nuevas de la fase expand.
+9. Preparar un deployment rollback de la versión anterior.
+10. Identificar quién puede promover deployment y quién puede restaurar Neon.
 
 ## Fallo antes de escribir datos
 

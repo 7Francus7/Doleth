@@ -1,7 +1,7 @@
 # Plan de release de Doleth
 
 Estado: `BLOCKED` hasta cerrar los gates 1 a 5.
-Base: `integration/identity-over-corte-7` (`fc3f8196490b2fd496823fd7e1b10bf559a2dfc1`).
+Base: `codex/production-readiness-audit` (`af60b682235c2387950226df3da818bee6253277` al iniciar preflight Neon).
 
 ## Principios
 
@@ -50,6 +50,8 @@ DOLETH_REQUIRE_DB=1 pnpm test:isolation
 
 Salida: transcript sin secretos, todas las pruebas verdes.
 
+Estado: `VERIFIED` el 2026-07-29 con PostgreSQL 16.14 descartable, 787/787 tests y 52/52 tests estrictos.
+
 ## Gate 3 — Preparación externa
 
 Responsables: owner de infraestructura y owner del producto.
@@ -57,9 +59,11 @@ Responsables: owner de infraestructura y owner del producto.
 - Neon: proyecto/rama correctos, pooling para runtime, conexión apropiada para migraciones, backup/PITR y límites confirmados.
 - Resend: dominio verificado, SPF, DKIM, remitente permitido y entrega real.
 - Vercel: variables separadas por Production/Preview, dominio, SHA y protección de preview.
-- Instalar Vercel CLI de forma local para operación: `npm i -g vercel`; luego vincular el proyecto y usar `vercel env pull` sin registrar `.env`.
+- Vercel CLI 57 ya está instalada y autenticada. No intentar convertir `DATABASE_URL` `sensitive` en una variable legible.
 
 Salida: checklist de infraestructura firmado, sin valores sensibles.
+
+Estado Neon: `BLOCKED_NO_NEON_ACCESS`. El owner debe iniciar sesión manualmente en la consola Neon conservada; no compartir credenciales ni URLs por chat.
 
 ## Gate 4 — Preflight productivo
 
@@ -68,7 +72,7 @@ Responsable: Release Manager/DBA.
 1. Congelar escrituras de la versión anterior si el backfill lo requiere.
 2. Confirmar punto de restauración reciente.
 3. Consultar migraciones pendientes.
-4. Ejecutar solo preflight read-only.
+4. Ejecutar `pnpm db:preflight:neon-readonly`, revisado para abortar si la transacción no es read-only.
 5. Registrar conteos por tabla, filas sin owner, owner histórico y checksums.
 6. Si existe cualquier ambigüedad de ownership, cancelar.
 

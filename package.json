@@ -19,6 +19,7 @@
     "db:backfill-owner": "tsx prisma/backfill-owner.ts",
     "db:rollback-owner": "tsx prisma/rollback-owner-backfill.ts",
     "db:preflight": "tsx prisma/ops/preflight.ts",
+    "db:preflight:neon-readonly": "tsx prisma/ops/neon-production-preflight.ts",
     "db:rehearsal:seed-legacy": "tsx prisma/ops/seed-legacy-rehearsal.ts",
     "db:ensure-owner": "tsx prisma/ops/ensure-owner.ts",
     "db:audit-migrations": "tsx prisma/ops/audit-migrations.ts",

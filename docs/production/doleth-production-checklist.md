@@ -26,6 +26,8 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 - [x] Migraciones desde base PostgreSQL vacía.
 - [x] Rehearsal expand/backfill/contract con dataset legacy.
 - [x] Rollback transaccional por fallos inducidos.
+- [x] Tooling productivo revisado; script histórico inseguro no ejecutado.
+- [x] Preflight Neon protegido por transacción read-only y test unitario.
 
 ## Base de datos y ownership
 
@@ -42,7 +44,7 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 - [x] Todas las tablas financieras tienen `userId NOT NULL` en esquema final.
 - [x] Índices por `userId` presentes.
 - [x] FKs compuestas de ownership aplicadas y probadas.
-- [ ] No se usó `db push` ni `migrate reset`.
+- [x] En este corte no se usó `db push`, `migrate reset`, migrate deploy, seed ni backfill.
 
 ## Variables e infraestructura
 
@@ -59,6 +61,15 @@ Marcar cada casilla con evidencia. Una casilla sin verificar mantiene el release
 - [ ] Preview protegida.
 - [ ] Deployment muestra el SHA aprobado.
 - [ ] Warning TLS de `pg` resuelto con Neon.
+
+Evidencia 2026-07-30:
+
+- [x] Proyecto Vercel coincidente y deployment Production `READY`.
+- [x] SHA productivo actual: `a3c4a54fb20c20749222f9eaf02b23db4444a62f`.
+- [x] `DATABASE_URL` existe por nombre en Production.
+- [ ] Valor de `DATABASE_URL` accesible al preflight: bloqueado por tipo `sensitive`.
+- [ ] Sesión Neon autenticada.
+- [ ] Backup/PITR visible y fechado.
 
 ## Email
 
