@@ -1,5 +1,18 @@
 # Acceso operativo de la beta privada
 
+## Precondición productiva descubierta — 2026-07-31
+
+El operador requiere al menos un usuario `ACTIVE / ADMIN`. `bootstrap-admin`
+sólo es válido con la tabla `User` vacía. Si Production ya contiene un usuario
+histórico que no es administrador, el release debe detenerse: no se permite
+promoverlo con SQL manual, marcar el correo como verificado ni crear un segundo
+administrador por fuera del operador.
+
+Antes de un nuevo intento debe existir un comando auditado de adopción de
+usuario histórico. Como el resto del operador, debe ser local, exigir host
+exacto, `DOLETH_ACCESS_MODE=private-beta`, habilitación temporal y `--confirm`.
+Debe registrar la activación de beta sin completar `emailVerifiedAt`.
+
 Este documento describe el procedimiento; nunca debe contener correos reales,
 contraseñas, tokens, connection strings ni enlaces privados.
 

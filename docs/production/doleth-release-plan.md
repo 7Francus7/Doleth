@@ -1,5 +1,26 @@
 # Plan de release de Doleth
 
+## Estado posterior al intento de 2026-07-31
+
+`ROLLED_BACK`
+
+El candidato aprobado llegó a merge, migraciones y deployment `READY`, pero el
+gate de acceso falló antes del primer write de smoke. Production no tiene un
+`ADMIN` activo y el único usuario histórico no puede ser adoptado por el
+operador actual. El alias volvió al deployment anterior; las migraciones
+aditivas permanecen aplicadas y verificadas.
+
+Nuevo gate obligatorio antes de otro intento:
+
+1. implementar una operación CLI, nunca endpoint web, para adoptar un usuario
+   histórico indicado explícitamente;
+2. exigir `private-beta`, host exacto, flag temporal y `--confirm`;
+3. cambiar de forma atómica rol, estado y `privateBetaActivatedAt`;
+4. no completar `emailVerifiedAt`;
+5. emitir un evento de auditoría sin PII ni secretos;
+6. cubrir base no vacía, ambigüedad, reintento e identidad incorrecta;
+7. repetir rehearsal, Preview A/B y aprobación de un nuevo SHA.
+
 Estado del candidato: `PRIVATE_BETA_READY_WITH_CONCERNS`
 
 Production: `NOT_AUTHORIZED`

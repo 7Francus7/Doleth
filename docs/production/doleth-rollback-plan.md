@@ -1,5 +1,23 @@
 # Plan de rollback de Doleth
 
+## Rollback ejecutado — 2026-07-31
+
+Disparador: invitaciones productivas inutilizables por ausencia de un
+administrador `ACTIVE / ADMIN`.
+
+- Deployment nuevo: SHA `8f2746a…`, alcanzó `READY`.
+- Acción: rollback del alias de Vercel al deployment anterior
+  `dpl_57…9GYV`, SHA `a3c4a54…`.
+- Resultado: alias productivo `READY`, rutas con respuesta final 200.
+- Base: no restaurada. Las dos migraciones fueron aditivas y el postflight
+  confirmó 6/6 checksums, conteos intactos, cero cruces y saldos `MATCH`.
+- Datos de smoke: ninguno creado.
+- Logs: cero 5xx observados durante el cierre.
+- Recuperación: snapshot manual y branch de recuperación conservados.
+
+No promover nuevamente `main` hasta que exista un flujo aprobado de adopción
+del administrador histórico y se repita el smoke A/B.
+
 Estado: `READY_WITH_CONCERNS`. Production no fue modificada en este corte.
 
 ## Regla principal
