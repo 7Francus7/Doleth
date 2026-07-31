@@ -6,6 +6,7 @@ import { Surface } from "../../primitives/Surface";
 import { TextLink } from "../../primitives/TextLink";
 import { motionCurve, motionDuration } from "../../tokens";
 import styles from "./InformationBlock.module.css";
+import { SensitiveText } from "../../../components/privacy/AmountPrivacy";
 
 export type InformationBlockState = "complete" | "partial" | "stale" | "conflict";
 
@@ -56,8 +57,8 @@ export function InformationBlock({
           <Label as="p" size="m" tone="primary">
             {title}
           </Label>
-          <p className={styles.primaryLine}>{primaryLine}</p>
-          <p className={styles.causalLine}>{causalLine}</p>
+          <p className={styles.primaryLine}><SensitiveText>{primaryLine}</SensitiveText></p>
+          <p className={styles.causalLine}><SensitiveText>{causalLine}</SensitiveText></p>
         </motion.div>
       </AnimatePresence>
       <TextLink href={linkHref} kind="standalone" showChevron>

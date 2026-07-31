@@ -5,6 +5,7 @@ import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
 import { Surface } from "../../design-system/primitives/Surface";
 import { OperationalShell } from "../../components/finance/OperationalShell";
+import { SensitiveAmount } from "../../components/privacy/AmountPrivacy";
 import financeStyles from "../../components/finance/finance.module.css";
 import type { InvestmentsViewModel } from "./model";
 import styles from "./InvestmentsPage.module.css";
@@ -37,14 +38,14 @@ export function InvestmentsPage({ model }: InvestmentsPageProps) {
                 <div className={styles.gain} data-state={model.performance.state}>
                   <span className={styles.gainPercent}>{model.performance.gainPercentLabel}</span>
                   <span className={styles.gainAmount}>
-                    {model.performance.gainPrefix}{model.performance.gain}
+                    <SensitiveAmount>{model.performance.gainPrefix}{model.performance.gain}</SensitiveAmount>
                   </span>
                 </div>
               ) : null}
             </div>
             {model.performance ? (
               <p className={styles.investedLine}>
-                Aportado: <strong>${model.performance.invested}</strong>
+                Aportado: <strong><SensitiveAmount>${model.performance.invested}</SensitiveAmount></strong>
               </p>
             ) : null}
           </Surface>
@@ -67,7 +68,7 @@ export function InvestmentsPage({ model }: InvestmentsPageProps) {
                   <div className={styles.holdingCopy}>
                     <span className={styles.holdingName}>{holding.name}</span>
                     <span className={styles.holdingMeta}>
-                      {holding.kindLabel} · aportado ${holding.invested}
+                      {holding.kindLabel} · aportado <SensitiveAmount>${holding.invested}</SensitiveAmount>
                     </span>
                   </div>
                   <div className={styles.holdingValues}>

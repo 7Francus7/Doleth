@@ -7,6 +7,7 @@ import { SystemRail } from "../../design-system/composites/SystemRail";
 import { Divider } from "../../design-system/primitives/Divider";
 import type { EvidenceBreakdown } from "./model";
 import styles from "./EvidenceBreakdownSheet.module.css";
+import { SensitiveText } from "../../components/privacy/AmountPrivacy";
 
 export interface EvidenceBreakdownSheetProps {
   model: EvidenceBreakdown;
@@ -30,7 +31,7 @@ export function EvidenceBreakdownSheet({
       title={model.title}
     >
       <div className={styles.breakdown}>
-        {model.summary ? <p className={styles.summary}>{model.summary}</p> : null}
+        {model.summary ? <p className={styles.summary}><SensitiveText>{model.summary}</SensitiveText></p> : null}
         <div className={styles.lines}>
           {model.lines.map((line, index) => (
             <div className={styles.line} key={line.id}>

@@ -4,7 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { BottomSheet } from "../../design-system/composites/BottomSheet";
-import { logoutAction } from "../../app/actions/session";
+// El cierre de sesión del corte de identidad: además de borrar la cookie revoca
+// la fila `Session` y deja el evento en la bitácora. El de la etapa de un solo
+// usuario sólo borraba la cookie y dejaba la sesión viva en la base.
+import { logoutAction } from "../../app/auth/actions";
+import { AmountPrivacyToggle } from "../privacy/AmountPrivacy";
+import { DataExportPanel } from "./DataExportPanel";
 import { NavIcon } from "./NavIcon";
 import { isDestinationActive, isMoreActive, moreGroups } from "./navModel";
 import styles from "./finance.module.css";
@@ -64,6 +69,17 @@ export function MoreMenu() {
               </ul>
             </section>
           ))}
+          <section aria-labelledby="privacy-title" className={styles.moreGroup}>
+            <p className={styles.moreGroupTitle} id="privacy-title">Privacidad</p>
+            <AmountPrivacyToggle />
+            <p className={styles.morePrivacyCopy}>
+              La preferencia queda solo en este dispositivo. No cambia cálculos ni datos guardados.
+            </p>
+          </section>
+          <section aria-labelledby="data-title" className={styles.moreGroup}>
+            <p className={styles.moreGroupTitle} id="data-title">Tus datos</p>
+            <DataExportPanel />
+          </section>
           <form action={logoutAction} className={styles.moreSession}>
             <button className={styles.moreLogout} type="submit">Cerrar sesión</button>
           </form>

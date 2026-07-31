@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { MovementForm } from "../../../../components/finance/MovementForm";
 import { OperationalShell } from "../../../../components/finance/OperationalShell";
+import { requireOnboardedUser } from "../../../../lib/auth/guards";
 import { getDb } from "../../../../lib/db";
 import { formatCentsAR } from "../../../../lib/finance/amount";
 import { sanitizeReturnPath } from "../../../../lib/navigation/returnPath";
@@ -14,14 +15,27 @@ const first = (value: string | string[] | undefined) => (Array.isArray(value) ? 
 
 export default async function EditMovementPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { id } = await params;
+  const user = await requireOnboardedUser(`/movimientos/${id}/editar`);
   const returnTo = sanitizeReturnPath(first((await searchParams).volver), `/movimientos/${id}`);
   const db = getDb();
+  // Las tres consultas acotadas al propietario: ni el movimiento ni las opciones
+  // del formulario pueden venir de otra cuenta.
   const [movement, accounts, categories] = await Promise.all([
-    db.transaction.findUnique({ where: { id }, include: { sourceAccount: true } }),
-    db.account.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
-    db.category.findMany({ orderBy: { name: "asc" } }),
+    db.transaction.findFirst({ where: { id, userId: user.id }, include: { sourceAccount: true } }),
+    db.account.findMany({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { name: "asc" } }),
+    db.category.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } }),
   ]);
-  if (!movement || movement.voidedAt) notFound();
+  if (!movement) notFound();
+  if (movement.voidedAt) {
+    const replacement = await db.transaction.findFirst({
+      where: { userId: user.id, correctedFromId: movement.id },
+      select: { id: true },
+    });
+    if (replacement) {
+      redirect(`/movimientos/${replacement.id}?volver=${encodeURIComponent(returnTo)}`);
+    }
+    notFound();
+  }
 
   const occurredOn = movement.occurredOn.toISOString().slice(0, 10);
 

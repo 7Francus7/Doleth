@@ -36,8 +36,8 @@ function sharePercent(part: bigint, whole: bigint): number {
   return Number((part * 10000n) / whole) / 100;
 }
 
-export async function getInvestmentsModel(): Promise<InvestmentsViewModel> {
-  const investments = await getInvestments();
+export async function getInvestmentsModel(userId: string): Promise<InvestmentsViewModel> {
+  const investments = await getInvestments(userId);
   const hasInvestments = investments.length > 0;
 
   const totalValueCents = investments.reduce((sum, item) => sum + item.currentValueCents, 0n);

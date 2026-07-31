@@ -256,7 +256,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.investmentsDelta[data-state="positive"] { color: var(--color-stable-text); }
+.investmentsDelta[data-state="positive"] { color: var(--color-slate-500); }
 .investmentsDelta[data-state="negative"] { color: var(--color-attention-text); }
 .investmentsDelta[data-state="neutral"] { color: var(--color-text-tertiary); }
 

@@ -27,9 +27,9 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   OTHER: "Otra",
 };
 
-async function getInvestmentsSummary(): Promise<NonNullable<NowViewModel["investments"]> | null> {
+async function getInvestmentsSummary(userId: string): Promise<NonNullable<NowViewModel["investments"]> | null> {
   try {
-    const investments = await getInvestments();
+    const investments = await getInvestments(userId);
     if (!investments.length) {
       return { hasInvestments: false, value: "0", valuePrefix: "$", deltaLabel: "", deltaState: "neutral", href: "/inversiones" };
     }
@@ -68,8 +68,8 @@ function primaryAction(state: NowState): NowViewModel["actions"] {
   return { primary: "register", primaryLabel: "Registrar un movimiento", secondaryActions: secondary, state: "default" };
 }
 
-export async function getNowModel(): Promise<NowViewModel> {
-  const [data, investments] = await Promise.all([getNowData(), getInvestmentsSummary()]);
+export async function getNowModel(userId: string): Promise<NowViewModel> {
+  const [data, investments] = await Promise.all([getNowData(userId), getInvestmentsSummary(userId)]);
 
   const hasAccounts = data.accounts.length > 0;
   const baseCents = accountsMoneyCents(data.accounts);

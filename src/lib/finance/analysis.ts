@@ -215,10 +215,14 @@ export function reconcileCoverage(
  * secundarios (como inversiones) cuya ausencia degrada de forma honesta; nunca
  * para el patrimonio central. Refleja la resiliencia que ya tiene el dashboard.
  */
-export async function resilientList<T>(load: () => Promise<T[]>): Promise<T[]> {
+export async function resilientList<T>(
+  load: () => Promise<T[]>,
+  onError?: () => void,
+): Promise<T[]> {
   try {
     return await load();
   } catch {
+    onError?.();
     return [];
   }
 }
@@ -228,10 +232,14 @@ export async function resilientList<T>(load: () => Promise<T[]>): Promise<T[]> {
  * `null` ante un error para que la pantalla pueda decir qué no pudo cargar en
  * lugar de mostrar un vacío que el usuario leería como "no hay nada".
  */
-export async function resilientRead<T>(load: () => Promise<T>): Promise<T | null> {
+export async function resilientRead<T>(
+  load: () => Promise<T>,
+  onError?: () => void,
+): Promise<T | null> {
   try {
     return await load();
   } catch {
+    onError?.();
     return null;
   }
 }

@@ -38,8 +38,8 @@ function balanceAfterLabel(cents: bigint, single: boolean): string {
     : `Después de estos pagos quedarían aproximadamente $${money(cents)}.`;
 }
 
-export async function getNextModel(): Promise<NextViewModel> {
-  const data = await getUpcomingData();
+export async function getNextModel(userId: string): Promise<NextViewModel> {
+  const data = await getUpcomingData(userId);
   const baseCents = accountsMoneyCents(data.accounts);
   const timeline = buildTimeline(data.pending, data.today, baseCents);
   const coverage = computeCoverage(baseCents, timeline.pendingCents);

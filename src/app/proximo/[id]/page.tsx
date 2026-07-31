@@ -1,10 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OperationalShell } from "../../../components/finance/OperationalShell";
 import { ConfirmPaymentForm } from "../../../components/finance/ConfirmPaymentForm";
 import { RepeatUpcomingPaymentForm } from "../../../components/finance/RepeatUpcomingPaymentForm";
+import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
+import { requireOnboardedUser } from "../../../lib/auth/guards";
 import { getDb } from "../../../lib/db";
 import { formatCentsAR } from "../../../lib/finance/amount";
+import { getOwnedUpcomingPayment } from "../../../lib/finance/data";
 import { todayInArgentina } from "../../../lib/finance/domain";
 import { nextMonthSameDay, paymentState } from "../../../lib/finance/projection";
 import { describeDueDateAR } from "../../../lib/finance/upcomingDate";
@@ -12,6 +16,7 @@ import { sanitizeReturnPath } from "../../../lib/navigation/returnPath";
 import styles from "../../../components/finance/finance.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Detalle de próximo pago" };
 
 const STATE_LABELS = {
   overdue: "Vencido",
@@ -30,11 +35,9 @@ export default async function UpcomingPaymentDetailPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const user = await requireOnboardedUser(`/proximo/${id}`);
   const returnTo = sanitizeReturnPath(first((await searchParams).volver) ?? null, "/proximo");
-  const payment = await getDb().upcomingPayment.findUnique({
-    where: { id },
-    include: { plannedAccount: true, transaction: true },
-  });
+  const payment = await getOwnedUpcomingPayment(user.id, id);
   if (!payment) notFound();
 
   const today = todayInArgentina();
@@ -42,8 +45,10 @@ export default async function UpcomingPaymentDetailPage({
   const state = paymentState(dueOn, today, payment.status);
 
   // El saldo de la cuenta prevista se deriva del ledger, igual que en /cuentas.
+  // `userId` acota la suma aunque la cuenta ya sea del usuario: el asiento es la
+  // unidad que se agrega, y ninguna agregación financiera queda sin dueño.
   const entries = await getDb().ledgerEntry.aggregate({
-    where: { accountId: payment.plannedAccountId, transaction: { voidedAt: null } },
+    where: { userId: user.id, accountId: payment.plannedAccountId, transaction: { voidedAt: null } },
     _sum: { amountCents: true },
   });
   const balanceCents = payment.plannedAccount.initialBalanceCents + (entries._sum.amountCents ?? 0n);
@@ -58,7 +63,7 @@ export default async function UpcomingPaymentDetailPage({
         <dl className={styles.detailGrid}>
           <div className={styles.detailRow}>
             <dt>Importe previsto</dt>
-            <dd>${formatCentsAR(payment.estimatedCents)}</dd>
+            <dd><SensitiveAmount>${formatCentsAR(payment.estimatedCents)}</SensitiveAmount></dd>
           </div>
           <div className={styles.detailRow}>
             <dt>Vencimiento</dt>
@@ -86,7 +91,7 @@ export default async function UpcomingPaymentDetailPage({
       {payment.transaction ? (
         <section className={styles.panel}>
           <p className={styles.fieldHelp}>
-            Este pago ya se confirmó: salieron ${formatCentsAR(payment.transaction.amountCents)} de{" "}
+            Este pago ya se confirmó: salieron <SensitiveAmount>${formatCentsAR(payment.transaction.amountCents)}</SensitiveAmount> de{" "}
             {payment.plannedAccount.name}.
           </p>
           <Link className={styles.primaryLink} href={`/movimientos/${payment.transaction.id}`}>

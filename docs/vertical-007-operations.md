@@ -5,8 +5,12 @@
 1. Crear una base PostgreSQL en Neon.
 2. Copiar `.env.example` a `.env.local` y completar:
    - `DATABASE_URL`: conexión PostgreSQL con TLS.
-   - `DOLETH_ACCESS_PASSWORD`: frase personal de 12 o más caracteres.
    - `DOLETH_SESSION_SECRET`: secreto aleatorio de 32 o más caracteres.
+   - Correo, si se va a probar el alta de cuentas: `RESEND_API_KEY` y
+     `DOLETH_EMAIL_FROM`, o `DOLETH_EMAIL_TRANSPORT=console` en desarrollo.
+
+   Desde el corte de identidad no hay clave compartida: cada persona se registra
+   con su correo y su contraseña.
 3. Ejecutar:
 
 ```bash

@@ -44,5 +44,8 @@ next-env.d.ts
 .gstack/
 /src/generated/prisma/
 
-# base descartable y scripts de QA local
-/.qa-tmp/
+# QA manual y base descartable: semillas, capturas y logs de servidores
+# efímeros. Se regenera, y puede contener datos de una base real. Nunca se
+# commitea.
+.qa-tmp/
+evidencia/

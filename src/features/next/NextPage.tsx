@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DolethBrand } from "../../components/brand/DolethBrand";
+import { SensitiveAmount } from "../../components/privacy/AmountPrivacy";
 import { RestorableList } from "../../components/finance/RestorableList";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
 import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
@@ -95,11 +96,13 @@ export function NextPage({ model }: NextPageProps) {
                             </span>
                           </span>
                           <span className={styles.paymentAmount}>
-                            {payment.amountPrefix}{payment.amount}
+                            <SensitiveAmount>{payment.amountPrefix}{payment.amount}</SensitiveAmount>
                           </span>
                         </Link>
                         <p className={styles.paymentAfter} data-state={payment.balanceAfterState}>
-                          {payment.balanceAfterLabel}
+                          <SensitiveAmount sensitive={payment.balanceAfterLabel.includes("$")}>
+                            {payment.balanceAfterLabel}
+                          </SensitiveAmount>
                         </p>
                       </li>
                     ))}

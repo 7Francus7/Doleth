@@ -103,7 +103,7 @@ export interface CategorizedMovement extends AnalysisMovement {
 }
 
 export interface CauseGroup {
-  /** `category:<id>`, `uncategorized:<tipo>` u `other` para el resto agrupado. */
+  /** `category:<id>` u `other` para el resto agrupado. */
   id: string;
   label: string;
   /** Efecto con signo sobre el patrimonio. */
@@ -132,9 +132,9 @@ function groupKey(movement: CategorizedMovement): { id: string; label: string } 
   if (movement.categoryId && movement.categoryName) {
     return { id: `category:${movement.categoryId}`, label: movement.categoryName };
   }
-  return movement.type === "INCOME"
-    ? { id: "uncategorized:INCOME", label: "Ingresos sin categoría" }
-    : { id: "uncategorized:EXPENSE", label: "Gastos sin categoría" };
+  // La base impide este estado para ingresos y gastos. Si una importación o
+  // corrupción lo saltea, fallar evita presentar una causa inventada.
+  throw new Error("Movimiento patrimonial sin categoría.");
 }
 
 /**

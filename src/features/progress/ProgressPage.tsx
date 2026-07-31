@@ -14,6 +14,7 @@ import { Surface } from "../../design-system/primitives/Surface";
 import { EvidenceBreakdownExperience } from "../evidence";
 import type { ProgressViewModel } from "./model";
 import styles from "./ProgressPage.module.css";
+import { SensitiveText } from "../../components/privacy/AmountPrivacy";
 
 export interface ProgressPageProps {
   model: ProgressViewModel;
@@ -74,7 +75,7 @@ export function ProgressPage({ model }: ProgressPageProps) {
               ))}
             </div>
             <p className={styles.comparisonSummary} data-kind={model.comparison.summaryKind}>
-              {model.comparison.summary}
+              <SensitiveText>{model.comparison.summary}</SensitiveText>
             </p>
           </Surface>
         </section>
@@ -97,11 +98,11 @@ export function ProgressPage({ model }: ProgressPageProps) {
                     {index > 0 ? <Divider /> : null}
                     <h3 className={styles.indicatorTitle}>{indicator.label}</h3>
                     <p className={styles.indicatorReading} data-state={indicator.state}>
-                      {indicator.reading}
+                      <SensitiveText>{indicator.reading}</SensitiveText>
                     </p>
                     {indicator.meter ? <CoverageMeter {...indicator.meter} /> : null}
-                    <p className={styles.indicatorMeta}>{indicator.reference}</p>
-                    <p className={styles.indicatorMeta}>{indicator.formula}</p>
+                    <p className={styles.indicatorMeta}><SensitiveText>{indicator.reference}</SensitiveText></p>
+                    <p className={styles.indicatorMeta}><SensitiveText>{indicator.formula}</SensitiveText></p>
                   </li>
                 ))}
               </ul>
@@ -135,7 +136,7 @@ export function ProgressPage({ model }: ProgressPageProps) {
                           {milestone.achieved ? " · alcanzado" : " · todavía no"}
                         </span>
                       </span>
-                      <span className={styles.milestoneDetail}>{milestone.detail}</span>
+                      <span className={styles.milestoneDetail}><SensitiveText>{milestone.detail}</SensitiveText></span>
                     </span>
                   </li>
                 ))}

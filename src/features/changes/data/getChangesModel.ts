@@ -137,8 +137,8 @@ function actionsFor(change: ChangeComparison): ChangesViewModel["actions"] {
   };
 }
 
-export async function getChangesModel(): Promise<ChangesViewModel> {
-  const data = await getChangesData();
+export async function getChangesModel(userId: string): Promise<ChangesViewModel> {
+  const data = await getChangesData(userId);
   const change = compareChangePeriods({
     movements: data.movements,
     period: data.period,

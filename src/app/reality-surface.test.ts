@@ -119,7 +119,8 @@ describe("/mi-realidad: estados", () => {
 
 describe("/mi-realidad: resiliencia", () => {
   it("las inversiones y los compromisos son secundarios y degradan declarándose", () => {
-    expect(data).toContain("resilientRead(() => getInvestments())");
+    expect(data).toContain("() => getInvestments(userId)");
+    expect(data).toContain('reportSecondaryRead("/mi-realidad", "investments")');
     expect(model).toContain("No pudimos cargar las inversiones.");
     expect(model).toContain("Tu patrimonio en cuentas sigue disponible");
     expect(model).toContain("No pudimos cargar los próximos pagos.");

@@ -10,4 +10,3 @@ export * from "./InformationBlock";
 export * from "./ReserveBlock";
 export * from "./StabilityStatement";
 export * from "./SystemRail";
-export * from "./TrendChart";

@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "../components/finance/AppNav";
+import { AccountLink } from "../components/auth/AccountLink";
+import { AmountPrivacyProvider } from "../components/privacy/AmountPrivacy";
+import { PwaManager } from "../components/pwa/PwaManager";
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -33,6 +36,18 @@ export const metadata: Metadata = {
     title: "Doleth",
     statusBarStyle: "default",
   },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noarchive: true,
+      noimageindex: true,
+      nosnippet: true,
+    },
+  },
 };
 
 export const viewport: Viewport = {
@@ -50,10 +65,25 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="es-AR"
       className={`${manrope.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}
     >
-      <body>{children}<AppNav /></body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{document.documentElement.dataset.amountsHidden=localStorage.getItem('doleth.hideAmounts')==='true'?'true':'false'}catch{document.documentElement.dataset.amountsHidden='false'}",
+          }}
+        />
+      </head>
+      <body>
+        <AmountPrivacyProvider>
+          {children}
+          <AccountLink />
+          <AppNav />
+          <PwaManager />
+        </AmountPrivacyProvider>
+      </body>
     </html>
   );
 }
