@@ -160,7 +160,7 @@ function localMigrations(): LocalMigration[] {
 
 async function tableExists(client: PoolClient, table: string): Promise<boolean> {
   const rows = await client.query<{ present: boolean }>(
-    `SELECT to_regclass(format('%I.%I', current_schema(), $1)) IS NOT NULL AS present`,
+    `SELECT to_regclass(format('%I.%I', current_schema(), $1::text)) IS NOT NULL AS present`,
     [table],
   );
   return rows.rows[0]?.present ?? false;

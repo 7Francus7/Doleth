@@ -175,3 +175,17 @@ beta privada. Debe exigir email local privado, host de base exacto, confirmació
 explícita y registrar el evento; no debe marcar el correo como verificado.
 Después se requiere un nuevo SHA aprobado, rehearsal, deployment y smoke A/B
 productivo completo antes de volver a mover el alias.
+
+## Corte de adopción administrativa (2026-08-01)
+
+El bloqueo anterior se resuelve en la rama
+`codex/private-beta-admin-adoption` mediante un CLI transaccional que adopta la
+cuenta histórica existente sin verificar su correo ni cambiar identidad,
+contraseña, timestamps preservados o finanzas. El rehearsal aislado PostgreSQL
+18 pasó con 6/6 migraciones, dos dry-runs, rollback de dos fallos inyectados, un
+evento y reintentos idempotentes. Production continúa en el deployment
+`a3c4a54…`; writes productivos de este corte: `0`; alias modificado: `NO`.
+
+La ejecución productiva del CLI y un nuevo deployment siguen prohibidos hasta
+una autorización explícita posterior. Ver
+`doleth-private-beta-admin-adoption.md`.
