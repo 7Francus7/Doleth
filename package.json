@@ -27,7 +27,10 @@
     "test:isolation": "vitest run src/test/database-required.test.ts src/lib/finance/isolation.test.ts src/app/actions/finance.authorization.test.ts src/lib/finance/ledger-integrity.test.ts src/lib/export/export-isolation.test.ts",
     "db:deletions": "tsx prisma/ops/deletion.ts",
     "db:smoke-cleanup": "tsx prisma/ops/smoke-cleanup.ts",
-    "beta:access": "node --conditions=react-server --import tsx prisma/ops/private-beta-access.ts"
+    "beta:access": "node --conditions=react-server --import tsx prisma/ops/private-beta-access.ts",
+    "admin:adopt-existing-user": "node --conditions=react-server --import tsx prisma/ops/private-beta-admin-adoption.ts",
+    "admin:adoption:rehearsal": "node --conditions=react-server --import tsx prisma/ops/private-beta-admin-adoption-rehearsal.ts",
+    "admin:adoption:test": "vitest run src/lib/auth/admin-adoption.test.ts src/lib/auth/admin-adoption-config.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

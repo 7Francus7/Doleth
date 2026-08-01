@@ -375,18 +375,52 @@ describe.skipIf(!hasDatabase)("integridad contable con propiedad por usuario", (
   });
 
   it("el resumen del panel no incluye movimientos anulados", async () => {
-    const panel = await getDashboardData(usuario.id);
-    const anulados = await getDb().transaction.findMany({
-      where: { userId: usuario.id, voidedAt: { not: null }, occurredOn: { gte: new Date("2026-07-01T00:00:00Z") } },
-      select: { amountCents: true, type: true },
+    const today = new Date();
+    const occurredOn = today.toISOString().slice(0, 10);
+    const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+    const monthEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1));
+    const activeKey = randomUUID();
+    const voidedKey = randomUUID();
+    for (const idempotencyKey of [activeKey, voidedKey]) {
+      expect(
+        (
+          await createMovementAction(
+            idle,
+            formData({
+              type: "EXPENSE",
+              amount: "100",
+              occurredOn,
+              sourceAccountId: usuario.accountId,
+              categoryId: usuario.categoryId,
+              idempotencyKey,
+            }),
+          )
+        ).ok,
+      ).toBe(true);
+    }
+    const toVoid = await getDb().transaction.findFirstOrThrow({
+      where: { userId: usuario.id, idempotencyKey: voidedKey },
     });
-    // Si los anulados contaran, el gasto del mes sería mayor; el ledger ya cierra
-    // arriba, así que basta con verificar que el resumen no los sumó.
-    const gastoAnulado = anulados
-      .filter((movimiento) => movimiento.type === "EXPENSE")
-      .reduce((suma, movimiento) => suma + movimiento.amountCents, 0n);
-    expect(gastoAnulado).toBeGreaterThan(0n);
-    expect(panel.expenseCents).toBeGreaterThan(0n);
+    expect(
+      (await voidMovementAction(idle, formData({ id: toVoid.id, reason: "control de resumen mensual" }))).ok,
+    ).toBe(true);
+
+    const panel = await getDashboardData(usuario.id);
+    const monthExpenses = await getDb().transaction.findMany({
+      where: {
+        userId: usuario.id,
+        type: "EXPENSE",
+        occurredOn: { gte: monthStart, lt: monthEnd },
+      },
+      select: { amountCents: true, voidedAt: true },
+    });
+    const activeTotal = monthExpenses
+      .filter((movement) => movement.voidedAt === null)
+      .reduce((sum, movement) => sum + movement.amountCents, 0n);
+    const allTotal = monthExpenses.reduce((sum, movement) => sum + movement.amountCents, 0n);
+    expect(activeTotal).toBeGreaterThan(0n);
+    expect(allTotal).toBeGreaterThan(activeTotal);
+    expect(panel.expenseCents).toBe(activeTotal);
     expect(await reconcile(usuario.id)).toBe(true);
   });
 

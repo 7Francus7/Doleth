@@ -120,3 +120,17 @@ Una sospecha de fuga multiusuario exige detener el release inmediatamente.
 El rollback público debe incorporar fallos de Resend, dominio, SPF/DKIM,
 verificación, recuperación y cambio de email. Esa cobertura no existe todavía y
 no debe presentarse como resuelta.
+
+## Fallo de adopción administrativa
+
+- Antes de `COMMIT`: la transacción serializable y el evento revierten juntos;
+  verificar `USER / PENDING_VERIFICATION`, timestamp nulo y cero eventos de
+  adopción.
+- Después de `COMMIT`: detener deploy e invitaciones. No revertir con SQL manual,
+  no borrar el evento y no simular verificación de email. Conservar snapshot,
+  comparar los tres campos permitidos y preparar un forward-fix revisado.
+- En cualquier caso: confirmar email/password/nombre/`updatedAt` preservados,
+  cero sesiones/tokens/invitaciones y checksum financiero idéntico.
+
+El alias productivo permanece en `a3c4a54…` durante este corte; el proyecto Neon
+temporal de rehearsal se conserva hasta decisión del release.

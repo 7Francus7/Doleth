@@ -99,3 +99,19 @@ contraseña global ni reutilizable.
 
 Este procedimiento es temporal y debe reemplazarse por recuperación real por
 email antes de abrir el registro público.
+
+## Adopción de usuario histórico
+
+Cuando la base no está vacía, `bootstrap-admin` está expresamente prohibido. La
+operación separada es:
+
+```text
+pnpm admin:adopt-existing-user -- --dry-run
+pnpm admin:adopt-existing-user -- --execute
+```
+
+Usa exclusivamente `DOLETH_ADMIN_ADOPTION_DATABASE_URL`, exige identidad exacta
+de host/proyecto/branch, ID+email por prompt local y frase fuerte. Production
+requiere `DOLETH_ALLOW_PRODUCTION_ADMIN_ADOPTION=YES`. Solo cambia `role`,
+`status` y `privateBetaActivatedAt`; `emailVerifiedAt` permanece `NULL`. Detalle
+y procedimiento: `doleth-private-beta-admin-adoption.md`.
