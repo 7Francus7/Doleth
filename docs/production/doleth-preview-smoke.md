@@ -119,3 +119,18 @@ quedaron fuera del repositorio y no contienen secretos.
 - no existe creación de categorías personalizadas en UI;
 - GitHub Actions no ejecuta pasos por bloqueo de billing de la cuenta;
 - el warning futuro de semántica TLS de `pg` sigue pendiente.
+
+## Revalidación requerida para la adopción
+
+El smoke anterior no cubría una cuenta histórica pending. El nuevo corte debe
+repetir en una Preview nueva y sobre el mismo proyecto Neon temporal:
+
+1. crear un fixture sintético `USER / PENDING_VERIFICATION` con 1/13/1/1;
+2. ejecutar dos dry-runs y la adopción CLI;
+3. confirmar login como admin con `emailVerifiedAt=NULL`;
+4. emitir invitaciones A/B y recuperación administrativa;
+5. repetir aislamiento, IDOR, logs y callbacks sobre el host Preview;
+6. demostrar que host/proyecto/branch no son los de Production.
+
+No usar identidad ni email productivos. El estado de esta revalidación se
+completa únicamente con evidencia del deployment del nuevo SHA.

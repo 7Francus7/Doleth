@@ -1,5 +1,18 @@
 # Acceso operativo de la beta privada
 
+## Precondición productiva descubierta — 2026-07-31
+
+El operador requiere al menos un usuario `ACTIVE / ADMIN`. `bootstrap-admin`
+sólo es válido con la tabla `User` vacía. Si Production ya contiene un usuario
+histórico que no es administrador, el release debe detenerse: no se permite
+promoverlo con SQL manual, marcar el correo como verificado ni crear un segundo
+administrador por fuera del operador.
+
+Antes de un nuevo intento debe existir un comando auditado de adopción de
+usuario histórico. Como el resto del operador, debe ser local, exigir host
+exacto, `DOLETH_ACCESS_MODE=private-beta`, habilitación temporal y `--confirm`.
+Debe registrar la activación de beta sin completar `emailVerifiedAt`.
+
 Este documento describe el procedimiento; nunca debe contener correos reales,
 contraseñas, tokens, connection strings ni enlaces privados.
 
@@ -86,3 +99,19 @@ contraseña global ni reutilizable.
 
 Este procedimiento es temporal y debe reemplazarse por recuperación real por
 email antes de abrir el registro público.
+
+## Adopción de usuario histórico
+
+Cuando la base no está vacía, `bootstrap-admin` está expresamente prohibido. La
+operación separada es:
+
+```text
+pnpm admin:adopt-existing-user -- --dry-run
+pnpm admin:adopt-existing-user -- --execute
+```
+
+Usa exclusivamente `DOLETH_ADMIN_ADOPTION_DATABASE_URL`, exige identidad exacta
+de host/proyecto/branch, ID+email por prompt local y frase fuerte. Production
+requiere `DOLETH_ALLOW_PRODUCTION_ADMIN_ADOPTION=YES`. Solo cambia `role`,
+`status` y `privateBetaActivatedAt`; `emailVerifiedAt` permanece `NULL`. Detalle
+y procedimiento: `doleth-private-beta-admin-adoption.md`.

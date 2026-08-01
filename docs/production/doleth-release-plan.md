@@ -1,5 +1,26 @@
 # Plan de release de Doleth
 
+## Estado posterior al intento de 2026-07-31
+
+`ROLLED_BACK`
+
+El candidato aprobado llegó a merge, migraciones y deployment `READY`, pero el
+gate de acceso falló antes del primer write de smoke. Production no tiene un
+`ADMIN` activo y el único usuario histórico no puede ser adoptado por el
+operador actual. El alias volvió al deployment anterior; las migraciones
+aditivas permanecen aplicadas y verificadas.
+
+Nuevo gate obligatorio antes de otro intento:
+
+1. implementar una operación CLI, nunca endpoint web, para adoptar un usuario
+   histórico indicado explícitamente;
+2. exigir `private-beta`, host exacto, flag temporal y `--confirm`;
+3. cambiar de forma atómica rol, estado y `privateBetaActivatedAt`;
+4. no completar `emailVerifiedAt`;
+5. emitir un evento de auditoría sin PII ni secretos;
+6. cubrir base no vacía, ambigüedad, reintento e identidad incorrecta;
+7. repetir rehearsal, Preview A/B y aprobación de un nuevo SHA.
+
 Estado del candidato: `PRIVATE_BETA_READY_WITH_CONCERNS`
 
 Production: `NOT_AUTHORIZED`
@@ -97,3 +118,19 @@ Es otro release y requiere:
 7. smoke con dos buzones;
 8. cambio deliberado a `DOLETH_ACCESS_MODE=public`;
 9. nueva auditoría y aprobación.
+
+## Gate 3A — Adopción del administrador histórico
+
+Antes de volver a desplegar la beta privada:
+
+1. aprobar el SHA del CLI y su PR draft;
+2. demostrar rehearsal 6/6 y Preview aislada con usuario sintético;
+3. repetir smoke A/B, invitación y recuperación en Preview;
+4. solicitar autorización explícita para el dry-run productivo;
+5. ejecutar el dry-run por TTY y revisar todos los guards;
+6. solicitar autorización explícita separada para `--execute`;
+7. ejecutar adopción y postflight atómicos;
+8. recién entonces aprobar el deployment del mismo SHA.
+
+No hay nueva migración para este CLI. Production conserva seis migraciones y el
+evento lógico se codifica sobre la infraestructura `AuthEvent` ya desplegada.

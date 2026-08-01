@@ -1,5 +1,23 @@
 # Checklist de Doleth
 
+## Resultado del intento productivo — 2026-07-31
+
+- [x] Snapshot manual y branch de recuperación creados y verificados.
+- [x] Validación local: 808/808; aislamiento: 52/52; migraciones: 6/6.
+- [x] PR `#8` integrado; árbol resultante equivalente al SHA aprobado.
+- [x] Dos migraciones productivas aplicadas mediante `prisma migrate deploy`.
+- [x] Postflight: 5 claves y 8 FKs compuestas, cero cruces, saldos `MATCH`.
+- [x] Deployment `8f2746a…` construido y servido como `READY`.
+- [ ] Administrador activo disponible: bloqueado por usuario histórico
+  `USER / PENDING_VERIFICATION`.
+- [ ] Smoke A/B productivo: no iniciado.
+- [ ] Invitaciones reales: no creadas.
+- [x] Rollback de Vercel al deployment anterior `a3c4a54…`.
+- [x] Verificación final: cero 5xx, cero datos de smoke, integridad intacta.
+
+Estado: `ROLLED_BACK`. No reintentar hasta implementar y aprobar un flujo
+auditado de adopción del administrador histórico.
+
 Fecha: 2026-07-30
 
 Alcance aprobado: beta privada; Production todavía no autorizada.
@@ -143,3 +161,24 @@ Estas casillas no bloquean la beta privada; bloquean el lanzamiento público.
 - [ ] Registro público sigue deshabilitado.
 
 Estado actual: no merge, no migraciones Production, no deployment Production.
+
+## Gate de adopción histórica
+
+- [x] CLI dedicado; no usa `DATABASE_URL`.
+- [x] Host/proyecto/branch y entorno fallan cerrado.
+- [x] Production exige flag adicional.
+- [x] ID y email exactos se introducen en TTY.
+- [x] Frase fuerte; no acepta confirmación silenciosa.
+- [x] Dry-run `READ ONLY` y checksum estable.
+- [x] Solo `role`, `status` y `privateBetaActivatedAt`.
+- [x] `emailVerifiedAt`, identidad, password y `updatedAt` preservados.
+- [x] Auditoría atómica e idempotencia.
+- [x] Rehearsal PostgreSQL 18, 6/6.
+- [x] Suite estricta 843/843 sin skips; aislamiento explícito 52/52.
+- [x] Lint, TypeScript y build productivo local.
+- [ ] Preview nueva del SHA final.
+- [ ] Adopción sintética, login admin y smoke A/B repetidos.
+- [ ] Revisión humana del PR draft.
+- [ ] Autorización separada para dry-run Production.
+
+Las últimas cuatro casillas mantienen bloqueado cualquier deploy productivo.

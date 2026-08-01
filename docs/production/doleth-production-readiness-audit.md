@@ -1,5 +1,21 @@
 # Auditoría de preparación de Doleth
 
+## Actualización productiva — 2026-07-31
+
+Veredicto del intento: `ROLLED_BACK`.
+
+El PR `#8` fue integrado como `8f2746a456446d1705dce161aff2a97b74971e37`,
+las dos migraciones pendientes quedaron aplicadas con checksums 6/6 y el
+deployment productivo llegó a `READY`. El smoke se detuvo antes de escribir
+datos: el único usuario histórico es `USER / PENDING_VERIFICATION` y no existe
+un administrador activo. El operador aprobado no puede emitir invitaciones en
+ese estado y su bootstrap falla cerrado cuando la base no está vacía.
+
+Se restauró el alias de Vercel al deployment anterior `a3c4a54…`. Neon conserva
+las migraciones aditivas; el postflight final confirmó conteos intactos, cero
+cruces y saldos `MATCH`. El detalle está en
+`doleth-private-beta-production-release.md`.
+
 Fecha: 2026-07-30
 
 Rama: `codex/production-readiness-audit`

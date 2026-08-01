@@ -49,6 +49,11 @@ describe("neon production preflight helpers", () => {
     expect(source).toContain(`code !== "25006"`);
   });
 
+  it("casts the format parameter explicitly for PostgreSQL 18", () => {
+    expect(source).toContain("format('%I.%I', current_schema(), $1::text)");
+    expect(source).not.toContain("format('%I.%I', current_schema(), $1))");
+  });
+
   it("contains no database mutation commands outside the rejected probe", () => {
     expect(source.match(/\b(?:INSERT|UPDATE|DELETE|UPSERT|ALTER|DROP|TRUNCATE|GRANT|REVOKE|VACUUM)\b/g)).toEqual(
       null,
