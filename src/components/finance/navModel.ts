@@ -8,7 +8,8 @@ export type NavIconName =
   | "progress"
   | "reality"
   | "act"
-  | "investments";
+  | "investments"
+  | "currency";
 
 export interface Destination {
   href: string;
@@ -54,6 +55,7 @@ export const moreGroups: DestinationGroup[] = [
     items: [
       { href: "/cuentas", label: "Cuentas", compact: "Cuentas", icon: "wallet", hint: "Dónde está tu dinero." },
       { href: "/inversiones", label: "Inversiones", compact: "Inversiones", icon: "investments", hint: "Tu cartera y asignación." },
+      { href: "/configuracion/moneda", label: "Moneda", compact: "Moneda", icon: "currency", hint: "Leer tu plata en pesos o en dólares." },
     ],
   },
 ];

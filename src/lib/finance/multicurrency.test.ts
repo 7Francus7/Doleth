@@ -392,6 +392,30 @@ describe.skipIf(!hasDatabase)("ledger multimoneda", () => {
       expect(model.position.rows.every((row) => row.valuePrefix?.includes("US$"))).toBe(true);
     });
 
+    /**
+     * El total de arriba se convierte porque un total tiene que ser comparable.
+     * La tarjeta de una cuenta, no: una cuenta en dólares mostrada en pesos se
+     * lee como si fuera una cuenta en pesos, que es exactamente lo que no es.
+     */
+    it("cada cuenta se lee en su propia moneda aunque el total esté convertido", async () => {
+      await getDb().user.update({
+        where: { id: usuario.id },
+        data: { displayCurrency: "ARS", fxVariant: "BLUE" },
+      });
+      const model = await getNowModel(usuario.id);
+
+      const enDolares = model.accounts?.find((cuenta) => cuenta.id === dolares);
+      const enPesos = model.accounts?.find((cuenta) => cuenta.id === pesos);
+      expect(enDolares?.balancePrefix).toBe("US$");
+      // La cuenta en pesos quedó en rojo tras las transferencias de arriba: lo
+      // que importa acá es el símbolo, no el signo.
+      expect(enPesos?.balancePrefix).not.toContain("US$");
+      expect(enPesos?.balancePrefix).toContain("$");
+
+      // Y el hero sigue consolidando en la moneda de lectura.
+      expect(model.hero.valuePrefix).toBe("$");
+    });
+
     it("declara con qué cotización se leyó", async () => {
       await getDb().user.update({
         where: { id: usuario.id },

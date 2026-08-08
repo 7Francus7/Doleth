@@ -11,6 +11,9 @@ const paths: Record<NavIconName, React.ReactNode> = {
   reality: <><circle cx="12" cy="12" r="8" /><path d="m15 9-2.5 5.5L7 17l2.5-5.5z" /></>,
   act: <><path d="M13 3 5 13h6l-1 8 8-10h-6z" /></>,
   investments: <><path d="M12 4a8 8 0 1 0 8 8h-8z" /><path d="M12 4v8h8" /></>,
+  // Dos sentidos de cambio. Geométrico y sin relleno, como el resto: el ícono
+  // orienta, no explica —eso lo hace la etiqueta "Moneda" que va al lado—.
+  currency: <><path d="M4 9h13" /><path d="m14 6 3 3-3 3" /><path d="M20 15H7" /><path d="m10 12-3 3 3 3" /></>,
 };
 
 export function NavIcon({ name }: { name: NavIconName }) {

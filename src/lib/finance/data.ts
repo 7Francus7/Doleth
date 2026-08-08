@@ -271,7 +271,11 @@ export interface NowData {
     id: string;
     name: string;
     type: string;
+    /** Saldo ya convertido a la moneda de lectura: es el que suma al total. */
     balanceCents: bigint;
+    /** Saldo en la moneda propia de la cuenta, sin convertir. */
+    originalCents: bigint;
+    currency: string;
     archived: boolean;
   }[];
   /** Todos los próximos pagos PENDING: el horizonte se decide en el cálculo puro. */
@@ -345,6 +349,8 @@ export async function getNowData(userId: string, now = new Date()): Promise<NowD
       name: account.name,
       type: account.type,
       balanceCents: account.balanceCents,
+      originalCents: account.originalCents,
+      currency: account.currency,
       archived: account.status === "ARCHIVED",
     })),
     pending: pending.map((payment) => toCommitment(payment, balanceByAccount)),

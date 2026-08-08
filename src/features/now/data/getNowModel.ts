@@ -28,6 +28,12 @@ const plural = (count: number, one: string, many: string): string => (count === 
  * vigente, el historial cambiaría de números solo, y un historial que cambia
  * solo deja de ser evidencia de nada.
  */
+/** Signo y símbolo del saldo de una cuenta, en su propia moneda. */
+const accountPrefix = (cents: bigint, currency: string): string => {
+  const symbol = CURRENCY_SYMBOLS[currency as "ARS"] ?? currency;
+  return cents < 0n ? `-${symbol}` : symbol;
+};
+
 const movementPrefix = (type: "EXPENSE" | "INCOME" | "TRANSFER", currency: string): string => {
   const symbol = CURRENCY_SYMBOLS[currency as "ARS"] ?? currency;
   if (type === "EXPENSE") return `-${symbol}`;
@@ -297,8 +303,12 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
         id: account.id,
         name: account.name,
         type: ACCOUNT_TYPE_LABELS[account.type] ?? "Cuenta",
-        balance: money(account.balanceCents),
-        balancePrefix: signed(account.balanceCents),
+        // La tarjeta de una cuenta se lee en la moneda de esa cuenta. El total de
+        // arriba sí está convertido, porque un total tiene que ser comparable;
+        // una cuenta en dólares mostrada en pesos, en cambio, se lee como si
+        // fuera una cuenta en pesos, que es exactamente lo que no es.
+        balance: money(account.originalCents),
+        balancePrefix: accountPrefix(account.originalCents, account.currency),
         state: account.balanceCents < 0n ? "attention" : "stable",
       })),
     operational: [
