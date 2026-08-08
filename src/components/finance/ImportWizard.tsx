@@ -152,21 +152,26 @@ export function ImportWizard({ accounts }: { accounts: readonly AccountOption[] 
           <section className={importStyles.tableWrap}>
             <h2 className={importStyles.summaryTitle}>Fila por fila</h2>
             <div className={importStyles.tableScroll}>
+              {/*
+                Tres columnas y no cinco. En un teléfono, cinco dejaban el
+                importe fuera de pantalla, y el importe es justamente lo que se
+                viene a mirar. El número de fila y el estado bajan a la celda del
+                comercio: son contexto, no columnas que haya que alinear.
+              */}
               <table className={importStyles.table}>
                 <thead>
                   <tr>
-                    <th scope="col">#</th>
                     <th scope="col">Fecha</th>
                     <th scope="col">Comercio</th>
-                    <th scope="col">Importe</th>
-                    <th scope="col">Estado</th>
+                    <th className={importStyles.amount} scope="col">
+                      Importe
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.plan.rows.slice(0, 200).map((row) => (
                     <tr data-state={row.usable ? "ok" : "skip"} key={row.sourceRowNumber}>
-                      <td>{row.sourceRowNumber}</td>
-                      <td>{row.day ?? "—"}</td>
+                      <td className={importStyles.day}>{row.day ?? "—"}</td>
                       <td>
                         <span className={importStyles.merchant}>{row.merchant || "—"}</span>
                         {row.processor ? <span className={importStyles.tag}>{row.processor}</span> : null}
@@ -175,18 +180,19 @@ export function ImportWizard({ accounts }: { accounts: readonly AccountOption[] 
                             Cuota {row.installment.number}/{row.installment.total}
                           </span>
                         ) : null}
+                        <span className={importStyles.status}>
+                          {`Fila ${row.sourceRowNumber} · `}
+                          {row.usable
+                            ? "se importa"
+                            : row.duplicate
+                              ? DUPLICATE_MESSAGES[row.duplicate].toLowerCase()
+                              : row.issues.map((issue) => ROW_ISSUE_MESSAGES[issue].toLowerCase()).join(" ")}
+                        </span>
                       </td>
                       <td className={importStyles.amount}>
                         {row.amountCents === null
                           ? "—"
                           : `${row.amountCents < 0n ? "-" : "+"}${symbol}${formatCentsAR(abs(row.amountCents))}`}
-                      </td>
-                      <td className={importStyles.status}>
-                        {row.usable
-                          ? "Se importa"
-                          : row.duplicate
-                            ? DUPLICATE_MESSAGES[row.duplicate]
-                            : row.issues.map((issue) => ROW_ISSUE_MESSAGES[issue]).join(" ")}
                       </td>
                     </tr>
                   ))}

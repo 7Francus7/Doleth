@@ -87,7 +87,11 @@
   border-bottom: var(--border-width-hairline) solid var(--border-subtle);
   text-align: left;
   vertical-align: top;
-  white-space: nowrap;
+}
+
+/* El comercio es lo único que puede envolver: es texto, no un dato alineado. */
+.table td:nth-child(2) {
+  min-width: 12ch;
 }
 
 .table th {
@@ -119,6 +123,12 @@
   font-weight: 500;
 }
 
+/* La fecha no envuelve: partir "2026-08-05" en dos líneas la vuelve ilegible. */
+.day {
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+
 .tag {
   display: inline-block;
   margin-left: var(--space-8);
@@ -136,8 +146,15 @@
   text-align: right;
 }
 
+/*
+ * Estado de la fila, debajo del comercio. Es metadato y se comporta como tal:
+ * no compite con el nombre ni con el importe.
+ */
 .status {
-  color: var(--color-text-secondary);
+  display: block;
+  margin-top: var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
   white-space: normal;
 }
 
