@@ -10,7 +10,8 @@ export type NavIconName =
   | "act"
   | "investments"
   | "currency"
-  | "import";
+  | "import"
+  | "spending";
 
 export interface Destination {
   href: string;
@@ -45,6 +46,7 @@ export const moreGroups: DestinationGroup[] = [
   {
     title: "Entender",
     items: [
+      { href: "/en-que-se-fue", label: "En qué se fue", compact: "En qué", icon: "spending", hint: "Adónde fue tu plata este mes." },
       { href: "/cambios", label: "Cambios", compact: "Cambios", icon: "changes", hint: "Qué cambió respecto al período anterior." },
       { href: "/progreso", label: "Progreso", compact: "Progreso", icon: "progress", hint: "Cómo evolucionás mes a mes." },
       { href: "/mi-realidad", label: "Mi realidad", compact: "Realidad", icon: "reality", hint: "Tu situación financiera completa." },

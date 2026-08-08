@@ -1,0 +1,233 @@
+/*
+ * En qué se fue la plata.
+ *
+ * Cada fila es una unidad completa: nombre e importe arriba, barra de
+ * proporción, metadatos abajo. Apilada y no tabular, porque en un teléfono una
+ * tabla de cuatro columnas obliga a leer en zigzag y acá el trabajo es escanear
+ * una lista buscando lo que llama la atención.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-32);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.sectionIntro {
+  max-width: 60ch;
+  margin: calc(var(--space-4) * -1) 0 var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+/* --- Selector de mes ------------------------------------------------------ */
+
+/*
+ * Desborda hacia adentro: con doce meses no entra en un teléfono, y envolver en
+ * tres filas le daría al selector más peso visual que al número que encabeza la
+ * pantalla.
+ */
+.months {
+  display: flex;
+  gap: var(--space-8);
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
+  scrollbar-width: none;
+}
+
+.months::-webkit-scrollbar {
+  display: none;
+}
+
+.month {
+  padding: var(--space-8) var(--space-16);
+  border: var(--border-width-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.month[data-current] {
+  border-color: transparent;
+  background: var(--color-action-primary-bg, var(--color-mineral-700));
+  color: var(--color-text-inverse);
+}
+
+.month:hover:not([data-current]) {
+  border-color: var(--border-default);
+  color: var(--color-text-primary);
+}
+
+/* --- Encabezado ----------------------------------------------------------- */
+
+.stateLine {
+  max-width: min(100%, 42ch);
+  margin: 0;
+  color: var(--color-text-strong);
+  font-family: var(--font-instrument-serif);
+  font-size: var(--type-heading-l-size);
+  font-weight: normal;
+  letter-spacing: var(--type-heading-l-tracking);
+  line-height: var(--type-heading-l-line);
+}
+
+.heroValue {
+  margin-top: var(--space-20);
+}
+
+.heroLabel {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-label-m-size);
+  font-weight: var(--type-label-m-weight);
+}
+
+.heroNote {
+  margin: var(--space-8) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+/* --- Filas del desglose --------------------------------------------------- */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row,
+.recurringRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-16);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--color-surface-subtle);
+}
+
+.row:focus-visible {
+  outline: var(--border-width-hairline) solid var(--border-accent);
+  outline-offset: calc(var(--space-2) * -1);
+}
+
+.rowHead {
+  display: flex;
+  gap: var(--space-16);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.rowLabel {
+  min-width: 0;
+  color: var(--color-text-strong);
+  font-size: var(--type-body-m-size);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.rowAmount {
+  color: var(--color-text-strong);
+  font-family: var(--font-satoshi);
+  font-size: var(--type-data-m-size);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: var(--type-data-m-weight);
+  white-space: nowrap;
+}
+
+/*
+ * Barra de proporción. Sin color semántico: es una lectura de cuánto pesa, no
+ * un juicio. Pintar de rojo el rubro más grande afirmaría que gastar ahí está
+ * mal, y eso Doleth no lo sabe.
+ */
+.bar {
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-subtle);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-mineral-300);
+}
+
+.rowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-12);
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  letter-spacing: var(--type-label-s-tracking);
+}
+
+/*
+ * La dirección del cambio se dice con palabras ("+$12.000 vs. el mes anterior")
+ * y el color sólo acompaña. Un aumento de gasto tampoco es crítico por sí solo:
+ * puede ser el mes que compraste un colchón.
+ */
+.delta[data-direction="up"] {
+  color: var(--color-text-attention);
+}
+
+.delta[data-direction="down"] {
+  color: var(--color-text-accent);
+}
+
+.empty {
+  max-width: 60ch;
+  padding: var(--space-16);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-s-size);
+  line-height: var(--type-body-s-line);
+}
+
+/* --- Acciones del estado vacío -------------------------------------------- */
+
+.primaryLink {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  padding: 0 var(--space-24);
+  border-radius: var(--radius-sm);
+  background: var(--color-mineral-700);
+  color: var(--color-text-inverse);
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+  text-decoration: none;
+}
+
+.secondaryLink {
+  color: var(--color-text-accent);
+  font-size: var(--type-label-l-size);
+  font-weight: var(--type-label-l-weight);
+  text-decoration: none;
+}
+
+.secondaryLink:hover {
+  text-decoration: underline;
+}

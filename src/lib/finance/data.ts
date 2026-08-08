@@ -18,9 +18,11 @@ import {
   type UpcomingCommitment,
 } from "./projection";
 import type { RealityAccount, RealityInvestment, RealityMovement } from "./reality";
+import type { SpendingMovement } from "./spending";
 import { logServerError } from "../observability";
 import {
   monthPeriod,
+  previousMonth,
   resolvePeriod,
   type CloseAccount,
   type ClosePayment,
@@ -1008,4 +1010,122 @@ export async function getActData(userId: string): Promise<{
       accountBalanceCents: balanceByAccount.get(payment.plannedAccountId) ?? 0n,
     })),
   };
+}
+
+// ---------------------------------------------------------------------------
+// En qué se fue la plata (/en-que-se-fue). Sólo lee.
+// ---------------------------------------------------------------------------
+
+export interface SpendingData {
+  today: string;
+  month: string;
+  period: Period;
+  /** Meses con actividad registrada, del más nuevo al más viejo. */
+  availableMonths: string[];
+  movements: SpendingMovement[];
+  previousMovements: SpendingMovement[];
+  /** Ventana ancha para poder reconocer una cadencia mensual. */
+  recurringWindow: SpendingMovement[];
+  display: DisplayContext;
+  hasAccounts: boolean;
+}
+
+/** Meses hacia atrás que se miran para detectar un gasto que se repite. */
+const RECURRENCE_WINDOW_MONTHS = 6;
+
+/**
+ * Lectura de /en-que-se-fue.
+ *
+ * Trae tres conjuntos de una sola vez porque el reporte necesita los tres: el
+ * mes pedido, el anterior para comparar, y una ventana de seis meses para poder
+ * reconocer una cadencia. Mirando sólo el mes en curso no se vería ni una sola
+ * repetición mensual, que es justamente lo que hace útil al reporte.
+ *
+ * Los importes vienen valuados en la moneda de lectura: un total que mezcle
+ * pesos y dólares sin convertir no significa nada.
+ */
+export async function getSpendingData(
+  userId: string,
+  requestedMonth: string | undefined,
+  now = new Date(),
+): Promise<SpendingData> {
+  const db = getDb();
+  const today = todayInArgentina(now);
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth ?? "") ? requestedMonth! : today.slice(0, 7);
+  const period = monthPeriod(month, today);
+  const previous = monthPeriod(previousMonth(month), today);
+
+  const windowStart = new Date(`${period.start}T00:00:00.000Z`);
+  windowStart.setUTCMonth(windowStart.getUTCMonth() - RECURRENCE_WINDOW_MONTHS);
+
+  const [book, accountCount, rows, oldest] = await Promise.all([
+    resolveRateBook(userId, now),
+    db.account.count({ where: { userId } }),
+    db.transaction.findMany({
+      where: { userId, occurredOn: { gte: windowStart, lt: shiftDays(period.end, 1) } },
+      include: { sourceAccount: true, category: true },
+      orderBy: [{ occurredOn: "asc" }, { createdAt: "asc" }],
+    }),
+    db.transaction.findFirst({
+      where: { userId, voidedAt: null },
+      orderBy: { occurredOn: "asc" },
+      select: { occurredOn: true },
+    }),
+  ]);
+
+  const { valued, context } = valueAmounts(
+    rows.map((row) => ({ balanceCents: row.amountCents, currency: row.currency })),
+    book,
+    now,
+  );
+
+  const movements: SpendingMovement[] = rows.map((row, index) => ({
+    id: row.id,
+    occurredOn: dayString(row.occurredOn),
+    amountCents: valued[index] ?? 0n,
+    type: row.type,
+    voided: row.voidedAt !== null,
+    categoryId: row.categoryId,
+    categoryName: row.category?.name ?? null,
+    // La descripción es el nombre del comercio: lo importado ya llegó
+    // normalizado, y lo cargado a mano es lo que la persona escribió.
+    merchant: row.description || row.category?.name || "Sin detalle",
+    accountId: row.sourceAccountId,
+    accountName: row.sourceAccount.name,
+  }));
+
+  const inPeriod = (day: string, bounds: { start: string; end: string }) =>
+    day >= bounds.start && day <= bounds.end;
+
+  return {
+    today,
+    month,
+    period,
+    availableMonths: listMonths(oldest ? dayString(oldest.occurredOn) : today, today),
+    movements: movements.filter((movement) => inPeriod(movement.occurredOn, period)),
+    previousMovements: movements.filter((movement) => inPeriod(movement.occurredOn, previous)),
+    recurringWindow: movements,
+    display: context,
+    hasAccounts: accountCount > 0,
+  };
+}
+
+/**
+ * Meses entre el primer movimiento y hoy, del más nuevo al más viejo.
+ *
+ * Se listan sólo los meses que la persona puede haber vivido dentro de Doleth:
+ * ofrecer un selector con meses anteriores a su primer movimiento la invitaría a
+ * mirar pantallas vacías y a dudar de si faltan datos.
+ */
+function listMonths(firstDay: string, today: string): string[] {
+  const months: string[] = [];
+  let cursor = today.slice(0, 7);
+  const floor = firstDay.slice(0, 7);
+  // Tope defensivo: diez años de meses alcanzan y evitan un bucle infinito si
+  // alguna fecha viniera corrupta.
+  for (let guard = 0; guard < 120 && cursor >= floor; guard += 1) {
+    months.push(cursor);
+    cursor = previousMonth(cursor);
+  }
+  return months;
 }

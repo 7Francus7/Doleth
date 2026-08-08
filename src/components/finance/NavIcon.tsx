@@ -16,6 +16,9 @@ const paths: Record<NavIconName, React.ReactNode> = {
   currency: <><path d="M4 9h13" /><path d="m14 6 3 3-3 3" /><path d="M20 15H7" /><path d="m10 12-3 3 3 3" /></>,
   // Algo que entra y se apoya: una flecha hacia abajo sobre una bandeja.
   import: <><path d="M12 4v10" /><path d="m8 11 4 4 4-4" /><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" /></>,
+  // Proporciones de un todo: tres barras de distinto peso, que es exactamente
+  // lo que muestra la pantalla.
+  spending: <><path d="M4 7h16" /><path d="M4 12h10" /><path d="M4 17h6" /></>,
 };
 
 export function NavIcon({ name }: { name: NavIconName }) {
