@@ -36,6 +36,19 @@ enum SubscriptionStatus {
   CANCELED
 }
 
+/// Tipo de cambio. En Argentina "el dólar" no es un número sino varios, y la
+/// diferencia entre ellos cambia el patrimonio de una persona de forma material:
+/// por eso cuál se usa es una decisión explícita y no un default escondido.
+enum FxVariant {
+  OFICIAL
+  BLUE
+  MEP
+  CCL
+  CRIPTO
+  TARJETA
+  MANUAL
+}
+
 enum AuthTokenPurpose {
   EMAIL_VERIFICATION
   PASSWORD_RESET
@@ -80,6 +93,13 @@ model User {
   onboardingCompletedAt  DateTime?
   onboardingStep         Int                @default(0)
   primaryCurrency        String             @default("ARS")
+  /// Moneda en la que la persona *lee* su dinero. No cambia nada de lo guardado:
+  /// el ledger conserva cada importe en la moneda en que ocurrió y esto sólo
+  /// decide en qué unidad se presenta el consolidado.
+  displayCurrency        String             @default("ARS")
+  /// Qué dólar usa para esa lectura. Cambiarlo cambia el patrimonio mostrado,
+  /// así que es del usuario y no del sistema.
+  fxVariant              FxVariant          @default(BLUE)
   timeZone               String             @default("America/Argentina/Cordoba")
   locale                 String             @default("es-AR")
   planKey                PlanKey            @default(BASE)
@@ -104,6 +124,7 @@ model User {
   ledgerEntries             LedgerEntry[]
   investments               Investment[]
   upcomingPayments          UpcomingPayment[]
+  manualRates               ManualRate[]
 
   @@index([status])
 }
@@ -191,6 +212,57 @@ model OwnerBackfillRun {
   createdAt   DateTime @default(now())
 
   @@index([ownerUserId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Cotizaciones
+// ---------------------------------------------------------------------------
+
+/// Cotización pública, tal como la publicó un proveedor.
+///
+/// Es la única tabla del dominio financiero sin propietario, y a propósito: el
+/// precio del dólar no es un dato personal. Que una persona lo consulte no dice
+/// nada de su patrimonio, así que compartir la fila entre todos no rompe el
+/// aislamiento —no hay nada de nadie adentro— y evita pedirle la misma
+/// cotización al proveedor una vez por usuario.
+model MarketRate {
+  id            String    @id @default(cuid())
+  /// Moneda fuerte del par: `rateMicros` dice cuánto vale **una** unidad de ésta.
+  baseCurrency  String
+  quoteCurrency String
+  variant       FxVariant
+  /// Unidades de `quoteCurrency` por 1 de `baseCurrency`, en millonésimas enteras.
+  rateMicros    BigInt
+  provider      String
+  /// Momento que declara el proveedor. No es cuándo Doleth la bajó: una
+  /// cotización de ayer sigue siendo de ayer aunque se lea hoy.
+  asOf          DateTime
+  fetchedAt     DateTime  @default(now())
+
+  @@unique([baseCurrency, quoteCurrency, variant, asOf])
+  @@index([baseCurrency, quoteCurrency, variant, asOf])
+}
+
+/// Cotización propia. Manda sobre la pública mientras esté vigente.
+///
+/// Existe porque mucha gente compró sus dólares a un precio concreto, o usa una
+/// referencia que ningún proveedor publica. Obligarla a leer su patrimonio a un
+/// número que no reconoce como suyo sería negarle la realidad que Doleth dice
+/// ordenar.
+model ManualRate {
+  id            String   @id @default(cuid())
+  userId        String
+  baseCurrency  String
+  quoteCurrency String
+  rateMicros    BigInt
+  note          String?
+  asOf          DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, baseCurrency, quoteCurrency, asOf])
+  @@index([userId, baseCurrency, quoteCurrency, asOf])
 }
 
 // ---------------------------------------------------------------------------
@@ -285,6 +357,15 @@ model Transaction {
   userId               String
   type                 TransactionType
   amountCents          BigInt
+  /// Moneda de `amountCents`: siempre la de la cuenta de origen. Se denormaliza
+  /// para que un movimiento se pueda leer sin resolver la cuenta, y para que
+  /// cambiar de opinión sobre una cuenta no reescriba la historia de sus
+  /// movimientos.
+  currency             String           @default("ARS")
+  /// Importe acreditado en la cuenta de destino, cuando la transferencia cruza
+  /// monedas. `null` cuando ambas puntas usan la misma: ahí entra y sale lo
+  /// mismo y guardarlo dos veces sería invitar a que se desincronicen.
+  destinationAmountCents BigInt?
   occurredOn           DateTime         @db.Date
   description          String?
   sourceAccountId      String
