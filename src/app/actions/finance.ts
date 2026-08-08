@@ -6,6 +6,7 @@ import { UnauthorizedError, requireOnboardedUserForAction } from "../../lib/auth
 import { successForCorrection, successForMovement, successForVoid } from "../../lib/finance/actionFeedback";
 import { formatCentsAR } from "../../lib/finance/amount";
 import { FALLBACK_EXPENSE_SLUG } from "../../lib/finance/categories";
+import { isAccountKind, isLiabilityAccount } from "../../lib/finance/accountKind";
 import { CURRENCY_LABELS, SUPPORTED_CURRENCIES, isSupportedCurrency } from "../../lib/finance/currency";
 import { financeError, toSafeError } from "../../lib/finance/errors";
 import { sanitizeReturnPath } from "../../lib/navigation/returnPath";
@@ -202,6 +203,40 @@ export async function archiveInvestmentAction(formData: FormData): Promise<void>
   revalidatePath("/inversiones");
 }
 
+/**
+ * Lee los datos propios de una tarjeta de crédito.
+ *
+ * El día de cierre y el de vencimiento son obligatorios porque sin ellos la
+ * tarjeta no responde la única pregunta por la que existe como entidad aparte:
+ * cuándo hay que pagarla. Los días fuera del calendario se rechazan acá y la
+ * base los vuelve a rechazar: un 31 en un mes de 30 se resuelve al derivar la
+ * fecha concreta, no guardando un día imposible.
+ */
+function readCreditCardFields(formData: FormData) {
+  const closingDay = Number(value(formData, "closingDay"));
+  const dueDay = Number(value(formData, "dueDay"));
+  const last4 = value(formData, "last4");
+  const brand = value(formData, "brand");
+
+  const validDay = (day: number) => Number.isInteger(day) && day >= 1 && day <= 31;
+  if (!validDay(closingDay)) {
+    throw financeError("closing-day-invalid", "El día de cierre tiene que estar entre 1 y 31.", "closingDay");
+  }
+  if (!validDay(dueDay)) {
+    throw financeError("due-day-invalid", "El día de vencimiento tiene que estar entre 1 y 31.", "dueDay");
+  }
+  if (last4 && !/^\d{4}$/.test(last4)) {
+    throw financeError("last4-invalid", "Escribí los últimos cuatro dígitos, o dejalo vacío.", "last4");
+  }
+
+  return {
+    closingDay,
+    dueDay,
+    ...(last4 ? { last4 } : {}),
+    ...(brand ? { brand } : {}),
+  };
+}
+
 export async function createAccountAction(
   _previous: FinanceActionState,
   formData: FormData,
@@ -213,15 +248,18 @@ export async function createAccountAction(
     const currency = readCurrency(formData);
     const initialBalanceCents = parseMoneyToCents(value(formData, "initialBalance"), true);
     if (name.length < 2 || name.length > 60) throw new Error("El nombre debe tener entre 2 y 60 caracteres.");
-    if (!["CASH", "BANK", "WALLET", "SAVINGS", "OTHER"].includes(type)) {
-      throw new Error("Seleccioná un tipo de cuenta válido.");
-    }
+    if (!isAccountKind(type)) throw new Error("Seleccioná un tipo de cuenta válido.");
+
+    // Una tarjeta trae datos que ninguna otra cuenta tiene, y sin ellos no se
+    // puede saber cuándo cierra ni cuándo vence: se exigen al crearla, no
+    // después, para que no exista una tarjeta a medias.
+    const card = isLiabilityAccount(type) ? readCreditCardFields(formData) : null;
 
     const recentAccount = await getDb().account.findFirst({
       where: {
         userId: user.id,
         name,
-        type: type as "CASH",
+        type,
         currency,
         initialBalanceCents,
         createdAt: { gte: recentThreshold() },
@@ -230,10 +268,29 @@ export async function createAccountAction(
     if (recentAccount) return { ok: true, message: "Cuenta ya registrada. No se creó un duplicado." };
 
     await getDb().account.create({
-      data: { userId: user.id, name, type: type as "CASH", currency, initialBalanceCents },
+      data: {
+        userId: user.id,
+        name,
+        type,
+        currency,
+        initialBalanceCents,
+        // La tarjeta se crea junto con su cuenta: el nested create de Prisma
+        // resuelve las dos en una sola sentencia, así que no puede quedar una
+        // cuenta de tipo tarjeta sin su fecha de cierre.
+        // Sin `userId`: la relación compuesta (accountId, userId) lo hereda de la
+        // cuenta que se está creando, igual que los asientos del ledger.
+        // Repetirlo es inválido para Prisma y la FK compuesta igual verifica el
+        // propietario.
+        ...(card ? { creditCard: { create: card } } : {}),
+      },
     });
     refreshFinance();
-    return { ok: true, message: "Cuenta creada. El saldo inicial ya forma parte de tu patrimonio." };
+    return {
+      ok: true,
+      message: card
+        ? "Tarjeta creada. Su saldo cuenta como deuda y no como dinero disponible."
+        : "Cuenta creada. El saldo inicial ya forma parte de tu patrimonio.",
+    };
   } catch (error) {
     return errorState(error, "create-account");
   }

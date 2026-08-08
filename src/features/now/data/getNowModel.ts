@@ -5,9 +5,11 @@ import { describeDuePhraseAR, describeDueDateAR } from "../../../lib/finance/upc
 import { getInvestments, getNowData } from "../../../lib/finance/data";
 import { describeEquivalent, describeMissing, describeRate } from "../../../lib/finance/display";
 import { CURRENCY_SYMBOLS } from "../../../lib/finance/currency";
+import { accountTypeLabel } from "../../../lib/finance/accountKind";
 import {
   accountsMoneyCents,
   archivedMoneyCents,
+  debtCents,
   computeCoverage,
   patrimonyCents,
   projectBalance,
@@ -41,13 +43,7 @@ const movementPrefix = (type: "EXPENSE" | "INCOME" | "TRANSFER", currency: strin
   return symbol;
 };
 
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  CASH: "Efectivo",
-  BANK: "Banco",
-  WALLET: "Billetera",
-  SAVINGS: "Ahorro",
-  OTHER: "Otra",
-};
+
 
 async function getInvestmentsSummary(userId: string): Promise<NonNullable<NowViewModel["investments"]> | null> {
   try {
@@ -104,6 +100,10 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
   const baseCents = accountsMoneyCents(data.accounts);
   const totalPatrimonyCents = patrimonyCents(data.accounts);
   const archivedCents = archivedMoneyCents(data.accounts);
+  // Lo que se debe, positivo para poder decirlo en voz alta. Ya está restado del
+  // patrimonio por el signo del ledger: acá sólo se lo nombra.
+  const owedCents = debtCents(data.accounts);
+  const hasDebt = owedCents > 0n;
   const archivedCount = data.accounts.filter((account) => account.archived).length;
   const activeCount = data.accounts.length - archivedCount;
   const hasArchived = archivedCount > 0;
@@ -262,9 +262,13 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
           // vive acá: es detalle del cálculo, y este bloque es justamente el que
           // se abre para poder seguirlo.
           subtitle: rateLine ? `Saldos de tus cuentas activas, hoy · ${rateLine}` : "Saldos de tus cuentas activas, hoy",
-          summary: hasArchived
-            ? `Tu patrimonio total es ${symbol}${money(totalPatrimonyCents)}: incluye ${symbol}${money(archivedCents)} en cuentas archivadas, que no entran en esta lectura operativa.`
-            : `${committedLine} La proyección resta esos compromisos del dinero en tus cuentas.`,
+          // La deuda manda sobre lo archivado: no saber que se deben $240.000
+          // cambia una decisión, y tener una cuenta archivada casi nunca.
+          summary: hasDebt
+            ? `Tu patrimonio total es ${symbol}${money(totalPatrimonyCents)}: este número es sólo el dinero de tus cuentas y no descuenta los ${symbol}${money(owedCents)} que debés en tarjetas.`
+            : hasArchived
+              ? `Tu patrimonio total es ${symbol}${money(totalPatrimonyCents)}: incluye ${symbol}${money(archivedCents)} en cuentas archivadas, que no entran en esta lectura operativa.`
+              : `${committedLine} La proyección resta esos compromisos del dinero en tus cuentas.`,
           lines: evidenceLines,
           total: {
             label: "Dinero en tus cuentas",
@@ -302,7 +306,7 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
       .map((account) => ({
         id: account.id,
         name: account.name,
-        type: ACCOUNT_TYPE_LABELS[account.type] ?? "Cuenta",
+        type: accountTypeLabel(account.type),
         // La tarjeta de una cuenta se lee en la moneda de esa cuenta. El total de
         // arriba sí está convertido, porque un total tiene que ser comparable;
         // una cuenta en dólares mostrada en pesos, en cambio, se lee como si
@@ -360,6 +364,9 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
         : "Todavía no hay cuentas registradas.",
       causalLine: [
         "Los saldos se derivan del saldo inicial y del ledger, excluyendo movimientos anulados. Las transferencias entre tus cuentas no alteran el total.",
+        hasDebt
+          ? `Debés ${symbol}${money(owedCents)} en tarjetas: gastar con una tarjeta no saca plata de tus cuentas, la saca el día que pagás el resumen.`
+          : null,
         rateLine ? `Lo que está en otra moneda se convirtió a ${data.display.currency}: ${rateLine}` : null,
         missingLine,
       ]

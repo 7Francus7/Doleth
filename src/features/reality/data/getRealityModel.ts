@@ -1,6 +1,7 @@
 import "server-only";
 import type { FinancialRowProps } from "../../../design-system/composites/FinancialRow";
 import type { EvidenceBreakdown } from "../../evidence/model";
+import { accountTypeLabel } from "../../../lib/finance/accountKind";
 import { formatCents } from "../../../lib/finance/domain";
 import { describeMonthAR, describePlainDateAR } from "../../../lib/finance/movementDate";
 import { computeReality, type RealityResult, type RealitySignalId } from "../../../lib/finance/reality";
@@ -15,14 +16,6 @@ import type {
 const money = (cents: bigint): string => formatCents(cents < 0n ? -cents : cents);
 const prefix = (cents: bigint): string => (cents < 0n ? "-$" : "$");
 const plural = (count: number, one: string, many: string): string => (count === 1 ? one : many);
-
-const ACCOUNT_TYPE: Record<string, string> = {
-  CASH: "Efectivo",
-  BANK: "Banco",
-  WALLET: "Billetera virtual",
-  SAVINGS: "Ahorro",
-  OTHER: "Otra",
-};
 
 /**
  * Cómo se llama cada estado de la representación. "Completa para análisis" no
@@ -147,7 +140,7 @@ function accountRows(
   archived: boolean,
 ): FinancialRowProps[] {
   return accounts.map((account) => {
-    const type = ACCOUNT_TYPE[account.type] ?? "Cuenta";
+    const type = accountTypeLabel(account.type);
     const share =
       account.sharePercent === null ? null : `${account.sharePercent}% del dinero operativo`;
     const activity = account.lastActivityOn

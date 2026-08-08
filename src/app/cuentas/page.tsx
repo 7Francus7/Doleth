@@ -8,10 +8,11 @@ import { getAccountsWithBalances } from "../../lib/finance/data";
 import { requireOnboardedUser } from "../../lib/auth/guards";
 import styles from "../../components/finance/finance.module.css";
 
+import { accountTypeLabel } from "../../lib/finance/accountKind";
+
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Cuentas" };
 
-const typeLabel: Record<string, string> = { CASH: "Efectivo", BANK: "Banco", WALLET: "Billetera virtual", SAVINGS: "Ahorro", OTHER: "Otra" };
 
 export default async function AccountsPage() {
   const user = await requireOnboardedUser("/cuentas");
@@ -20,7 +21,7 @@ export default async function AccountsPage() {
     <OperationalShell eyebrow="Base financiera" title="Cuentas" intro="El saldo actual se deriva del saldo inicial y de todos los movimientos confirmados." actions={<Link className={styles.primaryLink} href="/cuentas/nueva">Crear cuenta</Link>}>
       {accounts.length ? <div className={styles.list}>{accounts.map((account) => (
         <div className={styles.listItem} key={account.id}>
-          <div className={styles.itemCopy}><span className={styles.itemTitle}>{account.name}</span><span className={styles.itemMeta}>{typeLabel[account.type]} · {account.currency} · {account.status === "ACTIVE" ? "Activa" : "Archivada"}</span></div>
+          <div className={styles.itemCopy}><span className={styles.itemTitle}>{account.name}</span><span className={styles.itemMeta}>{accountTypeLabel(account.type)} · {account.currency} · {account.status === "ACTIVE" ? "Activa" : "Archivada"}</span></div>
           <div className={styles.itemCopy}>
             <span className={styles.itemAmount}>
               <SensitiveAmount>{account.balanceCents < 0n ? "-" : ""}${formatCents(account.balanceCents < 0n ? -account.balanceCents : account.balanceCents)}</SensitiveAmount>

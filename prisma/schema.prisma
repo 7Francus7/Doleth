@@ -125,6 +125,7 @@ model User {
   investments               Investment[]
   upcomingPayments          UpcomingPayment[]
   manualRates               ManualRate[]
+  creditCards               CreditCard[]
 
   @@index([status])
 }
@@ -274,6 +275,12 @@ enum AccountType {
   BANK
   WALLET
   SAVINGS
+  /// Tarjeta de crédito: una deuda, no un lugar donde hay plata.
+  ///
+  /// Vive en el ledger como cualquier otra cuenta y con el mismo signo —gastar
+  /// deja el saldo en negativo— pero significa lo contrario. El tipo es la
+  /// declaración: no hace falta una columna aparte para saber que es pasivo.
+  CREDIT_CARD
   OTHER
 }
 
@@ -329,10 +336,40 @@ model Account {
   sourceTransactions  Transaction[]     @relation("TransactionSource")
   targetTransactions  Transaction[]     @relation("TransactionTarget")
   upcomingPayments    UpcomingPayment[]
+  creditCard          CreditCard?
 
   @@unique([id, userId])
   @@index([status])
   @@index([userId, status])
+}
+
+/// Los datos que una tarjeta tiene y una cuenta común no.
+///
+/// Vive aparte de `Account` en vez de agregarle seis columnas nulas a todas las
+/// cuentas del producto. La relación es uno a uno con la cuenta-deuda: la
+/// tarjeta *es* esa cuenta, esto sólo agrega lo que hace falta para saber cuándo
+/// cierra y cuándo vence.
+model CreditCard {
+  id               String   @id @default(cuid())
+  userId           String
+  /// Cuenta del ledger que representa la deuda de esta tarjeta.
+  accountId        String   @unique
+  brand            String?
+  /// Últimos cuatro dígitos. Es lo único del número que Doleth guarda, y sirve
+  /// para reconocer la tarjeta en un resumen o en un aviso de consumo.
+  last4            String?
+  /// Día del mes en que cierra el resumen.
+  closingDay       Int
+  /// Día del mes en que vence el pago.
+  dueDay           Int
+  creditLimitCents BigInt?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account          Account  @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@unique([accountId, userId])
+  @@index([userId])
 }
 
 model Category {

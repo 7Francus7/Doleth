@@ -9,6 +9,7 @@ import {
   buildTimeline,
   compareCommitments,
   computeCoverage,
+  debtCents,
   groupForDueDate,
   nextCivilMonth,
   patrimonyCents,
@@ -385,5 +386,61 @@ describe("importes: un solo formateador en todo el producto", () => {
   it("no pierde precisión con importes que exceden el entero seguro", () => {
     // Number(9007199254740993n) redondea a ...992: el formateador trabaja en bigint.
     expect(formatCents(9_007_199_254_740_993n)).toBe("90.071.992.547.409,93");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Deudas: una tarjeta de crédito no es un lugar donde hay plata.
+// ---------------------------------------------------------------------------
+
+describe("cuentas de deuda", () => {
+  const cuenta = (id: string, balanceCents: bigint, extra: Partial<ProjectionAccount> = {}): ProjectionAccount => ({
+    id,
+    name: id,
+    balanceCents,
+    archived: false,
+    ...extra,
+  });
+
+  /**
+   * El error que esta distinción evita es doble: si el saldo de la tarjeta
+   * entrara en la base, gastar con ella descontaría plata que todavía está en el
+   * banco, y pagar el resumen la volvería a descontar.
+   */
+  it("la deuda no entra en la base sobre la que se proyecta", () => {
+    const cuentas = [cuenta("banco", 500_000n), cuenta("visa", -240_000n, { liability: true })];
+    expect(accountsMoneyCents(cuentas)).toBe(500_000n);
+  });
+
+  it("la deuda sí resta del patrimonio, con su signo natural", () => {
+    const cuentas = [cuenta("banco", 500_000n), cuenta("visa", -240_000n, { liability: true })];
+    expect(patrimonyCents(cuentas)).toBe(260_000n);
+  });
+
+  it("informa lo que se debe como número positivo", () => {
+    const cuentas = [cuenta("banco", 500_000n), cuenta("visa", -240_000n, { liability: true })];
+    expect(debtCents(cuentas)).toBe(240_000n);
+  });
+
+  it("una tarjeta pagada de más deja saldo a favor y no se recorta en cero", () => {
+    expect(debtCents([cuenta("visa", 5_000n, { liability: true })])).toBe(-5_000n);
+  });
+
+  /**
+   * Archivar una tarjeta no cancela lo que se debe en ella. Ocultarlo sería un
+   * alivio falso.
+   */
+  it("una deuda archivada sigue contando como deuda", () => {
+    const cuentas = [cuenta("visa", -240_000n, { liability: true, archived: true })];
+    expect(debtCents(cuentas)).toBe(240_000n);
+    expect(patrimonyCents(cuentas)).toBe(-240_000n);
+    expect(accountsMoneyCents(cuentas)).toBe(0n);
+  });
+
+  it("sin deudas declaradas, nada cambia respecto de antes", () => {
+    const cuentas = [cuenta("banco", 500_000n), cuenta("efectivo", 20_000n)];
+    expect(accountsMoneyCents(cuentas)).toBe(520_000n);
+    expect(patrimonyCents(cuentas)).toBe(520_000n);
+    expect(debtCents(cuentas)).toBe(0n);
   });
 });

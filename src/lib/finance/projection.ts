@@ -34,6 +34,18 @@ export interface ProjectionAccount {
   name: string;
   balanceCents: bigint;
   archived: boolean;
+  /**
+   * ¿Es una deuda en vez de un lugar donde hay plata?
+   *
+   * Una tarjeta de crédito es el caso obvio: su saldo no es dinero disponible,
+   * es lo que se debe. Su saldo vive en el mismo ledger y con el mismo signo que
+   * cualquier otra cuenta —gastar deja el saldo en negativo— pero significa lo
+   * contrario, y por eso no puede entrar en la base sobre la que se proyecta.
+   *
+   * Opcional para no obligar a declararlo en cada lectura que sólo tiene cuentas
+   * comunes. Ausente equivale a `false`: lo que no se declara deuda, no lo es.
+   */
+  liability?: boolean;
 }
 
 export interface UpcomingCommitment {
@@ -93,19 +105,54 @@ export function nextMonthSameDay(day: string): string {
 const sumBalances = (accounts: readonly ProjectionAccount[]): bigint =>
   accounts.reduce((total, account) => total + account.balanceCents, 0n);
 
-/** Σ saldos de todas las cuentas. Fuente de verdad del patrimonio. */
+/**
+ * Σ saldos de todas las cuentas, deudas incluidas.
+ *
+ * Las deudas entran con su signo natural —negativo— así que restan solas. Es la
+ * definición correcta de patrimonio: lo que tenés menos lo que debés.
+ */
 export function patrimonyCents(accounts: readonly ProjectionAccount[]): bigint {
   return sumBalances(accounts);
 }
 
-/** Σ saldos de las cuentas activas: la base sobre la que se proyecta. */
+const isMoney = (account: ProjectionAccount) => !account.archived && !account.liability;
+
+/**
+ * Σ saldos de las cuentas activas que **contienen plata**: la base sobre la que
+ * se proyecta.
+ *
+ * Una tarjeta de crédito queda afuera, y ésa es la diferencia entera entre esta
+ * función y `patrimonyCents`. Sumar el saldo de una tarjeta acá haría que gastar
+ * con ella baje el número que responde "¿con cuánto cuento?", cuando gastar con
+ * una tarjeta no saca un peso de ningún lado hasta que se paga el resumen. El
+ * error sería doble: descontaría plata que todavía está, y volvería a
+ * descontarla al pagar.
+ */
 export function accountsMoneyCents(accounts: readonly ProjectionAccount[]): bigint {
-  return sumBalances(accounts.filter((account) => !account.archived));
+  return sumBalances(accounts.filter(isMoney));
 }
 
 /** Σ saldos de las cuentas archivadas: se declara cuando existe, nunca se oculta. */
 export function archivedMoneyCents(accounts: readonly ProjectionAccount[]): bigint {
   return sumBalances(accounts.filter((account) => account.archived));
+}
+
+/**
+ * Cuánto se debe, como número positivo.
+ *
+ * Se devuelve positivo porque es como se dice en voz alta: "debo 240.000", no
+ * "tengo menos 240.000". El signo negativo del ledger es correcto para sumar y
+ * pésimo para leer.
+ *
+ * Incluye las deudas archivadas: archivar una tarjeta no cancela lo que se debe
+ * en ella, y ocultarlo del total sería exactamente el tipo de alivio falso que
+ * Doleth no se puede permitir.
+ */
+export function debtCents(accounts: readonly ProjectionAccount[]): bigint {
+  // Invertir el signo, sin recortar en cero: una tarjeta pagada de más deja el
+  // saldo a favor y el resultado negativo, que se lee como "no debés nada, y
+  // encima tenés saldo". Recortarlo a cero perdería un hecho verdadero.
+  return -sumBalances(accounts.filter((account) => account.liability));
 }
 
 // ---------------------------------------------------------------------------

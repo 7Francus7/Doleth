@@ -2,6 +2,7 @@ import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
 import { valueAmounts, type DisplayContext } from "./display";
+import { isLiabilityAccount } from "./accountKind";
 import { resolveRateBook, type ResolvedRateBook } from "./rates/store";
 import { resilientRead, type AnalysisMovement } from "./analysis";
 import {
@@ -89,6 +90,9 @@ export async function getAccountsWithBalances(userId: string) {
     type: account.type,
     currency: account.currency,
     status: account.status,
+    // Derivado del tipo, nunca guardado: una columna aparte podría afirmar que
+    // una tarjeta no es un pasivo, y eso no significa nada.
+    liability: isLiabilityAccount(account.type),
     initialBalanceCents: account.initialBalanceCents,
     balanceCents: account.initialBalanceCents + (totalsByAccount.get(account.id) ?? 0n),
   }));
@@ -277,6 +281,8 @@ export interface NowData {
     originalCents: bigint;
     currency: string;
     archived: boolean;
+    /** El saldo es una deuda, no dinero disponible. */
+    liability: boolean;
   }[];
   /** Todos los próximos pagos PENDING: el horizonte se decide en el cálculo puro. */
   pending: UpcomingCommitment[];
@@ -352,6 +358,7 @@ export async function getNowData(userId: string, now = new Date()): Promise<NowD
       originalCents: account.originalCents,
       currency: account.currency,
       archived: account.status === "ARCHIVED",
+      liability: account.liability,
     })),
     pending: pending.map((payment) => toCommitment(payment, balanceByAccount)),
     recent:
@@ -466,7 +473,7 @@ export interface ConfirmedPayment {
 
 export interface UpcomingData {
   today: string;
-  accounts: { id: string; name: string; balanceCents: bigint; archived: boolean }[];
+  accounts: { id: string; name: string; balanceCents: bigint; archived: boolean; liability: boolean }[];
   pending: UpcomingCommitment[];
   /** Últimos pagos ya confirmados. No participan de compromiso ni proyección. */
   paid: ConfirmedPayment[];
@@ -502,6 +509,7 @@ export async function getUpcomingData(userId: string): Promise<UpcomingData> {
       name: account.name,
       balanceCents: account.balanceCents,
       archived: account.status === "ARCHIVED",
+      liability: account.liability,
     })),
     pending: pending.map((payment) => toCommitment(payment, balanceByAccount)),
     paid: paid.map((payment) => ({
@@ -719,6 +727,7 @@ export async function getProgressData(userId: string): Promise<ProgressData> {
     name: account.name,
     balanceCents: account.balanceCents,
     archived: account.status === "ARCHIVED",
+    liability: account.liability,
   }));
 
   return {
