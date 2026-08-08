@@ -55,6 +55,23 @@
   margin-top: var(--space-16);
 }
 
+/*
+ * Equivalente en la otra moneda. Numerales tabulares y tono secundario: es un
+ * dato, no un titular. Nunca toma color semántico, porque el estado ya lo
+ * comunica el número dominante y repetirlo acá sería emphasis sin decisión
+ * detrás.
+ */
+.secondaryValue {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-manrope);
+  font-size: var(--type-data-s-size);
+  font-weight: var(--type-data-s-weight);
+  letter-spacing: var(--type-data-s-tracking);
+  line-height: var(--type-data-s-line);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 .inlineNote {
   margin: var(--space-4) 0 0;
 }

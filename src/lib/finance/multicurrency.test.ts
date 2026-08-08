@@ -35,6 +35,7 @@ vi.mock("../auth/guards", async () => {
 const { correctMovementAction, createAccountAction, createInvestmentAction, createMovementAction, voidMovementAction } =
   await import("../../app/actions/finance");
 const { getAccountsWithBalances } = await import("./data");
+const { getNowModel } = await import("../../features/now/data/getNowModel");
 const { getDb } = await import("../db");
 
 const idle = { ok: false, message: "" };
@@ -325,7 +326,7 @@ describe.skipIf(!hasDatabase)("ledger multimoneda", () => {
      * desaparecen del patrimonio convertidos en cero. Quedan declarados aparte
      * para que la pantalla tenga que decirlo.
      */
-    it("sin cotización, los dólares se declaran en vez de contarse como cero", async () => {
+    it("sin cotización, los dólares se declaran en vez de contarse como cero (cálculo puro)", async () => {
       const cuentas = await getAccountsWithBalances(usuario.id);
       const importes = cuentas.map((cuenta) => money(cuenta.balanceCents, cuenta.currency as "ARS" | "USD"));
       const soloPesos = cuentas
@@ -336,6 +337,87 @@ describe.skipIf(!hasDatabase)("ledger multimoneda", () => {
       expect(result.totalCents).toBe(soloPesos);
       expect(result.complete).toBe(false);
       expect(result.missing.map((hueco) => hueco.currency)).toEqual(["USD"]);
+    });
+  });
+  /**
+   * La pantalla, de punta a punta.
+   *
+   * Es la única prueba que recorre el camino completo —ledger multimoneda,
+   * cotización guardada, preferencia de la persona, modelo de vista— y por eso
+   * es la que verifica lo que el usuario efectivamente ve: el símbolo correcto,
+   * el equivalente en la otra moneda, y la declaración cuando falta convertir.
+   */
+  describe("/ahora leído en cada moneda", () => {
+    const PROVEEDOR = "prueba-ahora";
+
+    beforeAll(async () => {
+      await getDb().marketRate.create({
+        data: {
+          baseCurrency: "USD",
+          quoteCurrency: "ARS",
+          variant: "BLUE",
+          rateMicros: 1_400n * RATE_SCALE,
+          provider: PROVEEDOR,
+          asOf: new Date(),
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await getDb().marketRate.deleteMany({ where: { provider: PROVEEDOR } });
+    });
+
+    it("en pesos muestra pesos y ofrece el equivalente en dólares", async () => {
+      await getDb().user.update({
+        where: { id: usuario.id },
+        data: { displayCurrency: "ARS", fxVariant: "BLUE" },
+      });
+      const model = await getNowModel(usuario.id);
+
+      expect(model.rail.items).toContain("ARS");
+      expect(model.hero.valuePrefix).toBe("$");
+      expect(model.hero.secondaryValue).toMatch(/^≈ US\$/);
+    });
+
+    it("en dólares cambia el símbolo de toda la pantalla, no sólo del hero", async () => {
+      await getDb().user.update({
+        where: { id: usuario.id },
+        data: { displayCurrency: "USD", fxVariant: "BLUE" },
+      });
+      const model = await getNowModel(usuario.id);
+
+      expect(model.rail.items).toContain("USD");
+      expect(model.hero.valuePrefix).toBe("US$");
+      expect(model.hero.secondaryValue).toMatch(/^≈ \$/);
+      expect(model.position.rows.every((row) => row.valuePrefix?.includes("US$"))).toBe(true);
+    });
+
+    it("declara con qué cotización se leyó", async () => {
+      await getDb().user.update({
+        where: { id: usuario.id },
+        data: { displayCurrency: "ARS", fxVariant: "BLUE" },
+      });
+      const model = await getNowModel(usuario.id);
+      expect(model.evidence?.subtitle).toContain("1 dólar = $1.400,00 (blue)");
+    });
+
+    /**
+     * El caso que el producto no puede permitirse: la persona tiene dólares y no
+     * hay cotización. El total no puede presentarse como completo, y la pantalla
+     * tiene que decir exactamente cuánto quedó afuera.
+     */
+    it("sin cotización, la pantalla lo dice en vez de mostrar un total falso", async () => {
+      await getDb().user.update({
+        where: { id: usuario.id },
+        data: { displayCurrency: "ARS", fxVariant: "MANUAL" },
+      });
+      const model = await getNowModel(usuario.id);
+
+      expect(model.rail.state).toBe("partial");
+      expect(model.rail.items).toContain("Información incompleta");
+      expect(model.hero.inlineNote).toContain("falta la cotización");
+      expect(model.hero.inlineNote).toContain("dólares");
+      expect(model.hero.secondaryValue).toBeUndefined();
     });
   });
 });

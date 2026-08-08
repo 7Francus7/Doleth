@@ -3,6 +3,8 @@ import { formatCents } from "../../../lib/finance/domain";
 import { describeDateAR } from "../../../lib/finance/movementDate";
 import { describeDuePhraseAR, describeDueDateAR } from "../../../lib/finance/upcomingDate";
 import { getInvestments, getNowData } from "../../../lib/finance/data";
+import { describeEquivalent, describeMissing, describeRate } from "../../../lib/finance/display";
+import { CURRENCY_SYMBOLS } from "../../../lib/finance/currency";
 import {
   accountsMoneyCents,
   archivedMoneyCents,
@@ -16,8 +18,22 @@ import {
 import type { NowProjection, NowViewModel } from "../model";
 
 const money = (cents: bigint): string => formatCents(cents < 0n ? -cents : cents);
-const signed = (cents: bigint): string => (cents < 0n ? "-$" : "$");
 const plural = (count: number, one: string, many: string): string => (count === 1 ? one : many);
+
+/**
+ * Signo y símbolo de una fila de movimiento, en la moneda en que ocurrió.
+ *
+ * Una fila de evidencia no se convierte: un gasto de US$ 50 es US$ 50 y no su
+ * equivalente de hoy en pesos. Si cada fila se recalculara con la cotización
+ * vigente, el historial cambiaría de números solo, y un historial que cambia
+ * solo deja de ser evidencia de nada.
+ */
+const movementPrefix = (type: "EXPENSE" | "INCOME" | "TRANSFER", currency: string): string => {
+  const symbol = CURRENCY_SYMBOLS[currency as "ARS"] ?? currency;
+  if (type === "EXPENSE") return `-${symbol}`;
+  if (type === "INCOME") return `+${symbol}`;
+  return symbol;
+};
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   CASH: "Efectivo",
@@ -71,6 +87,13 @@ function primaryAction(state: NowState): NowViewModel["actions"] {
 export async function getNowModel(userId: string): Promise<NowViewModel> {
   const [data, investments] = await Promise.all([getNowData(userId), getInvestmentsSummary(userId)]);
 
+  // El símbolo sale de la moneda de lectura de la persona, no de una constante:
+  // los mismos textos tienen que decir "US$" cuando lee en dólares. `signed`
+  // antepone el signo al símbolo y no al revés, porque "-US$ 100" se lee como un
+  // importe negativo y "US$ -100" se lee como un error de formato.
+  const symbol = data.display.symbol;
+  const signed = (cents: bigint): string => (cents < 0n ? `-${symbol}` : symbol);
+
   const hasAccounts = data.accounts.length > 0;
   const baseCents = accountsMoneyCents(data.accounts);
   const totalPatrimonyCents = patrimonyCents(data.accounts);
@@ -92,15 +115,28 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
 
   const horizonLabel = `hasta el ${describeDueDateAR(projection.horizonEnd, data.today).toLowerCase()}`;
   const committedLine = projection.hasCommitments
-    ? `Hay $${money(projection.committedCents)} comprometidos ${horizonLabel}.`
+    ? `Hay ${symbol}${money(projection.committedCents)} comprometidos ${horizonLabel}.`
     : "No hay pagos próximos cargados.";
 
-  // El rail declara la calidad de la lectura antes que cualquier número.
-  const informationComplete = data.movementCount > 0 && projection.hasCommitments && data.recent !== null;
+  // Declaración de la lectura multimoneda. `describeMissing` sólo devuelve texto
+  // cuando algo quedó sin convertir, así que su presencia es exactamente la
+  // señal de que el total no se puede presentar como completo.
+  const missingLine = describeMissing(data.display);
+  const rateLine = describeRate(data.display);
+  // El equivalente en la otra moneda acompaña al número dominante. Es `null`
+  // cuando no hay cotización: una equivalencia inventada es peor que ninguna.
+  const baseEquivalent = describeEquivalent(baseCents, data.display, data.book);
+
+  // El rail declara la calidad de la lectura antes que cualquier número. La
+  // moneda sale de la preferencia de la persona y ya no es una constante: decir
+  // "ARS" mientras se muestran dólares sería mentir en el lugar donde el
+  // producto promete transparencia.
+  const informationComplete =
+    data.movementCount > 0 && projection.hasCommitments && data.recent !== null && data.display.complete;
   const rail = {
     items: [
       "Dinero en cuentas",
-      "ARS",
+      data.display.stale ? `${data.display.currency} · cotización desactualizada` : data.display.currency,
       hasArchived ? "Incluye cuentas archivadas aparte" : "Personal",
       informationComplete ? "Información completa" : "Información incompleta",
     ] as const,
@@ -122,8 +158,8 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
         // Un proyectado negativo no es un saldo: es un faltante, y se dice así.
         headline: projection.hasCommitments
           ? projection.projectedCents < 0n
-            ? `Los pagos cargados superan tu dinero: faltarían $${money(projection.projectedCents)}.`
-            : `Después de los pagos cargados quedarían aproximadamente $${money(projection.projectedCents)}.`
+            ? `Los pagos cargados superan tu dinero: faltarían ${symbol}${money(projection.projectedCents)}.`
+            : `Después de los pagos cargados quedarían aproximadamente ${symbol}${money(projection.projectedCents)}.`
           : "Sin pagos cargados, tu proyección coincide con el dinero actual.",
         amount: money(projection.projectedCents),
         amountPrefix: signed(projection.projectedCents),
@@ -133,7 +169,7 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
           {
             label: "Comprometido",
             value: money(projection.committedCents),
-            valuePrefix: projection.committedCents > 0n ? "-$" : "$",
+            valuePrefix: projection.committedCents > 0n ? `-${symbol}` : symbol,
             state: "default" as const,
           },
           {
@@ -148,7 +184,7 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
           : `Sin próximos pagos cargados ${horizonLabel}.`,
         ...(projection.excludedCount > 0
           ? {
-              excludedNote: `${plural(projection.excludedCount, "Queda", "Quedan")} ${projection.excludedCount} ${plural(projection.excludedCount, "pago", "pagos")} por $${money(projection.excludedCents)} después de esa fecha: ${plural(projection.excludedCount, "no está incluido", "no están incluidos")} acá.`,
+              excludedNote: `${plural(projection.excludedCount, "Queda", "Quedan")} ${projection.excludedCount} ${plural(projection.excludedCount, "pago", "pagos")} por ${symbol}${money(projection.excludedCents)} después de esa fecha: ${plural(projection.excludedCount, "no está incluido", "no están incluidos")} acá.`,
             }
           : {}),
         linkLabel: "Ver próximos pagos",
@@ -165,7 +201,7 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
       label: account.name,
       amount: Number(account.balanceCents),
       displayValue: money(account.balanceCents),
-      valuePrefix: "$",
+      valuePrefix: symbol,
       ...(account.balanceCents < 0n ? { sign: "-" as const } : {}),
     }));
 
@@ -187,19 +223,23 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
           value: money(baseCents),
           valuePrefix: signed(baseCents),
           valueLabel: "Dinero en tus cuentas",
-          inlineNote: committedLine,
+          ...(baseEquivalent ? { secondaryValue: `≈ ${baseEquivalent}` } : {}),
+          // Lo que falta convertir manda sobre lo comprometido: un total que no
+          // incluye toda la plata de la persona es lo primero que tiene que
+          // saber, antes que cualquier proyección construida sobre él.
+          inlineNote: missingLine ?? committedLine,
           coverage: {
             title: "Cobertura de lo comprometido",
             value: coverage.percent,
             leftSummary: coverage.hasCommitments
               ? coverage.missingCents > 0n
-                ? `Faltan $${money(coverage.missingCents)}`
+                ? `Faltan ${symbol}${money(coverage.missingCents)}`
                 : "Cubierto"
               : "Sin pagos cargados",
-            rightSummary: `$${money(projection.committedCents)}`,
+            rightSummary: `${symbol}${money(projection.committedCents)}`,
             state: coverage.missingCents > 0n ? "atRisk" : "stable",
             accessibleLabel: coverage.hasCommitments
-              ? `Cobertura: $${money(coverage.coveredCents)} cubiertos de $${money(projection.committedCents)} comprometidos.`
+              ? `Cobertura: ${symbol}${money(coverage.coveredCents)} cubiertos de ${symbol}${money(projection.committedCents)} comprometidos.`
               : "Sin pagos próximos cargados.",
           },
         }
@@ -212,9 +252,12 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
       ? {
           status: "complete",
           title: "Cómo se calculó",
-          subtitle: "Saldos de tus cuentas activas, hoy",
+          // El rail es de cuatro ítems por diseño, así que la cotización usada
+          // vive acá: es detalle del cálculo, y este bloque es justamente el que
+          // se abre para poder seguirlo.
+          subtitle: rateLine ? `Saldos de tus cuentas activas, hoy · ${rateLine}` : "Saldos de tus cuentas activas, hoy",
           summary: hasArchived
-            ? `Tu patrimonio total es $${money(totalPatrimonyCents)}: incluye $${money(archivedCents)} en cuentas archivadas, que no entran en esta lectura operativa.`
+            ? `Tu patrimonio total es ${symbol}${money(totalPatrimonyCents)}: incluye ${symbol}${money(archivedCents)} en cuentas archivadas, que no entran en esta lectura operativa.`
             : `${committedLine} La proyección resta esos compromisos del dinero en tus cuentas.`,
           lines: evidenceLines,
           total: {
@@ -238,8 +281,8 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
     position: {
       title: "Este mes",
       rows: [
-        { label: "Ingresos", value: money(data.incomeCents), valuePrefix: "$" },
-        { label: "Gastos", value: money(data.expenseCents), valuePrefix: "$" },
+        { label: "Ingresos", value: money(data.incomeCents), valuePrefix: symbol },
+        { label: "Gastos", value: money(data.expenseCents), valuePrefix: symbol },
         {
           label: "Diferencia",
           value: money(data.monthlyBalanceCents),
@@ -269,11 +312,11 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
               label: payment.concept,
               supportingLabel: `${describeDueDateAR(payment.dueOn, data.today)} · ${payment.accountName}`,
               value: money(payment.amountCents),
-              valuePrefix: "$",
+              valuePrefix: symbol,
               href: `/proximo/${payment.id}`,
               state: payment.dueOn < data.today ? ("attention" as const) : ("default" as const),
             }))
-          : [{ label: "No hay pagos próximos cargados", value: "0", valuePrefix: "$" }],
+          : [{ label: "No hay pagos próximos cargados", value: "0", valuePrefix: symbol }],
       },
       {
         title: "Movimientos recientes",
@@ -291,11 +334,11 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
                     label: movement.description,
                     supportingLabel: `${describeDateAR(movement.occurredOn, data.today)} · ${movement.accountName}${movement.voided ? (movement.corrected ? " · Corregido" : " · Anulado") : ""}`,
                     value: money(movement.amountCents),
-                    valuePrefix: movement.type === "EXPENSE" ? "-$" : movement.type === "INCOME" ? "+$" : "$",
+                    valuePrefix: movementPrefix(movement.type, movement.currency),
                     href: `/movimientos/${movement.id}`,
                     state: movement.voided ? ("partial" as const) : ("default" as const),
                   }))
-                : [{ label: "Todavía no registraste movimientos", value: "0", valuePrefix: "$" }],
+                : [{ label: "Todavía no registraste movimientos", value: "0", valuePrefix: symbol }],
             }),
       },
     ],
@@ -305,8 +348,13 @@ export async function getNowModel(userId: string): Promise<NowViewModel> {
       primaryLine: hasAccounts
         ? `${activeCount} ${plural(activeCount, "cuenta activa", "cuentas activas")}${archivedCount > 0 ? ` y ${archivedCount} ${plural(archivedCount, "archivada", "archivadas")} fuera de esta lectura` : ""}; ${projection.includedCount} ${plural(projection.includedCount, "pago próximo considerado", "pagos próximos considerados")}.`
         : "Todavía no hay cuentas registradas.",
-      causalLine:
+      causalLine: [
         "Los saldos se derivan del saldo inicial y del ledger, excluyendo movimientos anulados. Las transferencias entre tus cuentas no alteran el total.",
+        rateLine ? `Lo que está en otra moneda se convirtió a ${data.display.currency}: ${rateLine}` : null,
+        missingLine,
+      ]
+        .filter(Boolean)
+        .join(" "),
       linkLabel: "Ver movimientos",
       linkHref: "/movimientos",
       state: informationComplete ? "complete" : "partial",

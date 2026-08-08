@@ -1,6 +1,8 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
+import { valueAmounts, type DisplayContext } from "./display";
+import { resolveRateBook, type ResolvedRateBook } from "./rates/store";
 import { resilientRead, type AnalysisMovement } from "./analysis";
 import {
   equivalentMonthPeriods,
@@ -90,6 +92,55 @@ export async function getAccountsWithBalances(userId: string) {
     initialBalanceCents: account.initialBalanceCents,
     balanceCents: account.initialBalanceCents + (totalsByAccount.get(account.id) ?? 0n),
   }));
+}
+
+/**
+ * Cuentas con su saldo ya expresado en la moneda de lectura de la persona.
+ *
+ * Es el único lugar donde las pantallas deberían tomar saldos: convierte una
+ * vez, al entrar, y entrega junto con los números el contexto que dice con qué
+ * cotización se hizo y qué quedó afuera. La capa de cálculo que viene después
+ * sigue trabajando en una sola moneda y no se entera de que existe otra.
+ *
+ * `originalCents` y `currency` viajan igual, porque el saldo de una cuenta en
+ * dólares se tiene que poder seguir leyendo en dólares: convertirlo para el
+ * total no puede significar perderlo de vista en su propia moneda.
+ */
+export async function getValuedAccounts(userId: string, now = new Date()) {
+  const [accounts, book] = await Promise.all([getAccountsWithBalances(userId), resolveRateBook(userId, now)]);
+  const { valued, context } = valueAmounts(accounts, book, now);
+
+  return {
+    book,
+    context,
+    accounts: accounts.map((account, index) => ({
+      ...account,
+      originalCents: account.balanceCents,
+      balanceCents: valued[index] ?? 0n,
+    })),
+  };
+}
+
+/**
+ * Convierte importes de movimientos a la moneda de lectura.
+ *
+ * Un movimiento guarda su importe en la moneda de la cuenta de la que salió, así
+ * que sumar gastos de un mes sin convertir daría un número sin significado. Los
+ * huecos de conversión de esta lista no se declaran aparte: la pantalla ya
+ * declara los de sus saldos, que provienen de las mismas cuentas y de la misma
+ * cotización faltante.
+ */
+function valueMovementAmounts<T extends { amountCents: bigint; currency: string }>(
+  movements: readonly T[],
+  book: ResolvedRateBook,
+  now: Date,
+): T[] {
+  const { valued } = valueAmounts(
+    movements.map((movement) => ({ balanceCents: movement.amountCents, currency: movement.currency })),
+    book,
+    now,
+  );
+  return movements.map((movement, index) => ({ ...movement, amountCents: valued[index] ?? 0n }));
 }
 
 export async function getMovementFormData(userId: string) {
@@ -197,6 +248,16 @@ export interface RecentMovement {
   type: "EXPENSE" | "INCOME" | "TRANSFER";
   description: string;
   amountCents: bigint;
+  /**
+   * Moneda del movimiento, sin convertir.
+   *
+   * Una fila de evidencia se lee en la moneda en que ocurrió: un gasto de
+   * US$ 50 es US$ 50, no su equivalente aproximado en pesos a la cotización de
+   * hoy. Convertir cada fila haría que el historial cambiara de números cada vez
+   * que se mueve el dólar, y un historial que cambia solo deja de ser evidencia.
+   * El que se convierte es el total, que es el que tiene que ser comparable.
+   */
+  currency: string;
   occurredOn: string;
   accountName: string;
   voided: boolean;
@@ -221,6 +282,18 @@ export interface NowData {
   incomeCents: bigint;
   expenseCents: bigint;
   monthlyBalanceCents: bigint;
+  /**
+   * En qué moneda están los importes de arriba, con qué cotización se llegó a
+   * ellos y qué quedó sin convertir. La pantalla no puede mostrar el total sin
+   * mirar esto: `complete` es lo que autoriza a presentarlo como total.
+   */
+  display: DisplayContext;
+  /**
+   * Cotizaciones resueltas para esta persona. Viaja para que la vista pueda
+   * expresar un total en la otra moneda sin volver a consultar la base ni
+   * arriesgarse a usar una cotización distinta de la que produjo los números.
+   */
+  book: ResolvedRateBook;
 }
 
 /**
@@ -229,16 +302,16 @@ export interface NowData {
  * Los movimientos recientes son secundarios y degradan a `null` para que la
  * pantalla pueda decir qué no pudo cargar sin perder el saldo principal.
  */
-export async function getNowData(userId: string): Promise<NowData> {
+export async function getNowData(userId: string, now = new Date()): Promise<NowData> {
   const db = getDb();
-  const today = todayInArgentina();
+  const today = todayInArgentina(now);
   const { start, end } = monthBounds(today.slice(0, 7));
 
-  const [accounts, monthMovements, pending, movementCount, recent] = await Promise.all([
-    getAccountsWithBalances(userId),
+  const [valuedAccounts, monthMovements, pending, movementCount, recent] = await Promise.all([
+    getValuedAccounts(userId, now),
     db.transaction.findMany({
       where: { userId, occurredOn: { gte: start, lt: end } },
-      select: { type: true, amountCents: true, voidedAt: true },
+      select: { type: true, amountCents: true, currency: true, voidedAt: true },
     }),
     db.upcomingPayment.findMany({
       where: { userId, status: "PENDING" },
@@ -257,10 +330,15 @@ export async function getNowData(userId: string): Promise<NowData> {
     ),
   ]);
 
+  const { accounts, book, context } = valuedAccounts;
   const balanceByAccount = new Map(accounts.map((account) => [account.id, account.balanceCents]));
-  const { incomeCents, expenseCents, balanceCents } = summarizeMonth(monthMovements);
+  const { incomeCents, expenseCents, balanceCents } = summarizeMonth(
+    valueMovementAmounts(monthMovements, book, now),
+  );
 
   return {
+    display: context,
+    book,
     today,
     accounts: accounts.map((account) => ({
       id: account.id,
@@ -276,6 +354,7 @@ export async function getNowData(userId: string): Promise<NowData> {
         type: movement.type,
         description: movementLabel(movement),
         amountCents: movement.amountCents,
+        currency: movement.currency,
         occurredOn: dayString(movement.occurredOn),
         accountName: accountLabel(movement),
         voided: movement.voidedAt !== null,

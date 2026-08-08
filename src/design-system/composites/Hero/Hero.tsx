@@ -17,6 +17,15 @@ export type HeroTone = "raised" | "state-raised";
 interface HeroBaseProps {
   stateText: string;
   valueLabel: string;
+  /**
+   * El mismo importe en la otra moneda.
+   *
+   * Se lee debajo del número dominante, en tamaño de dato chico y tono
+   * secundario: hay una sola verdad dominante por pantalla, y el equivalente
+   * acompaña esa verdad en vez de competir con ella. Es lo que permite leer
+   * "en pesos y en dólares" sin partir la pantalla en dos modos.
+   */
+  secondaryValue?: string;
   inlineNote?: string;
   tone?: HeroTone;
   className?: string;
@@ -52,6 +61,7 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
     scenario,
     stateText,
     valueLabel,
+    secondaryValue,
     inlineNote,
     tone = "raised",
     className,
@@ -150,6 +160,11 @@ export const Hero = forwardRef<HTMLButtonElement, HeroProps>(function Hero(
             ) : (
               animatedValue
             )}
+            {secondaryValue ? (
+              <p className={styles.secondaryValue}>
+                <SensitiveText>{secondaryValue}</SensitiveText>
+              </p>
+            ) : null}
             <Label size="m" tone="secondary">
               {valueLabel}
             </Label>
