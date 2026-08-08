@@ -30,6 +30,11 @@ Variables obligatorias:
 | `DOLETH_EMAIL_FROM` | remitente verificado en el proveedor |
 | `DOLETH_APP_URL` | URL pública, para armar los enlaces de los correos |
 
+Las cotizaciones de dólar se bajan de `dolarapi.com`. El entorno donde corra la
+aplicación tiene que permitir salida HTTPS a ese host; si no, Doleth sigue
+funcionando con la última cotización guardada o con la que cargue la persona, y
+lo declara en pantalla.
+
 Cada persona entra con su propia cuenta: correo y contraseña, con verificación y
 recuperación por correo real. La clave única compartida de la etapa de un solo
 usuario ya no existe. Ver `.env.example` para la lista completa.
@@ -110,7 +115,8 @@ El formato se documenta en
 
 ## Modelo financiero
 
-- Los importes se almacenan como centavos enteros (`BigInt`).
+- Los importes se almacenan como centavos enteros (`BigInt`). Nunca hay punto
+  flotante en el dominio.
 - Un ingreso suma y un gasto resta patrimonio.
 - Una transferencia entre cuentas propias tiene efecto patrimonial cero.
 - Un anulado queda visible pero no participa de saldos.
@@ -118,6 +124,52 @@ El formato se documenta en
 - Los próximos pagos no alteran el ledger hasta confirmarse.
 - Las inversiones se muestran aparte para evitar doble conteo con cuentas.
 - El `CHECK Transaction_accounts_by_type` exige categoría en ingresos y gastos.
+
+### Monedas
+
+Cada cuenta y cada movimiento conservan la moneda en la que ocurrieron. La
+persona elige en qué moneda **lee** su patrimonio y con qué tipo de cambio
+(oficial, blue, MEP, CCL, cripto, tarjeta o el suyo propio). Esa elección es una
+lente: no modifica ni un importe guardado.
+
+La conversión ocurre una sola vez, al entrar a la capa de lectura. **Un total
+incompleto nunca se presenta como total**: lo que no tiene cotización se declara
+aparte en vez de contarse como cero. Ver `src/lib/finance/valuation.ts` y
+`display.ts`.
+
+Una transferencia entre monedas distintas guarda los dos importes: sale una
+cantidad de pesos y entra una cantidad de dólares. Doleth pide el importe
+acreditado en vez de calcularlo, porque el precio que le hicieron a esa persona
+es un hecho de esa operación y no el promedio del mercado.
+
+### Tarjetas de crédito
+
+Una tarjeta es una cuenta de tipo `CREDIT_CARD`: su saldo es una deuda, no dinero
+disponible. Gastar con ella **no** reduce "dinero en tus cuentas"; la plata sale
+el día que se paga el resumen, que es una transferencia de la cuenta bancaria a
+la tarjeta. `accountsMoneyCents` la excluye, `patrimonyCents` la incluye con su
+signo natural y `debtCents` la nombra en positivo.
+
+### Importación de resúmenes
+
+`/importar` lee un CSV, propone los movimientos y **no escribe nada** hasta que se
+confirma. El lote entero se guarda en una transacción y se puede deshacer:
+deshacer anula, nunca borra. Todas las filas quedan registradas, incluidas las que
+no se pudieron usar. Ver `src/lib/import/`.
+
+### Inversiones
+
+Una tenencia con cantidad y símbolo se valúa multiplicando por el último precio
+conocido, así que el valor se actualiza sin que nadie toque nada. Una sin cantidad
+—un inmueble— conserva el valor declarado. Cada fila dice de dónde sale su
+número: precio de mercado, precio propio, o valor escrito a mano.
+
+### Reportes
+
+`/en-que-se-fue` desglosa el gasto del mes por categoría, comercio y medio de
+pago. Las transferencias entre cuentas propias no son gasto y quedan afuera:
+contarlas inflaría el total con dinero que sigue estando. Las participaciones
+suman el total exacto.
 
 ## Operación y release
 
