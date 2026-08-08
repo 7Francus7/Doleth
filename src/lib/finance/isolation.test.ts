@@ -10,7 +10,7 @@ import {
   getOwnedUpcomingPayment,
   getUpcomingPayments,
 } from "./data";
-import { createTestUser, deleteTestUser, hasDatabase, type TestUser } from "../../test/fixtures";
+import { FIXTURE_MONTH, createTestUser, deleteTestUser, hasDatabase, type TestUser } from "../../test/fixtures";
 
 /**
  * Aislamiento de la capa de lectura.
@@ -53,14 +53,14 @@ describe.skipIf(!hasDatabase)("aislamiento de datos entre usuarios · lectura", 
   });
 
   it("el historial de movimientos no cruza usuarios", async () => {
-    const { movements, accounts } = await getMovements(alicia.id, { month: "2026-07" });
+    const { movements, accounts } = await getMovements(alicia.id, { month: FIXTURE_MONTH });
     expect(movements.map((movimiento) => movimiento.id)).toContain(alicia.transactionId);
     expect(movements.map((movimiento) => movimiento.id)).not.toContain(bruno.transactionId);
     expect(accounts.map((cuenta) => cuenta.id)).not.toContain(bruno.accountId);
   });
 
   it("filtrar por una cuenta ajena no devuelve nada", async () => {
-    const { movements } = await getMovements(alicia.id, { month: "2026-07", accountId: bruno.accountId });
+    const { movements } = await getMovements(alicia.id, { month: FIXTURE_MONTH, accountId: bruno.accountId });
     expect(movements).toHaveLength(0);
   });
 
@@ -111,7 +111,7 @@ describe.skipIf(!hasDatabase)("aislamiento de datos entre usuarios · lectura", 
     });
     try {
       expect(await getAccountsWithBalances(nuevo.id)).toHaveLength(0);
-      expect((await getMovements(nuevo.id, { month: "2026-07" })).movements).toHaveLength(0);
+      expect((await getMovements(nuevo.id, { month: FIXTURE_MONTH })).movements).toHaveLength(0);
       expect(await getInvestments(nuevo.id)).toHaveLength(0);
       expect((await getUpcomingPayments(nuevo.id)).payments).toHaveLength(0);
       expect((await getDashboardData(nuevo.id)).totalCents).toBe(0n);

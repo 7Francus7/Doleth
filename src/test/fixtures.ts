@@ -1,7 +1,27 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "../lib/db";
 import { DEFAULT_CATEGORIES } from "../lib/finance/categories";
-import { createPostings } from "../lib/finance/domain";
+import { createPostings, todayInArgentina } from "../lib/finance/domain";
+
+/**
+ * Mes de los datos sembrados.
+ *
+ * Se deriva de hoy y no de una fecha escrita a mano. Las lecturas de panel
+ * (`getDashboardData`, `getNowData`) resumen el **mes en curso**: un fixture con
+ * mes fijo deja de aparecer en ese resumen apenas cambia el calendario, y la
+ * suite pasa de verde a roja sin que nadie haya tocado el código.
+ */
+export const FIXTURE_MONTH = todayInArgentina().slice(0, 7);
+
+/** Día del gasto sembrado. Cae siempre dentro de `FIXTURE_MONTH`. */
+export const FIXTURE_MOVEMENT_DAY = `${FIXTURE_MONTH}-10`;
+
+/** Último día de `FIXTURE_MONTH`: vencimiento del pago previsto sembrado. */
+export const FIXTURE_DUE_DAY = (() => {
+  const [year, month] = FIXTURE_MONTH.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
+  return `${FIXTURE_MONTH}-${String(lastDay).padStart(2, "0")}`;
+})();
 
 /**
  * Ayudas para las pruebas de integración.
@@ -86,7 +106,7 @@ export async function createTestUser(label: string): Promise<TestUser> {
       userId: user.id,
       type: "EXPENSE",
       amountCents: 12_345n,
-      occurredOn: new Date("2026-07-10T00:00:00.000Z"),
+      occurredOn: new Date(`${FIXTURE_MOVEMENT_DAY}T00:00:00.000Z`),
       description: `Gasto de ${label}`,
       sourceAccountId: account.id,
       categoryId: category.id,
@@ -110,7 +130,7 @@ export async function createTestUser(label: string): Promise<TestUser> {
         userId: user.id,
         concept: `Alquiler ${label}`,
         estimatedCents: 300_000n,
-        dueOn: new Date("2026-07-31T00:00:00.000Z"),
+        dueOn: new Date(`${FIXTURE_DUE_DAY}T00:00:00.000Z`),
         plannedAccountId: account.id,
       },
     }),
