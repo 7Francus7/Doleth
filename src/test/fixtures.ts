@@ -167,9 +167,16 @@ export async function deleteTestUser(userId: string): Promise<void> {
   await db.user.delete({ where: { id: userId } });
 }
 
-/** FormData al estilo de los formularios de la aplicación. */
-export function formData(values: Record<string, string>): FormData {
+/**
+ * FormData al estilo de los formularios de la aplicación.
+ *
+ * Los archivos van en un segundo argumento y no mezclados con el resto: un
+ * `Record<string, string | File>` obligaría a cada llamada existente a cargar
+ * con un tipo que no usa, y son varias decenas.
+ */
+export function formData(values: Record<string, string>, files: Record<string, File> = {}): FormData {
   const data = new FormData();
   for (const [key, value] of Object.entries(values)) data.append(key, value);
+  for (const [key, file] of Object.entries(files)) data.append(key, file);
   return data;
 }

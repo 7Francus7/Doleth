@@ -9,7 +9,8 @@ export type NavIconName =
   | "reality"
   | "act"
   | "investments"
-  | "currency";
+  | "currency"
+  | "import";
 
 export interface Destination {
   href: string;
@@ -55,6 +56,7 @@ export const moreGroups: DestinationGroup[] = [
     items: [
       { href: "/cuentas", label: "Cuentas", compact: "Cuentas", icon: "wallet", hint: "Dónde está tu dinero." },
       { href: "/inversiones", label: "Inversiones", compact: "Inversiones", icon: "investments", hint: "Tu cartera y asignación." },
+      { href: "/importar", label: "Importar", compact: "Importar", icon: "import", hint: "Subir el resumen del banco o la tarjeta." },
       { href: "/configuracion/moneda", label: "Moneda", compact: "Moneda", icon: "currency", hint: "Leer tu plata en pesos o en dólares." },
     ],
   },

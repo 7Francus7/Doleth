@@ -126,6 +126,8 @@ model User {
   upcomingPayments          UpcomingPayment[]
   manualRates               ManualRate[]
   creditCards               CreditCard[]
+  importBatches             ImportBatch[]
+  importRows                ImportRow[]
 
   @@index([status])
 }
@@ -213,6 +215,81 @@ model OwnerBackfillRun {
   createdAt   DateTime @default(now())
 
   @@index([ownerUserId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Importación
+// ---------------------------------------------------------------------------
+
+enum ImportStatus {
+  /// Leído y propuesto, sin escribir nada en el ledger.
+  PREVIEWED
+  /// Confirmado: sus filas ya son movimientos.
+  COMMITTED
+  /// Revertido mediante anulaciones trazables. Los movimientos siguen visibles.
+  REVERTED
+}
+
+/// Un archivo importado, con todo lo necesario para poder deshacerlo.
+///
+/// El lote existe para que un import sea reversible **en bloque**. Sin él, quien
+/// importa un archivo equivocado tiene que encontrar y anular doscientos
+/// movimientos a mano, y el miedo a eso hace que nadie use el importador.
+model ImportBatch {
+  id             String       @id @default(cuid())
+  userId         String
+  /// Cuenta a la que se imputaron los movimientos.
+  accountId      String
+  originalName   String
+  /// Huella del contenido. Permite avisar "este archivo ya lo importaste" aunque
+  /// venga con otro nombre, que es como los homebanking los descargan.
+  fileSha256     String
+  status         ImportStatus @default(PREVIEWED)
+  /// Cómo se leyó: mapeo de columnas, orden de fecha, convención de signo. Se
+  /// guarda para poder explicar después por qué una fila quedó como quedó.
+  settingsJson   String
+  rowCount       Int
+  committedCount Int          @default(0)
+  skippedCount   Int          @default(0)
+  createdAt      DateTime     @default(now())
+  committedAt    DateTime?
+  revertedAt     DateTime?
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account        Account      @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
+  rows           ImportRow[]
+
+  @@unique([id, userId])
+  @@index([userId, createdAt])
+  @@index([userId, fileSha256])
+}
+
+/// Una fila del archivo, con lo que se leyó y en qué terminó.
+///
+/// Se guardan **todas**, incluidas las que no se pudieron usar. Una fila
+/// descartada en silencio es un movimiento que la persona cree tener y no tiene,
+/// y no hay forma de descubrirlo después si no quedó registrada.
+model ImportRow {
+  id              String       @id @default(cuid())
+  userId          String
+  batchId         String
+  sourceRowNumber Int
+  /// Celdas originales, tal como vinieron. Es la evidencia de lo que se leyó.
+  rawJson         String
+  day             DateTime?    @db.Date
+  amountCents     BigInt?
+  merchant        String?
+  /// Motivos por los que la fila no se pudo usar, o vacío si se usó.
+  issuesJson      String
+  /// Movimiento que salió de esta fila. `null` cuando no se pudo o se salteó.
+  transactionId   String?      @unique
+  createdAt       DateTime     @default(now())
+  user            User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  batch           ImportBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  transaction     Transaction? @relation(fields: [transactionId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@unique([transactionId, userId])
+  @@index([batchId, sourceRowNumber])
+  @@index([userId, batchId])
 }
 
 // ---------------------------------------------------------------------------
@@ -337,6 +414,7 @@ model Account {
   targetTransactions  Transaction[]     @relation("TransactionTarget")
   upcomingPayments    UpcomingPayment[]
   creditCard          CreditCard?
+  importBatches       ImportBatch[]
 
   @@unique([id, userId])
   @@index([status])
@@ -422,6 +500,7 @@ model Transaction {
   correctedFrom        Transaction?     @relation("CorrectionChain", fields: [correctedFromId, userId], references: [id, userId], onDelete: Restrict)
   correction           Transaction?     @relation("CorrectionChain")
   upcomingPayment      UpcomingPayment?
+  importRow            ImportRow?
 
   @@unique([id, userId])
   @@unique([correctedFromId, userId])

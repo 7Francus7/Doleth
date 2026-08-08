@@ -14,6 +14,8 @@ const paths: Record<NavIconName, React.ReactNode> = {
   // Dos sentidos de cambio. Geométrico y sin relleno, como el resto: el ícono
   // orienta, no explica —eso lo hace la etiqueta "Moneda" que va al lado—.
   currency: <><path d="M4 9h13" /><path d="m14 6 3 3-3 3" /><path d="M20 15H7" /><path d="m10 12-3 3 3 3" /></>,
+  // Algo que entra y se apoya: una flecha hacia abajo sobre una bandeja.
+  import: <><path d="M12 4v10" /><path d="m8 11 4 4 4-4" /><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" /></>,
 };
 
 export function NavIcon({ name }: { name: NavIconName }) {
