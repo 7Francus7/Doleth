@@ -1,7 +1,10 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
-import { valueAmounts, type DisplayContext } from "./display";
+import { getDisplayContextFromBook, valueAmounts, type DisplayContext } from "./display";
+import { valuePortfolio, type Holding } from "./holdings";
+import { isSupportedCurrency } from "./currency";
+import { loadLatestPrices } from "./rates/prices";
 import { isLiabilityAccount } from "./accountKind";
 import { resolveRateBook, type ResolvedRateBook } from "./rates/store";
 import { resilientRead, type AnalysisMovement } from "./analysis";
@@ -449,6 +452,37 @@ export async function getInvestments(userId: string) {
     where: { userId, status: "ACTIVE" },
     orderBy: [{ currentValueCents: "desc" }, { createdAt: "asc" }],
   });
+}
+
+/**
+ * Cartera valuada: cada tenencia con su precio, si lo tiene.
+ *
+ * El valor de una tenencia con cantidad sale de multiplicarla por el último
+ * precio conocido; el de una sin cantidad, del valor declarado. La distinción
+ * viaja en `mode` para que la pantalla pueda decir cuál de las dos está mirando:
+ * un número que se actualiza solo y uno que alguien escribió hace tres meses no
+ * merecen la misma confianza, y presentarlos igual sería mentir por omisión.
+ */
+export async function getPortfolio(userId: string, now = new Date()) {
+  const investments = await getInvestments(userId);
+  const symbols = investments.map((item) => item.symbol).filter((symbol): symbol is string => Boolean(symbol));
+  const [prices, book] = await Promise.all([loadLatestPrices(symbols), resolveRateBook(userId, now)]);
+
+  const holdings: Holding[] = investments.map((item) => ({
+    id: item.id,
+    name: item.name,
+    kind: item.kind,
+    // Una moneda que el producto no sabe leer no puede valuarse: se trata como
+    // pesos para no romper la pantalla, y la valuación general ya declara el
+    // hueco por su lado.
+    currency: isSupportedCurrency(item.currency) ? item.currency : "ARS",
+    investedCents: item.investedCents,
+    quantityMicros: item.quantityMicros,
+    symbol: item.symbol,
+    declaredValueCents: item.currentValueCents,
+  }));
+
+  return { portfolio: valuePortfolio(holdings, prices), book, display: getDisplayContextFromBook(book, now) };
 }
 
 export async function getUpcomingPayments(userId: string) {

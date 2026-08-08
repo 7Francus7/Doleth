@@ -39,19 +39,36 @@ export function InvestmentForm() {
       </div>
       <div className={styles.fieldRow}>
         <label className={styles.field}>
+          <span>Cantidad (opcional)</span>
+          <input autoComplete="off" inputMode="decimal" name="quantity" placeholder="12" />
+        </label>
+        <label className={styles.field}>
           <span>Monto aportado</span>
           <input inputMode="decimal" name="invested" placeholder="0,00" required />
         </label>
-        <label className={styles.field}>
-          <span>Valor actual</span>
-          <input inputMode="decimal" name="currentValue" placeholder="0,00" required />
-        </label>
       </div>
+      <p className={styles.fieldHint}>
+        Si cargás la cantidad y el símbolo, el valor se calcula solo con el último precio conocido y no tenés que
+        actualizarlo a mano. Para un inmueble o algo sin cotización, dejá la cantidad vacía.
+      </p>
+      <label className={styles.field}>
+        <span>Valor actual</span>
+        <input inputMode="decimal" name="currentValue" placeholder="0,00" required />
+      </label>
+      <p className={styles.fieldHint}>
+        Se usa mientras no haya precio para el símbolo. Con precio disponible, manda el cálculo por cantidad.
+      </p>
       <label className={styles.field}>
         <span>Nota (opcional)</span>
         <input autoComplete="off" maxLength={160} name="note" placeholder="Broker, objetivo, etc." />
       </label>
-      <input name="currency" type="hidden" value="ARS" />
+            <label className={styles.field}>
+        <span>Moneda</span>
+        <select defaultValue="ARS" name="currency" required>
+          <option value="ARS">ARS · pesos</option>
+          <option value="USD">USD · dólares</option>
+        </select>
+      </label>
       {state.message ? <StatusMessage tone={state.ok ? "success" : "error"}>{state.message}</StatusMessage> : null}
       <SubmitButton pendingLabel="Registrando…">Registrar inversión</SubmitButton>
     </form>

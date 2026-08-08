@@ -296,6 +296,26 @@ model ImportRow {
 // Cotizaciones
 // ---------------------------------------------------------------------------
 
+/// Precio de un instrumento, tal como lo publicó un proveedor.
+///
+/// Sin propietario, por la misma razón que `MarketRate`: el precio de una acción
+/// no es un dato personal. Que alguien lo consulte no dice nada de su cartera.
+model AssetPrice {
+  id         String   @id @default(cuid())
+  /// Símbolo normalizado en mayúsculas: es la clave con la que se busca.
+  symbol     String
+  currency   String
+  /// Precio por unidad, en millonésimas de la moneda.
+  priceMicros BigInt
+  provider   String
+  /// Momento que declara el proveedor, no cuándo Doleth lo bajó.
+  asOf       DateTime
+  fetchedAt  DateTime @default(now())
+
+  @@unique([symbol, currency, asOf])
+  @@index([symbol, currency, asOf])
+}
+
 /// Cotización pública, tal como la publicó un proveedor.
 ///
 /// Es la única tabla del dominio financiero sin propietario, y a propósito: el
@@ -537,6 +557,13 @@ model Investment {
   symbol            String?
   currency          String           @default("ARS")
   investedCents     BigInt
+  /// Unidades en millonésimas. `null` cuando la tenencia no se cuenta por
+  /// unidades: un departamento no tiene "cantidad", y forzarlo a tenerla sería
+  /// inventar una precisión que no existe.
+  quantityMicros    BigInt?
+  /// Último valor cargado a mano. Se usa cuando no hay cantidad, y también como
+  /// respaldo cuando hay cantidad pero falta el precio: mostrar cero sería peor
+  /// que mostrar el último número conocido y decir que lo es.
   currentValueCents BigInt
   note              String?
   status            InvestmentStatus @default(ACTIVE)

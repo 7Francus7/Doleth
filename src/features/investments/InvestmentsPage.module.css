@@ -149,3 +149,16 @@
     align-items: flex-start;
   }
 }
+
+/*
+ * Procedencia del valor y peso en la cartera. Tono terciario y tamaño de
+ * etiqueta: son contexto sobre el número, no otro número. Que estén siempre
+ * presentes es lo que permite distinguir de un vistazo una tenencia que se
+ * actualiza sola de una que muestra lo último que alguien escribió.
+ */
+.holdingSource {
+  color: var(--color-text-tertiary);
+  font-size: var(--type-label-s-size);
+  letter-spacing: var(--type-label-s-tracking);
+  overflow-wrap: anywhere;
+}

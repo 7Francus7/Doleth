@@ -11,6 +11,10 @@ export interface InvestmentHolding {
   invested: string;
   deltaLabel: string;
   deltaState: InvestmentTone;
+  /** De dónde sale el valor: precio de mercado, precio propio o valor cargado. */
+  source: string;
+  /** Cuánto pesa esta tenencia en la cartera. */
+  weightLabel: string;
 }
 
 export interface InvestmentsViewModel {

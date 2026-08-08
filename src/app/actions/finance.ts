@@ -8,6 +8,7 @@ import { formatCentsAR } from "../../lib/finance/amount";
 import { FALLBACK_EXPENSE_SLUG } from "../../lib/finance/categories";
 import { isAccountKind, isLiabilityAccount } from "../../lib/finance/accountKind";
 import { CURRENCY_LABELS, SUPPORTED_CURRENCIES, isSupportedCurrency } from "../../lib/finance/currency";
+import { parseQuantityInput } from "../../lib/finance/holdings";
 import { financeError, toSafeError } from "../../lib/finance/errors";
 import { sanitizeReturnPath } from "../../lib/navigation/returnPath";
 import { logServerError } from "../../lib/observability";
@@ -155,11 +156,29 @@ export async function createInvestmentAction(
     const currency = readCurrency(formData);
     const investedCents = requirePositiveMoney(value(formData, "invested"));
     const currentValueCents = parseMoneyToCents(value(formData, "currentValue"));
+    // La cantidad es opcional: un departamento no tiene unidades, y obligarlo a
+    // declararlas sería inventar una precisión que no existe. Cuando está, el
+    // valor de la tenencia pasa a salir de multiplicarla por su precio.
+    const rawQuantity = value(formData, "quantity");
+    const quantityMicros = rawQuantity ? parseQuantityInput(rawQuantity) : null;
     if (name.length < 2 || name.length > 80) throw new Error("El nombre debe tener entre 2 y 80 caracteres.");
     if (!validInvestmentKind(kind)) throw new Error("Seleccioná un tipo de inversión válido.");
     if (currentValueCents < 0n) throw new Error("El valor actual no puede ser negativo.");
     if (symbol && symbol.length > 20) throw new Error("El símbolo admite hasta 20 caracteres.");
     if (note && note.length > 160) throw new Error("La nota admite hasta 160 caracteres.");
+    if (rawQuantity && quantityMicros === null) {
+      throw financeError("quantity-invalid", "Escribí una cantidad válida, por ejemplo 12 o 0,5.", "quantity");
+    }
+    // Una cantidad sin símbolo no se puede valuar: quedaría contando unidades de
+    // algo que Doleth no sabe cotizar, y el valor seguiría saliendo del número
+    // escrito a mano. Se avisa en vez de aceptarlo y no cumplir.
+    if (quantityMicros !== null && !symbol) {
+      throw financeError(
+        "symbol-required",
+        "Para valuar por cantidad hace falta el símbolo, por ejemplo AAPL o BTC.",
+        "symbol",
+      );
+    }
 
     const recentInvestment = await getDb().investment.findFirst({
       where: {
@@ -182,6 +201,7 @@ export async function createInvestmentAction(
         currency,
         investedCents,
         currentValueCents,
+        ...(quantityMicros !== null ? { quantityMicros } : {}),
         ...(symbol ? { symbol } : {}),
         ...(note ? { note } : {}),
       },

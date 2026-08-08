@@ -144,6 +144,17 @@ export async function getDisplayContext(userId: string, now = new Date()): Promi
 }
 
 /**
+ * Contexto de lectura a partir de un libro ya resuelto.
+ *
+ * Lo usan las lecturas que ya pidieron el libro para otra cosa: volver a
+ * resolverlo consultaría la base de nuevo y, peor, podría devolver una
+ * cotización distinta de la que produjo los números que se están por mostrar.
+ */
+export function getDisplayContextFromBook(book: ResolvedRateBook, now = new Date()): DisplayContext {
+  return buildContext(book, [], [], now);
+}
+
+/**
  * Frase que declara con qué cotización se leyó un número.
  *
  * Existe para que ninguna pantalla tenga que inventar su propia redacción: la

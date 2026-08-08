@@ -5,7 +5,7 @@ import { SectionTitle } from "../../design-system/primitives/SectionTitle";
 import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
 import { Surface } from "../../design-system/primitives/Surface";
 import { OperationalShell } from "../../components/finance/OperationalShell";
-import { SensitiveAmount } from "../../components/privacy/AmountPrivacy";
+import { SensitiveAmount, SensitiveText } from "../../components/privacy/AmountPrivacy";
 import financeStyles from "../../components/finance/finance.module.css";
 import type { InvestmentsViewModel } from "./model";
 import styles from "./InvestmentsPage.module.css";
@@ -69,6 +69,16 @@ export function InvestmentsPage({ model }: InvestmentsPageProps) {
                     <span className={styles.holdingName}>{holding.name}</span>
                     <span className={styles.holdingMeta}>
                       {holding.kindLabel} · aportado <SensitiveAmount>${holding.invested}</SensitiveAmount>
+                    </span>
+                    {/*
+                      De dónde sale el valor y cuánto pesa. Van en tono terciario
+                      porque son procedencia y contexto: acompañan al número sin
+                      competir con él.
+                    */}
+                    <span className={styles.holdingSource}>
+                      <SensitiveText>{holding.source}</SensitiveText>
+                      {" · "}
+                      {holding.weightLabel}
                     </span>
                   </div>
                   <div className={styles.holdingValues}>
