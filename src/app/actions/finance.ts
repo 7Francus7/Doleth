@@ -6,6 +6,7 @@ import { UnauthorizedError, requireOnboardedUserForAction } from "../../lib/auth
 import { successForCorrection, successForMovement, successForVoid } from "../../lib/finance/actionFeedback";
 import { formatCentsAR } from "../../lib/finance/amount";
 import { FALLBACK_EXPENSE_SLUG } from "../../lib/finance/categories";
+import { CURRENCY_LABELS, SUPPORTED_CURRENCIES, isSupportedCurrency } from "../../lib/finance/currency";
 import { financeError, toSafeError } from "../../lib/finance/errors";
 import { sanitizeReturnPath } from "../../lib/navigation/returnPath";
 import { logServerError } from "../../lib/observability";
@@ -120,6 +121,26 @@ function validInvestmentKind(input: string): input is InvestmentKind {
   return (INVESTMENT_KINDS as readonly string[]).includes(input);
 }
 
+/**
+ * Lee la moneda que llega de un formulario.
+ *
+ * Hasta la fundación multimoneda, cualquier valor distinto de ARS se rechazaba.
+ * Ahora se acepta lo que el producto sabe cotizar y se rechaza el resto con su
+ * nombre: guardar una moneda que después no se puede convertir dejaría un
+ * agujero permanente en el patrimonio de esa persona.
+ */
+function readCurrency(formData: FormData, fallback = "ARS") {
+  const raw = (value(formData, "currency") || fallback).toUpperCase();
+  if (!isSupportedCurrency(raw)) {
+    throw financeError(
+      "currency-unsupported",
+      `Doleth todavía no sabe cotizar ${raw}. Por ahora maneja ${SUPPORTED_CURRENCIES.join(" y ")}.`,
+      "currency",
+    );
+  }
+  return raw;
+}
+
 export async function createInvestmentAction(
   _previous: FinanceActionState,
   formData: FormData,
@@ -130,12 +151,11 @@ export async function createInvestmentAction(
     const kind = value(formData, "kind");
     const symbol = value(formData, "symbol") || undefined;
     const note = value(formData, "note") || undefined;
-    const currency = (value(formData, "currency") || "ARS").toUpperCase();
+    const currency = readCurrency(formData);
     const investedCents = requirePositiveMoney(value(formData, "invested"));
     const currentValueCents = parseMoneyToCents(value(formData, "currentValue"));
     if (name.length < 2 || name.length > 80) throw new Error("El nombre debe tener entre 2 y 80 caracteres.");
     if (!validInvestmentKind(kind)) throw new Error("Seleccioná un tipo de inversión válido.");
-    if (currency !== "ARS") throw new Error("Esta vista consolida inversiones en ARS.");
     if (currentValueCents < 0n) throw new Error("El valor actual no puede ser negativo.");
     if (symbol && symbol.length > 20) throw new Error("El símbolo admite hasta 20 caracteres.");
     if (note && note.length > 160) throw new Error("La nota admite hasta 160 caracteres.");
@@ -190,13 +210,12 @@ export async function createAccountAction(
     const user = await requireOnboardedUserForAction();
     const name = value(formData, "name");
     const type = value(formData, "type");
-    const currency = value(formData, "currency").toUpperCase();
+    const currency = readCurrency(formData);
     const initialBalanceCents = parseMoneyToCents(value(formData, "initialBalance"), true);
     if (name.length < 2 || name.length > 60) throw new Error("El nombre debe tener entre 2 y 60 caracteres.");
     if (!["CASH", "BANK", "WALLET", "SAVINGS", "OTHER"].includes(type)) {
       throw new Error("Seleccioná un tipo de cuenta válido.");
     }
-    if (currency !== "ARS") throw new Error("Este corte consolida cuentas en ARS. Otras monedas requieren conversión explícita.");
 
     const recentAccount = await getDb().account.findFirst({
       where: {
@@ -228,6 +247,75 @@ export async function setAccountStatusAction(formData: FormData): Promise<void> 
   const updated = await getDb().account.updateMany({ where: { id, userId: user.id }, data: { status } });
   if (updated.count === 0) throw new Error("Cuenta inexistente.");
   refreshFinance();
+}
+
+interface MovementAccount {
+  id: string;
+  name: string;
+  currency: string;
+}
+
+/**
+ * Decide la moneda de un movimiento y, si hace falta, cuánto entra en destino.
+ *
+ * La moneda de un movimiento es siempre la de su cuenta de origen: es de ahí de
+ * donde sale la plata, y es la única lectura que no depende de una cotización.
+ *
+ * Una transferencia entre cuentas de monedas distintas es el único caso donde el
+ * ledger necesita dos importes. Doleth pide el segundo en vez de calcularlo con
+ * la cotización del día, y eso es deliberado: cuando alguien cambia pesos por
+ * dólares, el precio que le hicieron es un hecho de esa operación, no el
+ * promedio del mercado. Calcularlo sería reemplazar un dato real por una
+ * estimación, y además dejaría el saldo de la cuenta en dólares dependiendo de
+ * un número que puede cambiar mañana.
+ */
+function resolveMovementCurrency(
+  type: MovementType,
+  accounts: readonly MovementAccount[],
+  input: { sourceAccountId: string; destinationAccountId?: string; rawDestinationAmount: string },
+): { currency: string; destinationAmountCents: bigint | undefined } {
+  const byId = new Map(accounts.map((account) => [account.id, account]));
+  const source = byId.get(input.sourceAccountId);
+  if (!source) throw financeError("account-unavailable", "Una de las cuentas no está activa.", "sourceAccountId");
+  if (!isSupportedCurrency(source.currency)) {
+    throw financeError(
+      "currency-unsupported",
+      `La cuenta ${source.name} está en ${source.currency} y Doleth todavía no sabe cotizar esa moneda.`,
+      "sourceAccountId",
+    );
+  }
+
+  const destination = input.destinationAccountId ? byId.get(input.destinationAccountId) : null;
+  const crossesCurrencies = type === "TRANSFER" && destination !== null && destination !== undefined
+    && destination.currency !== source.currency;
+
+  if (!crossesCurrencies) {
+    if (input.rawDestinationAmount) {
+      throw financeError(
+        "destination-amount-unexpected",
+        "Las dos cuentas usan la misma moneda: entra exactamente lo que sale.",
+        "destinationAmount",
+      );
+    }
+    return { currency: source.currency, destinationAmountCents: undefined };
+  }
+
+  if (!isSupportedCurrency(destination.currency)) {
+    throw financeError(
+      "currency-unsupported",
+      `La cuenta ${destination.name} está en ${destination.currency} y Doleth todavía no sabe cotizar esa moneda.`,
+      "destinationAccountId",
+    );
+  }
+  if (!input.rawDestinationAmount) {
+    throw financeError(
+      "destination-amount-required",
+      `Este cambio cruza monedas: decinos cuántos ${CURRENCY_LABELS[destination.currency]} entraron en ${destination.name}.`,
+      "destinationAmount",
+    );
+  }
+
+  return { currency: source.currency, destinationAmountCents: requirePositiveMoney(input.rawDestinationAmount) };
 }
 
 export async function createMovementAction(
@@ -283,9 +371,12 @@ export async function createMovementAction(
     if (accounts.length !== new Set(accountIds).size) {
       throw financeError("account-unavailable", "Una de las cuentas no está activa.", "sourceAccountId");
     }
-    if (accounts.some((account) => account.currency !== "ARS")) {
-      throw financeError("currency-unsupported", "El resumen actual solo admite cuentas en ARS.", "sourceAccountId");
-    }
+
+    const { currency, destinationAmountCents } = resolveMovementCurrency(type, accounts, {
+      sourceAccountId,
+      ...(destinationAccountId ? { destinationAccountId } : {}),
+      rawDestinationAmount: value(formData, "destinationAmount"),
+    });
 
     if (type !== "TRANSFER") {
       if (!categoryId) throw financeError("category-required", "Seleccioná una categoría.", "categoryId");
@@ -296,7 +387,7 @@ export async function createMovementAction(
     }
 
     const byId = new Map(accounts.map((account) => [account.id, account.name]));
-    const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId);
+    const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId, destinationAmountCents);
     let createdId: string;
     try {
       const created = await db.transaction.create({
@@ -304,6 +395,8 @@ export async function createMovementAction(
           userId: user.id,
           type,
           amountCents,
+          currency,
+          ...(destinationAmountCents !== undefined ? { destinationAmountCents } : {}),
           occurredOn,
           sourceAccountId,
           ...(destinationAccountId ? { destinationAccountId } : {}),
@@ -427,8 +520,6 @@ export async function correctMovementAction(
     if (description && description.length > 160) {
       throw financeError("description-too-long", "La descripción admite hasta 160 caracteres.", "description");
     }
-    const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId);
-
     let replacementId = "";
     await db.$transaction(async (tx) => {
       const original = await tx.transaction.findFirst({ where: { id: originalId, userId: user.id } });
@@ -437,11 +528,17 @@ export async function correctMovementAction(
       }
       const accountIds = [sourceAccountId, destinationAccountId].filter(Boolean) as string[];
       const accounts = await tx.account.findMany({
-        where: { id: { in: accountIds }, userId: user.id, status: "ACTIVE", currency: "ARS" },
+        where: { id: { in: accountIds }, userId: user.id, status: "ACTIVE" },
       });
       if (accounts.length !== new Set(accountIds).size) {
-        throw financeError("account-unavailable", "Una de las cuentas no está activa o no usa ARS.", "sourceAccountId");
+        throw financeError("account-unavailable", "Una de las cuentas no está activa.", "sourceAccountId");
       }
+      const { currency, destinationAmountCents } = resolveMovementCurrency(type, accounts, {
+        sourceAccountId,
+        ...(destinationAccountId ? { destinationAccountId } : {}),
+        rawDestinationAmount: value(formData, "destinationAmount"),
+      });
+      const postings = createPostings(type, amountCents, sourceAccountId, destinationAccountId, destinationAmountCents);
       if (type !== "TRANSFER") {
         if (!categoryId) throw financeError("category-required", "Seleccioná una categoría.", "categoryId");
         const category = await tx.category.findFirst({ where: { id: categoryId, userId: user.id } });
@@ -461,6 +558,8 @@ export async function correctMovementAction(
           userId: user.id,
           type,
           amountCents,
+          currency,
+          ...(destinationAmountCents !== undefined ? { destinationAmountCents } : {}),
           occurredOn,
           sourceAccountId,
           ...(destinationAccountId ? { destinationAccountId } : {}),
@@ -619,6 +718,10 @@ export async function payUpcomingPaymentAction(
           userId: user.id,
           type: "EXPENSE",
           amountCents,
+          // La moneda del gasto es la de la cuenta de la que sale, igual que en
+          // cualquier otro movimiento: confirmar un pago previsto no es un caso
+          // aparte del ledger, es un gasto común que se originó en un plan.
+          currency: account.currency,
           occurredOn,
           sourceAccountId: payment.plannedAccountId,
           categoryId: category.id,

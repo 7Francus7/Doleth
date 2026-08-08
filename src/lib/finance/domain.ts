@@ -35,14 +35,31 @@ export function requirePositiveMoney(value: string): bigint {
   return cents;
 }
 
+/**
+ * Asientos de un movimiento.
+ *
+ * `destinationAmountCents` existe sólo para la transferencia entre cuentas de
+ * monedas distintas: sale una cantidad de pesos y entra una cantidad de dólares,
+ * y cada asiento queda expresado en la moneda de su cuenta. Sin ese segundo
+ * importe, el asiento de destino heredaría el número del origen y la cuenta en
+ * dólares terminaría con un saldo de pesos adentro.
+ *
+ * Cuando las dos puntas comparten moneda se omite: entra y sale exactamente lo
+ * mismo, y guardarlo dos veces sería crear dos verdades que pueden separarse.
+ */
 export function createPostings(
   type: MovementType,
   amountCents: bigint,
   sourceAccountId: string,
   destinationAccountId?: string,
+  destinationAmountCents?: bigint,
 ): LedgerPosting[] {
   if (amountCents <= 0n) throw new Error("El importe debe ser mayor que cero.");
   if (!sourceAccountId) throw new Error("Seleccioná una cuenta.");
+
+  if (type !== "TRANSFER" && destinationAmountCents !== undefined) {
+    throw new Error("Sólo una transferencia acredita un importe distinto en destino.");
+  }
 
   if (type === "INCOME") return [{ accountId: sourceAccountId, amountCents }];
   if (type === "EXPENSE") return [{ accountId: sourceAccountId, amountCents: -amountCents }];
@@ -51,10 +68,13 @@ export function createPostings(
   if (destinationAccountId === sourceAccountId) {
     throw new Error("La cuenta de destino debe ser distinta de la cuenta de origen.");
   }
+  if (destinationAmountCents !== undefined && destinationAmountCents <= 0n) {
+    throw new Error("El importe acreditado debe ser mayor que cero.");
+  }
 
   return [
     { accountId: sourceAccountId, amountCents: -amountCents },
-    { accountId: destinationAccountId, amountCents },
+    { accountId: destinationAccountId, amountCents: destinationAmountCents ?? amountCents },
   ];
 }
 

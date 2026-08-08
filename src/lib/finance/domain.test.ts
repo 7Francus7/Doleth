@@ -31,6 +31,43 @@ describe("invariantes contables", () => {
     expect(Object.values(after).reduce((sum, value) => sum + value, 0n)).toBe(11_000n);
   });
 
+  /**
+   * Una transferencia entre monedas distintas no conserva el número: conserva el
+   * valor. Salen 140.000 pesos y entran 100 dólares, y cada asiento queda
+   * expresado en la moneda de su cuenta. Sumar los dos números sin convertirlos
+   * no significaría nada, y por eso el patrimonio de un ledger multimoneda se
+   * calcula valuando, no sumando.
+   */
+  it("transferencia entre monedas acredita el importe de destino", () => {
+    const postings = createPostings("TRANSFER", 14_000_000n, "pesos", "dolares", 10_000n);
+    const after = applyPostings({ pesos: 20_000_000n, dolares: 0n }, postings);
+    expect(after).toEqual({ pesos: 6_000_000n, dolares: 10_000n });
+  });
+
+  it("sin importe de destino, la transferencia acredita lo mismo que sale", () => {
+    expect(createPostings("TRANSFER", 3_000n, "bank", "cash")).toEqual([
+      { accountId: "bank", amountCents: -3_000n },
+      { accountId: "cash", amountCents: 3_000n },
+    ]);
+  });
+
+  it("un gasto no puede acreditar un importe en destino", () => {
+    expect(() => createPostings("EXPENSE", 100n, "cash", undefined, 50n)).toThrow();
+    expect(() => createPostings("INCOME", 100n, "cash", undefined, 50n)).toThrow();
+  });
+
+  it("el importe acreditado tiene que ser positivo", () => {
+    expect(() => createPostings("TRANSFER", 100n, "bank", "cash", 0n)).toThrow();
+    expect(() => createPostings("TRANSFER", 100n, "bank", "cash", -50n)).toThrow();
+  });
+
+  it("la anulación de una transferencia entre monedas devuelve cada cuenta a su lugar", () => {
+    const postings = createPostings("TRANSFER", 14_000_000n, "pesos", "dolares", 10_000n);
+    const before = { pesos: 20_000_000n, dolares: 500n };
+    const after = applyPostings(before, postings);
+    expect(applyPostings(after, reversePostings(postings))).toEqual(before);
+  });
+
   it.each(["0", "-1"])("rechaza importe no positivo: %s", (value) => {
     expect(() => requirePositiveMoney(value)).toThrow();
   });
