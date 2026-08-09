@@ -67,6 +67,7 @@ const {
   verifyEmailAction,
 } = await import("./actions");
 const { emptyAuthState } = await import("../../lib/auth/form-state");
+const { RATE_LIMITS, clearRateLimit, requestSubject } = await import("../../lib/auth/rate-limit");
 const { getDb } = await import("../../lib/db");
 const { deleteTestUser } = await import("../../test/fixtures");
 
@@ -266,7 +267,10 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
 
     it("aplica rate limiting al registro", async () => {
       let bloqueo = "";
-      for (let intento = 0; intento < 8 && !bloqueo; intento += 1) {
+      // El tope por IP es holgado a propósito —una oficina entera comparte una—,
+      // así que hacen falta más intentos que antes para llegar a verlo.
+      const intentosMaximos = RATE_LIMITS.register.limit + 5;
+      for (let intento = 0; intento < intentosMaximos && !bloqueo; intento += 1) {
         const email = freshEmail(`rate-registro-${intento}`);
         try {
           const state = await registerAction(
@@ -288,6 +292,44 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
         }
       }
       expect(bloqueo).toMatch(/demasiados intentos/i);
+    });
+
+    /**
+     * El alta manda un correo aunque la dirección ya exista sin verificar. Si el
+     * único tope fuera por IP, rotar de IP alcanzaría para llenarle la casilla a
+     * cualquiera con correos que Doleth firma y paga.
+     */
+    it("corta los correos repetidos a una misma dirección aunque cambie la IP", async () => {
+      const email = freshEmail("rate-destinatario");
+      const alta = () =>
+        registerAction(
+          emptyAuthState,
+          formData({
+            name: "Persona",
+            email,
+            password: PASSWORD,
+            passwordConfirmation: PASSWORD,
+            acceptedTerms: "on",
+          }),
+        );
+
+      for (let intento = 0; intento < RATE_LIMITS.registerEmail.limit; intento += 1) {
+        try {
+          await alta();
+        } catch (error) {
+          if (!(error instanceof RedirectError)) throw error;
+          const creado = await getDb().user.findUnique({ where: { email } });
+          if (creado && !createdUserIds.includes(creado.id)) createdUserIds.push(creado.id);
+        }
+      }
+
+      // Se borra sólo el contador por IP: queda en pie el del destinatario, que
+      // es el que tiene que seguir cortando.
+      await clearRateLimit(RATE_LIMITS.register, await requestSubject());
+      const state = await alta();
+
+      expect(state.status).toBe("error");
+      expect(state.message).toMatch(/demasiados intentos/i);
     });
   });
 

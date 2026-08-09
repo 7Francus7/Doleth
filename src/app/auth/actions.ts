@@ -25,6 +25,7 @@ import {
   RATE_LIMITS,
   clearRateLimit,
   consumeRateLimit,
+  emailSubject,
   requestSubject,
   retryMessage,
 } from "../../lib/auth/rate-limit";
@@ -95,6 +96,13 @@ export async function registerAction(_previous: AuthFormState, formData: FormDat
     const limit = await consumeRateLimit(RATE_LIMITS.register, subject);
     if (!limit.allowed) return failure(retryMessage(limit.retryAfterSeconds));
 
+    // Segundo tope, por destinatario. Este camino manda un correo tanto si la
+    // dirección es nueva como si ya existía sin verificar, así que sin él
+    // alcanzaría con rotar de IP para usar el alta como relay contra una casilla
+    // ajena.
+    const perEmail = await consumeRateLimit(RATE_LIMITS.registerEmail, await emailSubject(email));
+    if (!perEmail.allowed) return failure(retryMessage(perEmail.retryAfterSeconds));
+
     const db = getDb();
     const existing = await db.user.findUnique({ where: { email } });
 
@@ -138,7 +146,12 @@ export async function resendVerificationAction(
   if (!email) return neutral;
 
   try {
-    const limit = await consumeRateLimit(RATE_LIMITS.verificationResend, `${await requestSubject()}:${email}`);
+    // La clave del bucket es la clave primaria de una tabla: con el correo en
+    // claro, `RateLimitCounter` terminaba siendo un padrón de direcciones.
+    const limit = await consumeRateLimit(
+      RATE_LIMITS.verificationResend,
+      `${await requestSubject()}:${await emailSubject(email)}`,
+    );
     if (!limit.allowed) return failure(retryMessage(limit.retryAfterSeconds));
 
     const user = await getDb().user.findUnique({ where: { email } });

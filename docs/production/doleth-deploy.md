@@ -39,6 +39,36 @@ Variables en Vercel, environment Production:
 | `RESEND_API_KEY` | clave de Resend |
 | `DOLETH_ACCESS_MODE` | `private-beta` mientras el registro público esté cerrado |
 
+## Abrir el registro a cualquiera
+
+`DOLETH_ACCESS_MODE=public`. Eso es todo: la pantalla de alta, la verificación
+por correo y la recuperación de contraseña ya están construidas y se encienden
+con esa variable. El valor por omisión es `private-beta` a propósito —sin
+configuración explícita no hay registro abierto—, así que el cambio es
+deliberado y se revierte igual de rápido.
+
+Dos consecuencias que conviene tener presentes antes de tocarla:
+
+- **El correo pasa a ser bloqueante.** En modo público toda alta manda un mail de
+  verificación, y `sendEmail` lanza en producción si falta `RESEND_API_KEY` o
+  `DOLETH_EMAIL_FROM`. Sin eso configurado y con el dominio verificado en Resend,
+  nadie puede terminar de crear su cuenta.
+- **Deja de hacer falta un administrador.** La adopción del administrador
+  histórico existe para poder *invitar* gente. Si cualquiera puede registrarse
+  solo, esa operación deja de estar en el camino crítico del lanzamiento.
+
+Topes de alta, para que se entienda qué corta cada uno:
+
+| Tope | Límite | Contra qué protege |
+|---|---|---|
+| `register` | 20/hora por IP | fuerza bruta desde un origen único |
+| `register-email` | 3/hora por destinatario | usar el alta para llenarle la casilla a alguien |
+
+El de IP es holgado porque una oficina o un celular por CGNAT comparten una sola:
+con un tope chico, el compañero número seis lee "demasiados intentos" sin haber
+intentado nada. Quien acota el abuso real es el de destinatario, que no depende
+de la IP.
+
 Red de salida: para que las integraciones funcionen, el entorno tiene que poder
 alcanzar `dolarapi.com` y `criptoya.com` por HTTPS. Si no puede, la aplicación
 **no se rompe**: sigue con la última cotización guardada y lo declara en
