@@ -171,6 +171,25 @@ pago. Las transferencias entre cuentas propias no son gasto y quedan afuera:
 contarlas inflaría el total con dinero que sigue estando. Las participaciones
 suman el total exacto.
 
+## Desplegar
+
+Vercel construye desde `main` y ejecuta `vercel-build`, que corre
+`prisma migrate deploy` **antes** del build. Ese orden evita el modo de falla más
+caro del stack: desplegar código que espera una columna que todavía no existe.
+
+Después de desplegar, `GET /api/salud` responde si la base está al día. Es
+público y no expone datos.
+
+El paso a paso completo, con variables y rollback, está en
+[docs/production/doleth-deploy.md](docs/production/doleth-deploy.md).
+
+## Integraciones
+
+En **Más → Integraciones** hay un botón por fuente externa: la cotización del
+dólar (dolarapi.com) y los precios de cripto (criptoya.com). Nada corre solo por
+atrás; se aprieta y trae. Si una fuente no contesta, la aplicación sigue con lo
+último que tenía y lo dice.
+
 ## Operación y release
 
 La política técnica de privacidad, observabilidad, release, rollback,

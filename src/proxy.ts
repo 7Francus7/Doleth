@@ -28,6 +28,11 @@ const PUBLIC_PATHS = new Set([
   "/restablecer-contrasena/listo",
   "/terminos",
   "/privacidad",
+  // Chequeo de salud del despliegue. Va sin sesión a propósito: quien necesita
+  // saber si el deploy quedó sano —un monitor, o vos después de apretar
+  // "deploy"— no tiene una cuenta con la que entrar. No expone ningún dato:
+  // sólo si el proceso responde, si la base contesta y si faltan migraciones.
+  "/api/salud",
 ]);
 
 /**

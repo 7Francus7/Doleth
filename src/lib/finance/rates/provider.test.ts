@@ -49,7 +49,12 @@ describe("decimalToMicros", () => {
   });
 
   it("rechaza magnitudes que acercarían el double a su límite de precisión", () => {
-    expect(decimalToMicros(10_000_001)).toBeNull();
+    expect(decimalToMicros(1_000_000_001)).toBeNull();
+  });
+
+  /** Un bitcoin en pesos ronda los noventa millones y tiene que entrar. */
+  it("admite un precio de cripto en pesos", () => {
+    expect(decimalToMicros(91_400_000)).toBe(91_400_000n * RATE_SCALE);
   });
 });
 

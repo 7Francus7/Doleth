@@ -23,6 +23,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-AR", {
   month: "long",
   hour: "2-digit",
   minute: "2-digit",
+  // Reloj de 24 horas: el "p. m." del formato de 12 termina en punto y, seguido
+  // del punto de la oración, deja un "p. m.." que se lee como un error.
+  hourCycle: "h23",
 });
 
 function Section({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {

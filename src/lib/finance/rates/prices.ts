@@ -25,10 +25,20 @@ export interface ProviderPrice {
   asOf: Date;
 }
 
+/**
+ * Por qué un símbolo se quedó sin precio.
+ *
+ * La distinción no es cosmética: "esto no lo cubro" es permanente y le pide a la
+ * persona que cargue el precio a mano, mientras que "no pude consultarlo" es
+ * pasajero y le pide que reintente. Meterlos en la misma bolsa haría que un corte
+ * de red se lea como una limitación del producto, y al revés.
+ */
+export type PriceRejection = { symbol: string; reason: "unsupported" | "unavailable" };
+
 export interface PriceProvider {
   name: string;
   /** Sólo se piden los símbolos que alguien tiene: no se baja un mercado entero. */
-  read(symbols: readonly string[]): Promise<{ prices: ProviderPrice[]; rejected: string[] }>;
+  read(symbols: readonly string[]): Promise<{ prices: ProviderPrice[]; rejected: PriceRejection[] }>;
 }
 
 /** Ventana en la que no se vuelve a molestar al proveedor. */
@@ -86,8 +96,8 @@ export async function loadLatestPrices(symbols: readonly string[]): Promise<Map<
 export interface PriceRefreshOutcome {
   stored: number;
   unchanged: number;
-  /** Símbolos que el proveedor no supo cotizar. Se informan, no se ocultan. */
-  rejected: string[];
+  /** Símbolos sin precio, con su motivo. Se informan, no se ocultan. */
+  rejected: PriceRejection[];
   skipped: boolean;
 }
 
@@ -124,7 +134,12 @@ export async function refreshPrices(
     reading = await provider.read(wanted);
   } catch {
     logServerError({ route: "/prices", operation: "read-prices", code: "provider-failed" });
-    return { stored: 0, unchanged: 0, rejected: [...wanted], skipped: false };
+    return {
+      stored: 0,
+      unchanged: 0,
+      rejected: wanted.map((symbol) => ({ symbol, reason: "unavailable" as const })),
+      skipped: false,
+    };
   }
 
   let stored = 0;

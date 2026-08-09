@@ -267,7 +267,7 @@ describe.skipIf(!hasDatabase)("cartera valuada por cantidad y precio", () => {
       };
       const outcome = await refreshPrices(roto, ["BTC"]);
       expect(outcome.stored).toBe(0);
-      expect(outcome.rejected).toEqual(["BTC"]);
+      expect(outcome.rejected).toEqual([{ symbol: "BTC", reason: "unavailable" }]);
 
       expect((await loadLatestPrices(["BTC"])).get("BTC")?.priceMicros).toBe(1_000n * RATE_SCALE);
     });

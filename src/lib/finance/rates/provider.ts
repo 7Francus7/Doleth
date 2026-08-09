@@ -51,9 +51,13 @@ export interface RateProvider {
 export function decimalToMicros(value: number): bigint | null {
   if (!Number.isFinite(value)) return null;
   if (value <= 0) return null;
-  // Diez millones por unidad ya es absurdo para cualquier moneda que Doleth
-  // cotice, y mantiene el producto lejos del límite de precisión del double.
-  if (value > 10_000_000) return null;
+  // El techo lo fija la precisión del double, no el gusto: un valor por un millón
+  // tiene que seguir siendo un entero exacto, y `Number.MAX_SAFE_INTEGER` está en
+  // 9,007 × 10¹⁵. Mil millones deja dos órdenes de magnitud de margen y alcanza
+  // de sobra para un bitcoin en pesos, que hoy ronda los noventa millones.
+  // El primer techo de este archivo eran diez millones, pensado sólo para
+  // cotizaciones de moneda, y dejaba afuera precisamente a la cripto.
+  if (value > 1_000_000_000) return null;
   const micros = Math.round(value * Number(RATE_SCALE));
   if (!Number.isSafeInteger(micros) || micros <= 0) return null;
   return BigInt(micros);
