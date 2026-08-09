@@ -4,6 +4,21 @@ import type { Pool, PoolClient } from "pg";
 export const ADMIN_ADOPTION_TOOL_VERSION = "1";
 export const ADMIN_ADOPTION_TEST_FAULT_AUTHORIZATION = Symbol("admin-adoption-test-fault");
 
+/**
+ * Esquema exacto que la adopción espera encontrar.
+ *
+ * La lista es literal y no se lee del directorio de migraciones a propósito: es
+ * una constante auditada, y el punto del guard es abortar cuando la base no es
+ * la que se revisó. Derivarla del árbol de trabajo la volvería siempre cierta y
+ * dejaría de proteger de nada.
+ *
+ * El costo de esa decisión es que hay que actualizarla al agregar una migración,
+ * y ya se pagó una vez: quedó con seis mientras el repositorio tenía diez, así
+ * que la herramienta habría abortado con `MIGRATION_STATE_MISMATCH` contra la
+ * base productiva real. `admin-adoption-migrations.test.ts` la coteja ahora
+ * contra `prisma/migrations`, para que el desfasaje se vea en la suite y no en
+ * el momento de operar.
+ */
 export const ADMIN_ADOPTION_MIGRATIONS = [
   "202607210001_vertical_007",
   "202607220001_investments",
@@ -11,6 +26,10 @@ export const ADMIN_ADOPTION_MIGRATIONS = [
   "202607280001_require_financial_ownership",
   "202607290001_enforce_cross_owner_relations",
   "202607300001_private_beta_access",
+  "202608080001_multicurrency_foundation",
+  "202608080002_credit_cards",
+  "202608080003_import_batches",
+  "202608080004_holdings",
 ] as const;
 
 export const HISTORICAL_FINANCIAL_COUNTS = {
