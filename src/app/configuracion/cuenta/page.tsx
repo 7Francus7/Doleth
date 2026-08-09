@@ -85,6 +85,20 @@ export default async function AccountSettingsPage() {
       }
     >
       <div className={styles.sections}>
+        {/* El panel no vive en la navegación principal: no es una superficie del
+            producto y mostrarle a todo el mundo un enlace que sólo funciona para
+            una persona es ruido. Aparece acá, y sólo para quien puede entrar. */}
+        {user.role === "ADMIN" && user.status === "ACTIVE" ? (
+          <Section
+            intro="Administrar las cuentas de las personas que usan Doleth."
+            title="Administración"
+          >
+            <Link className={authStyles.link} href="/admin">
+              Abrir el panel
+            </Link>
+          </Section>
+        ) : null}
+
         <Section intro="Así te identificamos dentro de Doleth." title="Identidad">
           <dl className={styles.summary}>
             <div className={styles.summaryRow}>

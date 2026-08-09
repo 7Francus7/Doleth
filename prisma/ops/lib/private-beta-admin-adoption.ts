@@ -30,6 +30,7 @@ export const ADMIN_ADOPTION_MIGRATIONS = [
   "202608080002_credit_cards",
   "202608080003_import_batches",
   "202608080004_holdings",
+  "202608090001_admin_audit_events",
 ] as const;
 
 export const HISTORICAL_FINANCIAL_COUNTS = {

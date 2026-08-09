@@ -1,5 +1,5 @@
 import "server-only";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { User } from "../../generated/prisma/client";
 import { getSession, type AuthenticatedSession } from "./session";
 
@@ -64,6 +64,31 @@ export async function requireOnboardedUserForAction(): Promise<User> {
   const user = await requireUserForAction();
   if (!user.onboardingCompletedAt) {
     throw new UnauthorizedError("Terminá la configuración inicial antes de registrar datos.");
+  }
+  return user;
+}
+
+/**
+ * Guardia del panel de administración.
+ *
+ * Exige rol `ADMIN` **y** estado activo, leídos de la fila del usuario en cada
+ * pedido y no de la sesión guardada: si a alguien se le saca el rol, tiene que
+ * perder el panel al instante y no cuando venza su cookie.
+ *
+ * Da 404 y no 403. Un 403 confirma que la ruta existe y que hay algo detrás;
+ * para quien no es administrador, `/admin` simplemente no es un lugar.
+ */
+export async function requireAdmin(returnTo?: string): Promise<User> {
+  const user = await requireUser(returnTo);
+  if (user.role !== "ADMIN" || user.status !== "ACTIVE") notFound();
+  return user;
+}
+
+/** La versión para Server Actions: lanza en vez de navegar. */
+export async function requireAdminForAction(): Promise<User> {
+  const user = await requireUserForAction();
+  if (user.role !== "ADMIN" || user.status !== "ACTIVE") {
+    throw new UnauthorizedError("No tenés permisos para esta operación.");
   }
   return user;
 }

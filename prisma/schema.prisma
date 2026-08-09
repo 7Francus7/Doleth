@@ -78,6 +78,13 @@ enum AuthEventType {
   ONBOARDING_COMPLETED
   ACCOUNT_DELETION_REQUESTED
   ACCOUNT_DELETION_CANCELED
+  /// Acciones del panel de administración. Existen como tipos propios en vez de
+  /// reusar `PROFILE_UPDATED` porque una suspensión decidida por un tercero y un
+  /// cambio que la persona se hizo a sí misma no son el mismo hecho, y la
+  /// bitácora es justamente donde esa diferencia importa.
+  USER_SUSPENDED
+  USER_REACTIVATED
+  USER_ROLE_CHANGED
 }
 
 model User {
