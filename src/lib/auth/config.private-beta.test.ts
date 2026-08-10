@@ -9,16 +9,22 @@ afterEach(() => {
 });
 
 describe("modo de acceso", () => {
-  it("falla cerrado en beta privada cuando la variable falta", () => {
+  it("habilita el registro público cuando la variable falta", () => {
     delete process.env.DOLETH_ACCESS_MODE;
-    expect(accessMode()).toBe("private-beta");
-    expect(publicEmailAuthEnabled()).toBe(false);
+    expect(accessMode()).toBe("public");
+    expect(publicEmailAuthEnabled()).toBe(true);
   });
 
   it("habilita registro y correo sólo con public explícito", () => {
     process.env.DOLETH_ACCESS_MODE = "public";
     expect(accessMode()).toBe("public");
     expect(publicEmailAuthEnabled()).toBe(true);
+  });
+
+  it("cierra el registro sólo con beta privada explícita", () => {
+    process.env.DOLETH_ACCESS_MODE = "private-beta";
+    expect(accessMode()).toBe("private-beta");
+    expect(publicEmailAuthEnabled()).toBe(false);
   });
 
   it("rechaza valores desconocidos", () => {

@@ -29,11 +29,11 @@ export function isProduction(): boolean {
 export type AccessMode = "private-beta" | "public";
 
 /**
- * Fail-closed: sin configuraciÃ³n explÃ­cita no existe registro pÃºblico.
- * El lanzamiento pÃºblico futuro tendrÃ¡ que habilitarlo deliberadamente.
+ * El registro es pÃºblico por defecto. Para volver a una beta por invitaciÃ³n,
+ * configurÃ¡ explÃ­citamente DOLETH_ACCESS_MODE=private-beta.
  */
 export function accessMode(): AccessMode {
-  const configured = process.env.DOLETH_ACCESS_MODE?.trim() || "private-beta";
+  const configured = process.env.DOLETH_ACCESS_MODE?.trim() || "public";
   if (configured !== "private-beta" && configured !== "public") {
     throw new ConfigurationError("DOLETH_ACCESS_MODE debe ser private-beta o public.");
   }
