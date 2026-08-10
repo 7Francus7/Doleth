@@ -12,6 +12,7 @@ No registrar valores en Git, documentación, tickets o logs.
 | `RESEND_API_KEY` | Runtime | Requerida con Resend | Credencial del proveedor. Debe existir solo donde se envían emails. |
 | `DOLETH_EMAIL_FROM` | Runtime | Requerida | Remitente permitido por el dominio verificado. |
 | `DOLETH_EMAIL_TRANSPORT` | Runtime | Requerida en producción | Debe ser `resend`; transportes de consola solo en desarrollo/test. |
+| `DOLETH_ACCESS_MODE` | Runtime | Opcional | `public` (por omisión) abre el registro a cualquiera; `private-beta` lo cierra a invitaciones. Es la **única** palanca que controla el acceso: no hay allowlist ni flag paralelo. Cualquier otro valor aborta el arranque. |
 | `DOLETH_ACCESS_PASSWORD` | Runtime antiguo | Obsoleta/peligrosa | Pertenece a `main` de acceso compartido. Remover del release multiusuario una vez confirmado que no hay consumidores. |
 | `DOLETH_OWNER_EMAIL` | Operación de backfill | Temporal | Identifica el owner histórico. Confirmar explícitamente; no mantener como variable ordinaria de runtime. |
 | `DOLETH_BACKFILL_TIMEOUT_MS` | Operación | Opcional | Timeout del backfill. Ajustar solo en rehearsal. |

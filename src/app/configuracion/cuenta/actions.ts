@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDb } from "../../../lib/db";
+import { eraseUserAccount, summarizeErasure } from "../../../lib/auth/account-deletion";
 import { recordAuthEvent } from "../../../lib/auth/audit";
 import { EMAIL_CHANGE_TTL_MINUTES, publicEmailAuthEnabled } from "../../../lib/auth/config";
 import {
@@ -234,12 +235,24 @@ export async function revokeOtherSessionsAction(): Promise<AccountState> {
   }
 }
 
+// Sin `export`: un módulo `"use server"` sólo puede exportar funciones async, y
+// exportar una constante deja al módulo entero sin exports en el build.
 const DELETION_PHRASE = "ELIMINAR";
 
-export async function requestAccountDeletionAction(
-  _previous: AccountState,
-  formData: FormData,
-): Promise<AccountState> {
+/**
+ * Baja definitiva, ejecutada por la propia persona.
+ *
+ * Pide dos cosas a la vez porque cada una tapa un agujero distinto: la
+ * contraseña prueba que es el dueño y no alguien frente a una sesión abierta;
+ * escribir ELIMINAR prueba que entendió qué apretó. Un botón solo, o un botón
+ * con `confirm()`, no distingue una decisión de un click.
+ *
+ * Qué borra exactamente está en `eraseUserAccount`. Acá interesa el orden de los
+ * efectos: primero se borra —en una transacción, o no se borra nada—, después se
+ * limpia la cookie. Al revés, un fallo del borrado dejaría a la persona afuera
+ * de una cuenta que sigue existiendo.
+ */
+export async function deleteAccountAction(_previous: AccountState, formData: FormData): Promise<AccountState> {
   try {
     const { user } = await requireSessionForAction();
     const password = String(formData.get("currentPassword") ?? "");
@@ -253,27 +266,21 @@ export async function requestAccountDeletionAction(
     const verification = await verifyPassword(password, user.passwordHash);
     if (!verification.valid) return failure(WRONG_PASSWORD, { currentPassword: WRONG_PASSWORD });
 
-    await getDb().user.update({ where: { id: user.id }, data: { deletionRequestedAt: new Date() } });
-    await recordAuthEvent({ type: "ACCOUNT_DELETION_REQUESTED", userId: user.id });
-    revalidatePath("/configuracion/cuenta");
-    return success(
-      "Registramos tu pedido de baja. Tus datos siguen intactos y podés cancelarlo mientras tanto.",
-    );
+    // El evento se registra **antes** del borrado: después, el usuario ya no
+    // existe y la FK dejaría el registro sin poder escribirse. La fila sobrevive
+    // con `userId` en NULL, que es exactamente lo que queremos conservar.
+    await recordAuthEvent({ type: "ACCOUNT_DELETED", userId: user.id });
+    const report = await eraseUserAccount(getDb(), user.id);
+    await recordAuthEvent({ type: "ACCOUNT_DELETED", context: summarizeErasure(report) });
   } catch (error) {
     return toState(error);
   }
-}
 
-export async function cancelAccountDeletionAction(): Promise<AccountState> {
-  try {
-    const { user } = await requireSessionForAction();
-    await getDb().user.update({ where: { id: user.id }, data: { deletionRequestedAt: null } });
-    await recordAuthEvent({ type: "ACCOUNT_DELETION_CANCELED", userId: user.id });
-    revalidatePath("/configuracion/cuenta");
-    return success("Cancelamos el pedido de baja.");
-  } catch (error) {
-    return toState(error);
-  }
+  // Fuera del `try`: `redirect()` señaliza con una excepción y `toState` la
+  // convertiría en "no pudimos completar la operación" sobre una baja que sí
+  // ocurrió. La sesión ya no existe en la base; esto saca la cookie muerta.
+  await destroyCurrentSession();
+  redirect("/cuenta-eliminada");
 }
 
 /** Cerrar sesión siempre termina en el login, incluso si la sesión ya había caído. */
