@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { repeatUpcomingPaymentAction, type FinanceActionState } from "../../app/actions/finance";
 import { SubmitButton } from "./SubmitButton";
 import { StatusMessage } from "../../design-system/feedback";
-import styles from "./finance.module.css";
+import styles from "../../features/plan/planPaymentForm.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
 

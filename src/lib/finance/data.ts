@@ -50,7 +50,7 @@ function toCommitment(
     estimatedCents: bigint;
     frequency: string | null;
     plannedAccountId: string;
-    plannedAccount: { name: string };
+    plannedAccount: { name: string; currency: string };
     createdAt: Date;
   },
   balanceByAccount: ReadonlyMap<string, bigint>,
@@ -63,6 +63,7 @@ function toCommitment(
     accountId: payment.plannedAccountId,
     accountName: payment.plannedAccount.name,
     accountBalanceCents: balanceByAccount.get(payment.plannedAccountId) ?? 0n,
+    currency: payment.plannedAccount.currency,
     frequency: payment.frequency,
     createdAtMs: payment.createdAt.getTime(),
   };
@@ -575,6 +576,7 @@ export interface ConfirmedPayment {
   dueOn: string;
   amountCents: bigint;
   accountName: string;
+  currency: string;
   transactionId: string | null;
 }
 
@@ -601,7 +603,7 @@ export async function getUpcomingData(userId: string): Promise<UpcomingData> {
     }),
     db.upcomingPayment.findMany({
       where: { userId, status: "PAID" },
-      include: { plannedAccount: true },
+      include: { plannedAccount: true, transaction: true },
       orderBy: [{ dueOn: "desc" }, { updatedAt: "desc" }],
       take: 5,
     }),
@@ -623,8 +625,11 @@ export async function getUpcomingData(userId: string): Promise<UpcomingData> {
       id: payment.id,
       concept: payment.concept,
       dueOn: dayString(payment.dueOn),
-      amountCents: payment.estimatedCents,
+      // Una confirmación permite ajustar el previsto: la historia debe mostrar
+      // lo que realmente salió, no volver al estimado original.
+      amountCents: payment.transaction?.amountCents ?? payment.estimatedCents,
       accountName: payment.plannedAccount.name,
+      currency: payment.plannedAccount.currency,
       transactionId: payment.transactionId,
     })),
     paidCount,

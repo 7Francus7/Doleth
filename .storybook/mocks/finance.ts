@@ -14,3 +14,6 @@ export const createMovementAction = unavailableInStorybook;
 export const correctMovementAction = unavailableInStorybook;
 export const createAccountAction = unavailableInStorybook;
 export const updateAccountMetadataAction = unavailableInStorybook;
+export const payUpcomingPaymentAction = unavailableInStorybook;
+export const repeatUpcomingPaymentAction = unavailableInStorybook;
+export const createUpcomingPaymentAction = unavailableInStorybook;

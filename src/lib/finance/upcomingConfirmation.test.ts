@@ -62,7 +62,8 @@ describe("confirmación: idempotencia real", () => {
 
   it("el éxito nombra el importe y la cuenta reales", () => {
     expect(action).toContain('message: "Pago confirmado."');
-    expect(action).toContain("Salieron $${formatCentsAR(result.amountCents)} de ${result.accountName}.");
+    expect(action).toContain('result.currency === "ARS" ? "$"');
+    expect(action).toContain("${formatCentsAR(result.amountCents)} de ${result.accountName}.");
   });
 });
 

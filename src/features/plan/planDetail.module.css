@@ -1,0 +1,14 @@
+.detail { display: grid; border: 2px solid var(--color-ink-900); }
+.hero { display: grid; gap: 14px; padding: 26px 20px; border-bottom: 2px solid var(--color-ink-900); background: #f5ead6; }
+.hero[data-state="paid"] { background: #ddd7ce; }
+.hero > p { font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.hero > strong { font-size: clamp(42px, 14vw, 72px); font-variant-numeric: tabular-nums; letter-spacing: -.055em; line-height: 1; white-space: nowrap; }
+.hero > span { font-weight: 700; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.facts div { display: grid; gap: 5px; padding: 14px; border-right: 1px solid var(--color-ink-900); border-bottom: 1px solid var(--color-ink-900); }
+.facts dt { font-family: var(--font-ibm-plex-mono); font-size: 9px; text-transform: uppercase; }
+.facts dd { overflow-wrap: anywhere; font-size: 14px; font-weight: 700; }
+.note { padding: 16px; color: var(--color-text-secondary); font-size: 12px; line-height: 1.45; }
+.paidActions { display: grid; gap: 12px; padding: 20px; }
+.paidActions a { display: flex; min-height: 50px; align-items: center; justify-content: center; border: 2px solid var(--color-ink-900); background: var(--color-ink-900); color: var(--color-bone-000); font-size: 10px; font-weight: 750; text-decoration: none; text-transform: uppercase; }
+@media (min-width: 800px) { .detail { grid-template-columns: minmax(20rem, .8fr) 1.2fr; } .hero { border-right: 2px solid var(--color-ink-900); border-bottom: 0; } }

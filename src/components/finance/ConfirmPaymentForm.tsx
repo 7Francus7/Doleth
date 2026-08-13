@@ -5,12 +5,24 @@ import { useActionState, useState } from "react";
 import { payUpcomingPaymentAction, type FinanceActionState } from "../../app/actions/finance";
 import { SubmitButton } from "./SubmitButton";
 import { AmountInput } from "../../design-system/primitives/AmountInput";
-import { StatusMessage, SuccessState } from "../../design-system/feedback";
+import { StatusMessage } from "../../design-system/feedback";
 import { SensitiveAmount } from "../privacy/AmountPrivacy";
 import { formatCentsAR, parseAmountInput } from "../../lib/finance/amount";
-import styles from "./finance.module.css";
+import styles from "../../features/plan/planPaymentForm.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
+
+export function PaymentConfirmationFeedback({ concept, amount, currency, transactionId, returnTo, detail }: {
+  concept: string; amount: string; currency: string; transactionId?: string; returnTo: string; detail?: string;
+}) {
+  const moneyPrefix = currency === "ARS" ? "$" : `${currency} `;
+  return <section aria-live="polite" className={styles.success}>
+    <p>Pago registrado</p>
+    <h2>{concept} · <SensitiveAmount>{moneyPrefix}{amount}</SensitiveAmount></h2>
+    {detail ? <span>{detail}</span> : null}
+    <div>{transactionId ? <Link className={styles.primaryLink} href={`/movimientos/${transactionId}`}>Ver movimiento</Link> : null}<Link className={styles.quietLink} href={returnTo}>Volver a Plan</Link></div>
+  </section>;
+}
 
 export interface ConfirmPaymentFormProps {
   paymentId: string;
@@ -19,6 +31,7 @@ export interface ConfirmPaymentFormProps {
   /** Importe previsto, en formato argentino, para prellenar el campo. */
   plannedAmount: string;
   accountName: string;
+  currency: string;
   /** Saldo actual de la cuenta prevista, en centavos. */
   accountBalanceCents: string;
   returnTo: string;
@@ -37,6 +50,7 @@ export function ConfirmPaymentForm({
   today,
   plannedAmount,
   accountName,
+  currency,
   accountBalanceCents,
   returnTo,
 }: ConfirmPaymentFormProps) {
@@ -45,31 +59,14 @@ export function ConfirmPaymentForm({
   const [occurredOn, setOccurredOn] = useState(today);
 
   const reading = parseAmountInput(amount);
+  const plannedReading = parseAmountInput(plannedAmount);
   const balanceCents = BigInt(accountBalanceCents);
   const afterCents = reading.cents === null ? null : balanceCents - reading.cents;
-  const changedAmount = reading.cents !== null && amount.trim() !== plannedAmount;
+  const changedAmount = reading.cents !== null && reading.cents !== plannedReading.cents;
+  const moneyPrefix = currency === "ARS" ? "$" : `${currency} `;
 
   if (state.ok) {
-    return (
-      <SuccessState
-        description={state.detail ?? ""}
-        title={state.message}
-        {...(state.data?.amount ? { amount: state.data.amount } : {})}
-        {...(state.data?.sourceAccountName ? { account: state.data.sourceAccountName } : {})}
-        primaryAction={
-          state.data?.transactionId ? (
-            <Link className={styles.primaryLink} href={`/movimientos/${state.data.transactionId}`}>
-              Ver movimiento
-            </Link>
-          ) : undefined
-        }
-        secondaryAction={
-          <Link className={styles.quietLink} href={returnTo}>
-            Volver a Próximo
-          </Link>
-        }
-      />
-    );
+    return <PaymentConfirmationFeedback amount={state.data?.amount ?? plannedAmount} concept={concept} currency={currency} returnTo={returnTo} {...(state.detail ? { detail: state.detail } : {})} {...(state.data?.transactionId ? { transactionId: state.data.transactionId } : {})} />;
   }
 
   return (
@@ -86,7 +83,7 @@ export function ConfirmPaymentForm({
           </div>
           <div className={styles.detailRow}>
             <dt>Saldo actual de la cuenta</dt>
-            <dd><SensitiveAmount>{balanceCents < 0n ? "-" : ""}${formatCentsAR(balanceCents < 0n ? -balanceCents : balanceCents)}</SensitiveAmount></dd>
+            <dd><SensitiveAmount>{balanceCents < 0n ? "−" : ""}{moneyPrefix}{formatCentsAR(balanceCents < 0n ? -balanceCents : balanceCents)}</SensitiveAmount></dd>
           </div>
           <div className={styles.detailRow}>
             <dt>Saldo después de pagar</dt>
@@ -94,15 +91,15 @@ export function ConfirmPaymentForm({
               {afterCents === null
                 ? "—"
                 : afterCents < 0n
-                  ? `Faltarían $${formatCentsAR(-afterCents)}`
-                  : `$${formatCentsAR(afterCents)}`}
+                  ? `Faltarían ${moneyPrefix}${formatCentsAR(-afterCents)}`
+                  : `${moneyPrefix}${formatCentsAR(afterCents)}`}
             </SensitiveAmount></dd>
           </div>
         </dl>
       </div>
 
       <AmountInput
-        hint={`Habías previsto $${plannedAmount}. Si salió otro importe, corregilo acá.`}
+        hint={`Habías previsto ${moneyPrefix}${plannedAmount}. Si salió otro importe, corregilo acá.`}
         label="Importe que salió"
         name="amount"
         onValueChange={setAmount}

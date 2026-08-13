@@ -778,7 +778,7 @@ export async function payUpcomingPaymentAction(
     }
 
     const db = getDb();
-    let outcome: { transactionId: string; amountCents: bigint; accountName: string; alreadyPaid: boolean } | null = null;
+    let outcome: { transactionId: string; amountCents: bigint; accountName: string; currency: string; alreadyPaid: boolean } | null = null;
 
     await db.$transaction(async (tx) => {
       const payment = await tx.upcomingPayment.findFirst({
@@ -792,6 +792,7 @@ export async function payUpcomingPaymentAction(
           transactionId: payment.transactionId!,
           amountCents: payment.transaction?.amountCents ?? payment.estimatedCents,
           accountName: payment.plannedAccount.name,
+          currency: payment.plannedAccount.currency,
           alreadyPaid: true,
         };
         return;
@@ -845,20 +846,21 @@ export async function payUpcomingPaymentAction(
         transactionId: movement.id,
         amountCents,
         accountName: payment.plannedAccount.name,
+        currency: payment.plannedAccount.currency,
         alreadyPaid: false,
       };
     });
 
     refreshFinance();
-    const result = outcome as { transactionId: string; amountCents: bigint; accountName: string; alreadyPaid: boolean } | null;
+    const result = outcome as { transactionId: string; amountCents: bigint; accountName: string; currency: string; alreadyPaid: boolean } | null;
     if (!result) throw financeError("payment-missing", "Próximo pago inexistente.");
 
     return {
       ok: true,
       message: "Pago confirmado.",
       detail: result.alreadyPaid
-        ? `Salieron $${formatCentsAR(result.amountCents)} de ${result.accountName}. Ya estaba confirmado: no se creó otro gasto.`
-        : `Salieron $${formatCentsAR(result.amountCents)} de ${result.accountName}.`,
+        ? `Salieron ${result.currency === "ARS" ? "$" : `${result.currency} `}${formatCentsAR(result.amountCents)} de ${result.accountName}. Ya estaba confirmado: no se creó otro gasto.`
+        : `Salieron ${result.currency === "ARS" ? "$" : `${result.currency} `}${formatCentsAR(result.amountCents)} de ${result.accountName}.`,
       data: {
         transactionId: result.transactionId,
         transactionType: "EXPENSE",
@@ -879,7 +881,7 @@ export async function payUpcomingPaymentAction(
         ok: true,
         message: "Pago confirmado.",
         detail: existing?.transaction
-          ? `Salieron $${formatCentsAR(existing.transaction.amountCents)} de ${existing.plannedAccount.name}. Ya estaba confirmado: no se creó otro gasto.`
+          ? `Salieron ${existing.plannedAccount.currency === "ARS" ? "$" : `${existing.plannedAccount.currency} `}${formatCentsAR(existing.transaction.amountCents)} de ${existing.plannedAccount.name}. Ya estaba confirmado: no se creó otro gasto.`
           : "Ya estaba confirmado: no se creó otro gasto.",
         ...(existing?.transactionId
           ? { data: { transactionId: existing.transactionId, transactionType: "EXPENSE" as const } }
