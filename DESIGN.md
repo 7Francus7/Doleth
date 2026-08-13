@@ -20,6 +20,82 @@ The result must feel like a recognizable, fast, tactile editorial financial
 tool. It must not feel like a traditional bank, blue fintech, SaaS dashboard,
 chaotic web brutalism, childish color app, or generic portfolio concept.
 
+### Luminous Priority UI
+
+**Warm Financial Brutalism is the structure. Luminous Priority UI is the
+hierarchy.** This layer raises only the fact or action that deserves immediate
+attention; it never replaces the editorial grid, hard edges, typography, or
+financial semantics.
+
+#### Three intensity levels
+
+1. **Hero / primary.** One or, exceptionally, two elements per viewport. Valid
+   uses: the main financial truth, the primary CTA, `+ NUEVO`, an active
+   selection, or one critical metric. It may use a dark surface, derived radial
+   gradient, low-alpha glow, internal blur, and controlled saturation.
+2. **Structural.** Bone or warm-neutral field, rules, borders, strong type, and
+   moderate semantic color. Metrics, accounts, commitments, movements, and
+   filters belong here by default.
+3. **Supporting.** Metadata, dates, labels, explanations, and secondary states.
+   Use quiet type and neutral backgrounds. No gradient, glow, saturated field,
+   or decorative depth.
+
+#### Priority surfaces
+
+Use the `PrioritySurface` primitive only when a contained fact or action is the
+first thing a person must read or do. Controlled variants are `neutral`,
+`pressure`, `positive`, `investment`, and `action`. Variant names express
+purpose in addition to color; visible text remains mandatory.
+
+- Dark mineral or ink is the default base.
+- Pressure derives from coral and warm amber; never use pure red.
+- Positive derives from mineral and soft lime; it must not imply that every
+  positive number deserves emphasis.
+- Investment derives from mineral and stone.
+- Action derives from warm yellow or mineral according to surrounding contrast.
+- Structural border, copy, amount, and CTA must remain legible if gradient,
+  blur, transparency, and shadow are removed.
+
+#### Gradient, glow, blur, and transparency
+
+- Gradients behave as diffuse internal light: radial or softly layered,
+  low-saturation, and derived only from the approved palette.
+- Glow behaves as ambient illumination: wide radius, low alpha, and never around
+  individual text. It must not be the sole active, focus, or status signal.
+- Blur is limited to internal light or one protagonist/navigation layer. Do not
+  apply backdrop blur to repeated content surfaces.
+- Transparency may add depth inside a priority surface but must never reduce AA
+  text contrast or make content behind it necessary for comprehension.
+- No neon edges, moving blobs, particles, glass-card collections, or gradients
+  on every CTA/card.
+
+#### CTA and navigation priority
+
+- One primary CTA may share the hero's luminous family while preserving a hard
+  `0–4px` silhouette, explicit label, border, focus outline, and pressed state.
+- `+ NUEVO` is the global creation action, not a sixth destination. It may be
+  more luminous than the navigation but must remain structurally separate.
+- Active navigation uses at least two signals among field, border/indicator,
+  weight, and `aria-current`; glow or color alone is insufficient.
+- Secondary actions remain flat and quiet so they cannot compete with the CTA.
+
+#### Typography priority
+
+- Hero interpretation may use Instrument Serif; the dominant amount uses
+  Manrope tabular numerals.
+- Page titles are materially smaller than hero interpretation.
+- Section titles and metrics remain structural; row copy remains scannable.
+- Supporting metadata steps down in size, contrast, and spacing. Do not enlarge
+  every level to manufacture hierarchy.
+
+#### Motion and accessibility
+
+- Hover, focus, press, and active feedback use `150–250ms` causal transitions.
+- No constant ambient animation. `prefers-reduced-motion` removes nonessential
+  transitions without removing hierarchy or state.
+- All foreground/background pairs meet WCAG AA. Focus uses a visible structural
+  outline. Every luminous state retains text and non-luminous fallback cues.
+
 ### Composition
 
 - Use one composed visual field, not a collection of independent cards.
@@ -30,8 +106,8 @@ chaotic web brutalism, childish color app, or generic portfolio concept.
 - Dark ink fields may contrast with one or two chromatic modules. Do not turn
   every adjacent block into a different color.
 - A colored module has one clear job: type, total, state, or action.
-- No gradients, neon, decorative transparency, glass, soft floating stacks, or
-  white-card-shadow-icon patterns.
+- Outside Luminous Priority level 1, no gradients, neon, decorative
+  transparency, glass, soft floating stacks, or white-card-shadow-icon patterns.
 
 ### V2 Color palette
 

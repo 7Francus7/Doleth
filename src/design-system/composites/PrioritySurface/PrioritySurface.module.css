@@ -1,0 +1,73 @@
+.surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 2px solid var(--priority-border, rgb(247 245 241 / 24%));
+  border-radius: 4px;
+  background-color: var(--priority-base, var(--color-ink-900));
+  background-image: var(--priority-light, none);
+  box-shadow: var(--priority-glow, none);
+  color: var(--priority-text, var(--color-bone-000));
+}
+
+.surface::before {
+  position: absolute;
+  z-index: -1;
+  width: min(28rem, 78%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--priority-bloom, transparent);
+  content: "";
+  filter: blur(56px);
+  inset: -42% -18% auto auto;
+  opacity: .56;
+  pointer-events: none;
+}
+
+.tone-neutral {
+  --priority-base: #171a1f;
+  --priority-light: radial-gradient(circle at 82% 12%, rgb(72 97 91 / 32%), transparent 46%);
+  --priority-bloom: rgb(72 97 91 / 42%);
+}
+
+.tone-pressure {
+  --priority-base: #201d1d;
+  --priority-border: rgb(217 120 97 / 54%);
+  --priority-light:
+    radial-gradient(circle at 82% 18%, rgb(217 120 97 / 30%), transparent 42%),
+    radial-gradient(circle at 18% 108%, rgb(227 184 79 / 14%), transparent 38%);
+  --priority-bloom: rgb(217 120 97 / 46%);
+  --priority-glow: 0 22px 60px rgb(122 68 55 / 16%);
+}
+
+.tone-positive {
+  --priority-base: #15211f;
+  --priority-border: rgb(199 211 111 / 42%);
+  --priority-light: radial-gradient(circle at 84% 12%, rgb(199 211 111 / 24%), transparent 44%);
+  --priority-bloom: rgb(134 179 171 / 38%);
+  --priority-glow: 0 22px 60px rgb(24 78 71 / 14%);
+}
+
+.tone-investment {
+  --priority-base: #19211f;
+  --priority-light: radial-gradient(circle at 82% 16%, rgb(168 164 156 / 24%), transparent 46%);
+  --priority-bloom: rgb(72 97 91 / 44%);
+}
+
+.tone-action {
+  --priority-base: #d2a63e;
+  --priority-border: #171a1f;
+  --priority-text: #171a1f;
+  --priority-light: radial-gradient(circle at 82% 16%, rgb(247 245 241 / 38%), transparent 46%);
+  --priority-bloom: rgb(247 245 241 / 44%);
+  --priority-glow: 0 18px 44px rgb(227 184 79 / 20%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface::before { filter: none; opacity: .22; }
+}
+
+@media (forced-colors: active) {
+  .surface { border-color: CanvasText; background: Canvas; box-shadow: none; color: CanvasText; }
+  .surface::before { display: none; }
+}

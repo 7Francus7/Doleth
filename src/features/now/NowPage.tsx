@@ -6,6 +6,7 @@ import { DolethBrand } from "../../components/brand/DolethBrand";
 import { SensitiveAmount, SensitiveText } from "../../components/privacy/AmountPrivacy";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
 import { ActionStrip } from "../../design-system/composites/ActionStrip";
+import { PrioritySurface, type PrioritySurfaceTone } from "../../design-system/composites/PrioritySurface";
 import type { NowViewModel } from "./model";
 import styles from "./NowPage.module.css";
 
@@ -32,6 +33,11 @@ export function NowPage({ model }: NowPageProps) {
   const accounts = model.accounts ?? [];
   const measuredHero = "value" in model.hero && model.hero.value;
   const investment = model.investments;
+  const heroTone: PrioritySurfaceTone = model.hero.scenario === "attention"
+    ? "pressure"
+    : model.hero.scenario === "stable"
+      ? "positive"
+      : "neutral";
 
   return (
     <main className={`app-canvas ${styles.canvas}`}>
@@ -49,7 +55,13 @@ export function NowPage({ model }: NowPageProps) {
           </aside>
         ) : null}
 
-        <section aria-labelledby="total-title" className={styles.hero} data-state={model.hero.scenario}>
+        <PrioritySurface
+          aria-labelledby="total-title"
+          as="section"
+          className={styles.hero}
+          data-state={model.hero.scenario}
+          tone={heroTone}
+        >
           <div className={styles.heroCopy}>
             <p className={styles.kicker}>Posición disponible</p>
             <h1 id="total-title"><SensitiveText>{model.hero.stateText}</SensitiveText></h1>
@@ -64,7 +76,7 @@ export function NowPage({ model }: NowPageProps) {
             {model.hero.secondaryValue ? <small><SensitiveText>{model.hero.secondaryValue}</SensitiveText></small> : null}
           </div>
           {model.hero.inlineNote ? <p className={styles.heroNote}><SensitiveText>{model.hero.inlineNote}</SensitiveText></p> : null}
-        </section>
+        </PrioritySurface>
 
         <ActionStrip
           {...model.actions}
