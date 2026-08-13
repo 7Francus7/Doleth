@@ -49,7 +49,7 @@ async function getInvestmentsSummary(userId: string): Promise<NonNullable<NowVie
   try {
     const investments = await getInvestments(userId);
     if (!investments.length) {
-      return { hasInvestments: false, value: "0", valuePrefix: "$", deltaLabel: "", deltaState: "neutral", href: "/inversiones" };
+      return { hasInvestments: false, value: "0", valuePrefix: "$", deltaLabel: "", deltaState: "neutral", href: "/mi-realidad#inversiones" };
     }
     const valueCents = investments.reduce((sum, item) => sum + item.currentValueCents, 0n);
     const investedCents = investments.reduce((sum, item) => sum + item.investedCents, 0n);
@@ -62,7 +62,7 @@ async function getInvestmentsSummary(userId: string): Promise<NonNullable<NowVie
       valuePrefix: "$",
       deltaLabel: `${sign}${Math.abs(percent).toLocaleString("es-AR", { maximumFractionDigits: 1 })}%`,
       deltaState: deltaCents > 0n ? "positive" : deltaCents < 0n ? "negative" : "neutral",
-      href: "/inversiones",
+      href: "/mi-realidad#inversiones",
     };
   } catch {
     // Inversiones es un dominio secundario: su ausencia no puede romper /ahora.

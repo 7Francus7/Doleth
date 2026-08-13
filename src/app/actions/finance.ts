@@ -207,6 +207,7 @@ export async function createInvestmentAction(
       },
     });
     revalidatePath("/inversiones");
+    revalidatePath("/mi-realidad");
     return { ok: true, message: "Inversión registrada. Ya forma parte de tu cartera." };
   } catch (error) {
     return errorState(error, "create-investment");
@@ -221,6 +222,7 @@ export async function archiveInvestmentAction(formData: FormData): Promise<void>
   const updated = await getDb().investment.updateMany({ where: { id, userId: user.id }, data: { status } });
   if (updated.count === 0) throw new Error("Inversión inexistente.");
   revalidatePath("/inversiones");
+  revalidatePath("/mi-realidad");
 }
 
 /**

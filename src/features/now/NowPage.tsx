@@ -79,7 +79,7 @@ export function NowPage({ model }: NowPageProps) {
               <strong><SensitiveAmount>{row.valuePrefix}{row.value}{row.valueSuffix}</SensitiveAmount></strong>
             </Link>
           ))}
-          <Link className={styles.metric} href={investment?.href ?? "/inversiones"}>
+          <Link className={styles.metric} href={investment?.href ?? "/mi-realidad#inversiones"}>
             <span>Invertido</span>
             <strong>
               {investment?.hasInvestments ? (

@@ -1,0 +1,65 @@
+.page { padding-bottom: 72px; color: var(--color-ink-900); }
+.heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding: 24px 0; border-bottom: 2px solid var(--color-ink-900); }
+.heading p, .hero > p, .formula header p, .sectionHeading p { font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
+.heading h1 { max-width: 15ch; margin-top: 6px; font-size: clamp(32px, 9vw, 56px); letter-spacing: -.05em; line-height: .95; }
+.heading > a, .empty a { display: flex; min-height: 48px; align-items: center; padding: 0 14px; border: 2px solid var(--color-ink-900); background: var(--color-ink-900); color: var(--color-bone-000); font-size: 10px; font-weight: 750; text-decoration: none; text-transform: uppercase; }
+.patrimony { display: grid; border-bottom: 2px solid var(--color-ink-900); }
+.hero { display: grid; align-content: start; gap: 12px; padding: 30px 20px; background: #48615b; color: var(--color-bone-000); }
+.hero > strong { max-width: 100%; overflow-wrap: anywhere; font-size: clamp(44px, 14vw, 76px); font-variant-numeric: tabular-nums; letter-spacing: -.06em; line-height: .92; }
+.hero > strong[data-amount-scale="long"] { font-size: clamp(38px, 12vw, 64px); }
+.hero > strong[data-amount-scale="extreme"] { font-size: clamp(32px, 10vw, 52px); }
+.hero > span { font-family: var(--font-ibm-plex-mono); font-size: 10px; text-transform: uppercase; }
+.nativeTotals, .investmentNative { display: flex; flex-wrap: wrap; gap: 10px 22px; padding-top: 12px; border-top: 1px solid currentColor; }
+.nativeTotals div, .investmentNative div { display: grid; gap: 2px; }
+.nativeTotals dt, .investmentNative dt { font-family: var(--font-ibm-plex-mono); font-size: 9px; }
+.nativeTotals dd, .investmentNative dd { font-size: 20px; font-weight: 750; }
+.formula { border: 2px solid var(--color-ink-900); border-top: 0; }
+.formula header { display: grid; gap: 6px; padding: 18px; border-bottom: 2px solid var(--color-ink-900); }
+.formula header span, .valuationNote { color: var(--color-text-secondary); font-size: 12px; line-height: 1.45; }
+.formula > a { display: grid; min-height: 58px; grid-template-columns: 1fr auto 14px; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--color-ink-900); color: inherit; text-decoration: none; }
+.formula > a span { font-size: 13px; font-weight: 700; text-transform: uppercase; }
+.formula > a strong { font-variant-numeric: tabular-nums; }
+.formula > a i { font-style: normal; }
+.valuationNote { padding: 16px; }
+.boundary { display: grid; gap: 6px; padding: 18px 0; border-bottom: 2px solid var(--color-ink-900); }
+.boundary strong { font-family: var(--font-ibm-plex-mono); font-size: 10px; text-transform: uppercase; }
+.boundary p { max-width: 74ch; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
+.investments { padding-top: 30px; }
+.sectionHeading { display: grid; gap: 20px; padding-bottom: 18px; border-bottom: 2px solid var(--color-ink-900); }
+.sectionHeading h2 { margin-top: 5px; font-size: clamp(30px, 8vw, 48px); letter-spacing: -.04em; }
+.investmentTotal { display: grid; gap: 3px; }
+.investmentTotal > span { font-family: var(--font-ibm-plex-mono); font-size: 9px; text-transform: uppercase; }
+.investmentTotal > strong { overflow-wrap: anywhere; font-size: clamp(34px, 10vw, 58px); font-variant-numeric: tabular-nums; letter-spacing: -.05em; line-height: 1; }
+.investmentTotal > strong[data-amount-scale="extreme"] { font-size: clamp(28px, 8vw, 46px); }
+.investmentTotal small, .values small { font-family: var(--font-ibm-plex-mono); font-size: 10px; }
+.page [data-tone="positive"] { color: var(--color-mineral-700); }
+.page [data-tone="negative"] { color: #8f4839; }
+.investmentNative { padding: 18px 0; border-color: var(--color-ink-900); }
+.investmentNote { padding: 12px 0; border-bottom: 1px solid var(--color-ink-900); color: var(--color-text-secondary); font-size: 12px; }
+.investmentRow { position: relative; display: grid; min-height: 92px; grid-template-columns: minmax(0, 1fr) auto 16px; align-items: center; gap: 12px; padding: 14px 0 14px 12px; border-bottom: 1px solid var(--color-ink-900); color: inherit; text-decoration: none; }
+.investmentRow::before { position: absolute; inset-block: 0; left: 0; width: 5px; background: #48615b; content: ""; }
+.investmentRow > span:first-child { display: grid; min-width: 0; gap: 3px; }
+.investmentRow b { overflow-wrap: anywhere; font-size: 19px; }
+.investmentRow em { color: var(--color-text-secondary); font-size: 10px; font-style: normal; }
+.investmentRow small { color: var(--color-text-secondary); font-size: 11px; line-height: 1.35; }
+.values { display: grid; justify-items: end; gap: 4px; text-align: right; }
+.values strong { max-width: 45vw; font-size: clamp(17px, 5vw, 24px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.investmentRow > i { font-style: normal; }
+.empty { display: grid; justify-items: start; gap: 12px; padding: 34px 0; }
+.empty p { max-width: 54ch; color: var(--color-text-secondary); font-size: 13px; line-height: 1.5; }
+.archived { margin-top: 34px; opacity: .68; }
+.archived h2 { padding-bottom: 12px; border-bottom: 2px solid var(--color-ink-900); font-size: 22px; }
+.archived a { display: grid; min-height: 64px; grid-template-columns: 1fr auto; align-items: center; gap: 12px; border-bottom: 1px solid var(--color-ink-900); color: inherit; text-decoration: none; }
+.archived a span { display: grid; font-weight: 700; }
+.archived a small { color: var(--color-text-secondary); font-weight: 400; }
+.page a:focus-visible { outline: 3px solid var(--color-mineral-700); outline-offset: 3px; }
+@media (min-width: 850px) {
+  .patrimony { grid-template-columns: minmax(0, .95fr) minmax(25rem, 1.05fr); }
+  .hero { min-height: 35rem; padding: 44px; }
+  .formula { border-top: 0; border-left: 0; }
+  .sectionHeading { grid-template-columns: 1fr auto; align-items: end; }
+  .investmentTotal { justify-items: end; text-align: right; }
+  .investmentList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .investmentRow:nth-child(odd) { border-right: 1px solid var(--color-ink-900); }
+  .values strong { max-width: 18rem; }
+}

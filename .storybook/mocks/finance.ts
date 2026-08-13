@@ -17,3 +17,5 @@ export const updateAccountMetadataAction = unavailableInStorybook;
 export const payUpcomingPaymentAction = unavailableInStorybook;
 export const repeatUpcomingPaymentAction = unavailableInStorybook;
 export const createUpcomingPaymentAction = unavailableInStorybook;
+export const createInvestmentAction = unavailableInStorybook;
+export const archiveInvestmentAction = async (): Promise<void> => {};

@@ -1,8 +1,8 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
-import { getDisplayContextFromBook, valueAmounts, type DisplayContext } from "./display";
-import { valuePortfolio, type Holding } from "./holdings";
+import { describeMissing, describeRate, getDisplayContextFromBook, valueAmounts, type DisplayContext } from "./display";
+import { formatQuantity, valuePortfolio, type Holding } from "./holdings";
 import { isSupportedCurrency } from "./currency";
 import { loadLatestPrices } from "./rates/prices";
 import { isLiabilityAccount } from "./accountKind";
@@ -555,6 +555,71 @@ export async function getPortfolio(userId: string, now = new Date()) {
   }));
 
   return { portfolio: valuePortfolio(holdings, prices), book, display: getDisplayContextFromBook(book, now) };
+}
+
+/**
+ * Lectura de Corte 6: cuentas e inversiones comparten moneda de presentación,
+ * pero no una contabilidad. Se convierten con el mismo libro y viajan separadas
+ * para impedir que la UI construya un total combinado no demostrable.
+ */
+export async function getPatrimonyData(userId: string, now = new Date()) {
+  const db = getDb();
+  const [accountData, investments] = await Promise.all([
+    getValuedAccounts(userId, now),
+    db.investment.findMany({ where: { userId }, orderBy: [{ status: "asc" }, { currentValueCents: "desc" }, { createdAt: "asc" }] }),
+  ]);
+  const symbols = investments.map((investment) => investment.symbol).filter((symbol): symbol is string => Boolean(symbol));
+  const prices = await loadLatestPrices(symbols);
+  const holdings: Holding[] = investments.map((investment) => ({
+    id: investment.id,
+    name: investment.name,
+    kind: investment.kind,
+    currency: isSupportedCurrency(investment.currency) ? investment.currency : "ARS",
+    investedCents: investment.investedCents,
+    quantityMicros: investment.quantityMicros,
+    symbol: investment.symbol,
+    declaredValueCents: investment.currentValueCents,
+  }));
+  const valuedById = new Map(valuePortfolio(holdings, prices).holdings.map((holding) => [holding.id, holding]));
+  const active = investments.filter((investment) => investment.status === "ACTIVE");
+  const activeValues = active.map((investment) => ({
+    balanceCents: valuedById.get(investment.id)?.valueCents ?? investment.currentValueCents,
+    currency: investment.currency,
+  }));
+  const activeBasis = active.map((investment) => ({ balanceCents: investment.investedCents, currency: investment.currency }));
+  const currentValuation = valueAmounts(activeValues, accountData.book, now);
+  const basisValuation = valueAmounts(activeBasis, accountData.book, now);
+  const currentById = new Map(active.map((investment, index) => [investment.id, currentValuation.valued[index] ?? 0n]));
+  const basisById = new Map(active.map((investment, index) => [investment.id, basisValuation.valued[index] ?? 0n]));
+
+  return {
+    display: accountData.context,
+    accounts: accountData.accounts,
+    investments: investments.map((investment) => {
+      const valued = valuedById.get(investment.id);
+      return {
+        id: investment.id,
+        name: investment.name,
+        kind: investment.kind,
+        symbol: investment.symbol,
+        currency: investment.currency,
+        investedCents: investment.investedCents,
+        valueCents: valued?.valueCents ?? investment.currentValueCents,
+        convertedInvestedCents: basisById.get(investment.id) ?? 0n,
+        convertedValueCents: currentById.get(investment.id) ?? 0n,
+        quantity: investment.quantityMicros === null ? null : formatQuantity(investment.quantityMicros),
+        note: investment.note,
+        status: investment.status,
+        mode: valued?.mode ?? "declared",
+        priceProvider: valued?.price?.provider ?? null,
+        priceAsOf: valued?.price?.asOf.toISOString().slice(0, 10) ?? null,
+      };
+    }),
+    investmentsComplete: currentValuation.context.complete,
+    investedBasisComplete: basisValuation.context.complete,
+    accountValuationNote: describeMissing(accountData.context) ?? describeRate(accountData.context),
+    investmentValuationNote: describeMissing(currentValuation.context) ?? describeRate(currentValuation.context),
+  };
 }
 
 export async function getUpcomingPayments(userId: string) {

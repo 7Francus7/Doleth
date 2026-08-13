@@ -1,0 +1,19 @@
+.page { display: grid; gap: 0; color: var(--color-ink-900); }
+.hero { display: grid; gap: 12px; padding: 28px 20px; border: 2px solid var(--color-ink-900); background: #a8a49c; }
+.hero > p, .facts dt, .boundary strong { font-family: var(--font-ibm-plex-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.hero h1 { overflow-wrap: anywhere; font-size: clamp(34px, 11vw, 58px); letter-spacing: -.05em; line-height: .95; }
+.hero > strong { overflow-wrap: anywhere; font-size: clamp(38px, 13vw, 70px); font-variant-numeric: tabular-nums; letter-spacing: -.055em; line-height: 1; }
+.hero > span { width: fit-content; padding-top: 8px; border-top: 2px solid currentColor; font-family: var(--font-ibm-plex-mono); font-size: 13px; font-weight: 700; }
+.page [data-tone="positive"] { color: var(--color-mineral-700); }
+.page [data-tone="negative"] { color: #8f4839; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 2px solid var(--color-ink-900); border-top: 0; }
+.facts div { display: grid; gap: 6px; min-height: 78px; padding: 14px; border-right: 1px solid var(--color-ink-900); border-bottom: 1px solid var(--color-ink-900); }
+.facts dd { overflow-wrap: anywhere; font-size: 14px; font-weight: 700; }
+.facts .wide { grid-column: 1 / -1; }
+.boundary { display: grid; gap: 5px; padding: 18px 0; border-bottom: 2px solid var(--color-ink-900); }
+.boundary p { max-width: 65ch; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 20px; }
+.actions a, .actions button { display: flex; min-height: 48px; align-items: center; justify-content: center; padding: 0 16px; border: 2px solid var(--color-ink-900); border-radius: 0; background: transparent; color: inherit; font: inherit; font-size: 10px; font-weight: 750; text-decoration: none; text-transform: uppercase; }
+.actions button { background: var(--color-ink-900); color: var(--color-bone-000); cursor: pointer; }
+.actions a:focus-visible, .actions button:focus-visible { outline: 3px solid var(--color-mineral-700); outline-offset: 3px; }
+@media (min-width: 820px) { .page { grid-template-columns: minmax(22rem, .8fr) 1.2fr; } .hero { min-height: 34rem; align-content: start; padding: 44px; } .facts { border-top: 2px solid var(--color-ink-900); border-left: 0; } .boundary, .actions { grid-column: 1 / -1; } }

@@ -1,11 +1,11 @@
-import { RealityPage } from "../../features/reality/RealityPage";
-import { getRealityModel } from "../../features/reality/data/getRealityModel";
+import { PatrimonyPage } from "../../features/patrimony/PatrimonyPage";
+import { getPatrimonyModel } from "../../features/patrimony/data/getPatrimonyModel";
 import { requireOnboardedUser } from "../../lib/auth/guards";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mi realidad" };
+export const metadata = { title: "Patrimonio" };
 
-export default async function MiRealidadPage() {
+export default async function PatrimonyRoute() {
   const user = await requireOnboardedUser("/mi-realidad");
-  return <RealityPage model={await getRealityModel(user.id)} />;
+  return <PatrimonyPage model={await getPatrimonyModel(user.id)} />;
 }
