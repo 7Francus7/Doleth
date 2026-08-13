@@ -1,27 +1,149 @@
 # Design System - Doleth
 
-## V2 Cut 1 — Financial functional brutalism override
+## V2 Visual Authority — Warm Financial Brutalism
 
-This section is the active visual authority for the V2 shell, primary navigation,
-Inicio, and any component created or restyled inside Cut 1. Legacy product
+This section is the active visual authority for every Doleth V2 cut. Legacy
 surfaces keep the rules below until their own V2 cut. When rules conflict inside
-the Cut 1 scope, this override wins.
+V2 scope, this authority wins.
 
-- Composition is editorial and structural: large financial type, hard modules,
-  full rules, visible grids, and direct labels.
-- Bone `#F7F5F1` and Ink `#171A1F` remain the foundation. Mineral green remains
-  semantic and secondary; it is not decorative chrome.
-- Cut 1 surfaces use `0–4px` radii, no gradients, no glass, no decorative
-  shadows, and no floating card stacks.
-- Navigation exposes exactly five primary destinations: Inicio, Movimientos,
-  Cuentas, Plan, and Patrimonio. `+ NUEVO` is a persistent action, not a sixth
-  destination.
-- Primary financial numbers use Manrope with tabular lining numerals. IBM Plex
-  Mono is reserved for compact evidence and structural labels. Instrument Serif
-  may frame a short interpretation but never replaces accounting clarity.
-- Mobile controls remain at least `44px`; the shell must hold at 320px without
-  horizontal page overflow. Long amounts wrap or scale within their module.
-- Motion remains causal only. The V2 shell adds no decorative entrance motion.
+### Identity
+
+**Warm Financial Brutalism** means functional financial brutalism with editorial
+color and tactility. Doleth combines two complementary sources:
+
+- editorial structure, dominant typography, ink/bone contrast, rules, rawness,
+  and deliberate composition;
+- flat color, large tactile surfaces, simple forms, clear graphic modules, and
+  strong mobile reachability.
+
+The result must feel like a recognizable, fast, tactile editorial financial
+tool. It must not feel like a traditional bank, blue fintech, SaaS dashboard,
+chaotic web brutalism, childish color app, or generic portfolio concept.
+
+### Composition
+
+- Use one composed visual field, not a collection of independent cards.
+- Large financial type, hard modules, full rules, visible grids, and direct
+  labels remain the structural base.
+- Flat color blocks may carry an entire financial fact or interaction. Color is
+  part of the grid, never a decoration placed inside a neutral card.
+- Dark ink fields may contrast with one or two chromatic modules. Do not turn
+  every adjacent block into a different color.
+- A colored module has one clear job: type, total, state, or action.
+- No gradients, neon, decorative transparency, glass, soft floating stacks, or
+  white-card-shadow-icon patterns.
+
+### V2 Color palette
+
+Foundation:
+
+- Ink: `#171A1F`
+- Bone: `#F7F5F1`
+- Warm gray: `#E8E3DB`
+- Stone: `#A8A49C`
+
+Controlled chromatic fields:
+
+- Coral: `#D97861`
+- Soft lime: `#C7D36F`
+- Warm yellow: `#E3B84F`
+- Mineral: `#48615B`
+
+These values establish the initial token direction and may be tuned only after
+measured WCAG contrast verification. Ink is the default text on coral, lime,
+yellow, stone, and bone. Bone is the default text on Ink and dark Mineral.
+
+Usage discipline:
+
+1. use at most two chromatic families in one viewport, excluding neutral fields;
+2. reserve large color fields for primary facts or primary interactions;
+3. repeat a color only when the semantic role repeats;
+4. never use operation color as the only signal — always show its text label;
+5. operation color and financial state are separate dimensions: coral expense
+   does not mean error, and lime income does not automatically mean success;
+6. every text/background pairing must meet WCAG AA for its actual size and weight.
+
+### Operation language
+
+Operation colors create recognition across movement lists, creation entry points,
+forms, and confirmations:
+
+| Operation | Primary field | Required textual signal |
+| --- | --- | --- |
+| Expense | Coral `#D97861` | “Gasto” and signed amount |
+| Income | Soft lime `#C7D36F` | “Ingreso” and signed amount |
+| Transfer | Warm yellow `#E3B84F` | “Transferencia”, origin, and destination |
+| Investment | Mineral `#48615B` or Stone `#A8A49C` | “Inversión” and instrument/account context |
+
+Compact rows may use a hard color edge, label field, or background segment. Full
+color is reserved for dominant totals, creation surfaces, and selected operation
+states. Icons may support recognition but never replace the label.
+
+### Financial surfaces
+
+A valid colored financial surface can contain:
+
+- `GASTOS`
+- `$428.300`
+- `−8% VS JULIO`
+
+as one coral compositional block. The label, value, and comparison form a single
+fact. Do not wrap that fact inside another card or add an icon badge, shadow, and
+descriptive filler.
+
+### Shape and tactility
+
+- Structural modules and composed surfaces: `0–4px` radius.
+- Inputs and high-frequency controls: up to `8px` when it improves touch clarity.
+- Sheets and modal layers: up to `12px` on exposed top corners only.
+- Pills: filters, tags, and real states only.
+- Large touch targets and generous padding create tactility; roundness does not.
+- Shadows remain absent from structural content and optional/subtle on a modal
+  sheet only when separation cannot be achieved through tone and border.
+
+### Navigation
+
+- Keep exactly five primary destinations: Inicio, Movimientos, Cuentas, Plan,
+  and Patrimonio.
+- `+ NUEVO` is a persistent primary action, not a sixth destination, and may use
+  a stronger flat-color treatment than navigation items.
+- Active destination must be unequivocal through structure, contrast, and text;
+  color alone is insufficient.
+- Mobile controls remain at least `44px`, reachable, keyboard-visible, and valid
+  at 320px without horizontal page overflow.
+
+### Forms — authority for Cut 2
+
+Movement creation must feel large, tactile, progressive, and fast:
+
+1. operation type establishes the surface and is always written as text;
+2. amount is the dominant control and receives focus first;
+3. category and account follow as the next essential decisions;
+4. date, description, and other secondary fields appear progressively without
+   hiding required consequences;
+5. the primary submit action stays evident and reachable on mobile;
+6. validation appears beside the cause and never relies only on color.
+
+The creation surface may use the operation field across the page or sheet:
+
+- Gasto → coral;
+- Ingreso → soft lime;
+- Transferencia → warm yellow;
+- Inversión → mineral or stone.
+
+Changing type may change the field color and relevant inputs, but must not alter
+stored data, trigger a mutation, or discard entered information without explicit
+warning. Contrast, focus, errors, disabled states, and long amounts must be tested
+for every operation field.
+
+### Typography and motion continuity
+
+- Primary financial numbers use Manrope with tabular lining numerals.
+- IBM Plex Mono is reserved for evidence, structural labels, and compact deltas.
+- Instrument Serif may frame a short interpretation but never replaces
+  accounting clarity.
+- Motion remains causal only: type changes, sheet transitions, validation, and
+  confirmed consequences. No decorative entrances or color floods.
 
 ## Product Context
 - What this is: mobile-first personal financial truth system for people with fragmented, multi-layered financial lives.
