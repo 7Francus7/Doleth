@@ -8,7 +8,6 @@ import { ConfirmDialog } from "../../design-system/composites/ConfirmDialog";
 import { StatusMessage } from "../../design-system/feedback";
 import { AmountInput } from "../../design-system/primitives/AmountInput";
 import { Button } from "../../design-system/primitives/Button";
-import { transferSummary } from "../../lib/finance/actionFeedback";
 import { parseAmountInput } from "../../lib/finance/amount";
 import { describeDateAR, isFutureDate } from "../../lib/finance/movementDate";
 import { draftStorageKey, isDraftWorthKeeping, parseDraft, serializeDraft, type DraftScope, type MovementDraftValues } from "../../lib/finance/movementDraft";
@@ -164,10 +163,12 @@ export function MovementForm({ accounts, categories, today, defaults, initialTyp
   if (state.ok && state !== dismissedResult) {
     const detailHref = state.data?.transactionId ? `/movimientos/${state.data.transactionId}?volver=${encodeURIComponent(returnTo)}` : returnTo;
     return <section className={formStyles.successState} data-operation={values.type} role="status">
-      <p>{typeLabel[values.type]} registrado</p>
-      {state.data?.amount ? <strong>${state.data.amount}</strong> : null}
-      <span>{state.detail}</span>
-      <div>
+      <div className={formStyles.successReceipt}>
+        <p>{typeLabel[values.type]} registrado</p>
+        {state.data?.amount ? <strong>${state.data.amount}</strong> : null}
+      </div>
+      <p className={formStyles.successContext}>{state.data?.sourceAccountName ?? state.detail}</p>
+      <div className={formStyles.successActions}>
         <Link className={formStyles.successPrimary} href={returnTo}>Volver</Link>
         <Link className={formStyles.successSecondary} href={detailHref}>Ver movimiento</Link>
         {!isCorrection ? <button onClick={() => {
@@ -220,7 +221,11 @@ export function MovementForm({ accounts, categories, today, defaults, initialTyp
         </div> : <><input name="occurredOn" type="hidden" value={values.occurredOn} /><input name="description" type="hidden" value={values.description} /></>}
       </div>
 
-      {values.type === "TRANSFER" ? <section aria-label="Resumen de la transferencia" className={formStyles.transferSummary}>{transferSummary(reading.cents, accountName(sourceAccountId), accountName(destinationAccountId)).map((line) => <p key={line}>{line}</p>)}</section> : null}
+      {values.type === "TRANSFER" ? <section aria-label="Resumen de la transferencia" className={formStyles.transferSummary}>
+        <strong>${values.amount || "—"}</strong>
+        <p>{accountName(sourceAccountId) || "Origen"} <span aria-hidden="true">→</span> {accountName(destinationAccountId) || "Destino"}</p>
+        {crossesCurrencies && destinationAccount && destinationAmount ? <small>Acredita {destinationAccount.currency} {destinationAmount}</small> : null}
+      </section> : null}
       {isCorrection && original ? <section aria-label="Qué cambia con la corrección" className={styles.comparison}><p className={styles.comparisonTitle}>Qué cambia</p><dl className={styles.detailGrid}>
         <div className={styles.detailRow}><dt>Importe</dt><dd>${original.amount} → ${values.amount || "—"}</dd></div><div className={styles.detailRow}><dt>Cuenta</dt><dd>{original.accountName} → {accountName(sourceAccountId) || "—"}</dd></div><div className={styles.detailRow}><dt>Fecha</dt><dd>{describeDateAR(original.occurredOn, today)} → {describeDateAR(values.occurredOn, today)}</dd></div>
         {original.description !== values.description ? <div className={styles.detailRow}><dt>Descripción</dt><dd>{original.description || "—"} → {values.description || "—"}</dd></div> : null}

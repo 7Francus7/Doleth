@@ -39,9 +39,14 @@ const viewport = (width: number, height = 844) => {
 };
 
 export const GastoMobile: Story = { args: { defaults: defaults.expense }, decorators: [viewport(390)] };
+export const GastoVacio320: Story = { args: { initialType: "EXPENSE" }, decorators: [viewport(320, 780)] };
+export const GastoCompleto320: Story = { args: { defaults: defaults.expense }, decorators: [viewport(320, 780)] };
 export const IngresoMobile: Story = { args: { defaults: defaults.income }, decorators: [viewport(390)] };
 export const TransferenciaMobile: Story = { args: { defaults: defaults.transfer }, decorators: [viewport(390)] };
-export const TransferenciaOtraMoneda: Story = { args: { defaults: { ...defaults.transfer, destinationAccountId: "usd" } }, decorators: [viewport(390)] };
+export const TransferenciaOtraMoneda: Story = {
+  args: { defaults: { ...defaults.transfer, destinationAccountId: "usd" } }, decorators: [viewport(390)],
+  play: async ({ canvasElement }) => { await userEvent.type(within(canvasElement).getByRole("textbox", { name: /Importe que entra/i }), "47,50"); },
+};
 export const MismaCuentaProtegida: Story = { args: { defaults: { ...defaults.transfer, destinationAccountId: "banco" } }, decorators: [viewport(390)] };
 export const CuentaInvalida: Story = { args: { defaults: { ...defaults.expense, sourceAccountId: "archivada" } }, decorators: [viewport(390)] };
 export const ImporteLargo: Story = { args: { defaults: { ...defaults.expense, amount: "999.999.999,99" } }, decorators: [viewport(320, 780)] };
@@ -69,6 +74,10 @@ export const SelectorCategoria: Story = {
 export const SelectorCuenta: Story = {
   args: { defaults: { ...defaults.expense, sourceAccountId: "" } }, decorators: [viewport(390)],
   play: async ({ canvasElement }) => { await userEvent.click(within(canvasElement).getByRole("button", { name: /Elegir cuenta/i })); },
+};
+export const SelectorSinOpciones: Story = {
+  args: { categories: [], defaults: { ...defaults.expense, categoryId: "" } }, decorators: [viewport(390)],
+  play: async ({ canvasElement }) => { await userEvent.click(within(canvasElement).getByRole("button", { name: /Elegir categoría/i })); },
 };
 export const Cancelacion: Story = {
   decorators: [viewport(390)],

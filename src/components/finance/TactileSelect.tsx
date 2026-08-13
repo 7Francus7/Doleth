@@ -75,7 +75,7 @@ export function TactileSelect({
         {searchable ? (
           <label className={styles.pickerSearch}>
             <span>Buscar</span>
-            <input autoFocus onChange={(event) => setQuery(event.target.value)} placeholder={`Buscar ${label.toLocaleLowerCase("es")}`} type="search" value={query} />
+            <input autoFocus enterKeyHint="search" onChange={(event) => setQuery(event.target.value)} placeholder={`Buscar ${label.toLocaleLowerCase("es")}`} type="search" value={query} />
           </label>
         ) : null}
         <div className={styles.pickerOptions} role="listbox" aria-label={label}>
@@ -96,7 +96,7 @@ export function TactileSelect({
               {option.id === value ? <strong aria-hidden="true">✓</strong> : null}
             </button>
           ))}
-          {filtered.length === 0 ? <p className={styles.noOptions}>No hay coincidencias.</p> : null}
+          {filtered.length === 0 ? <p aria-live="polite" className={styles.noOptions}>No hay opciones disponibles.</p> : null}
         </div>
       </BottomSheet>
     </div>
