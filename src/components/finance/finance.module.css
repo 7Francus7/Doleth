@@ -131,7 +131,7 @@
 .nav a { min-height: 62px; gap: 4px; border-right: 1px solid var(--border-default); border-radius: 0; color: var(--color-text-secondary); font-family: var(--font-ibm-plex-mono); font-size: 9px; letter-spacing: .02em; text-transform: uppercase; }
 .nav a:last-child { border-right: 0; }
 .nav a[aria-current="page"] { background: var(--color-ink-900); color: var(--color-bone-000); }
-.navUtilities { position: fixed; z-index: 21; right: 12px; bottom: calc(74px + env(safe-area-inset-bottom)); display: flex; align-items: stretch; gap: 6px; }
+.navUtilities { position: fixed; z-index: 21; right: 0; bottom: calc(62px + env(safe-area-inset-bottom)); left: 0; display: flex; min-height: 62px; align-items: center; justify-content: flex-end; gap: 6px; padding: 6px max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left)); border-top: 2px solid var(--color-ink-900); background: var(--color-canvas-default); }
 .newTrigger, .navUtilities .navMore { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; border: 2px solid var(--color-ink-900); border-radius: 0; background: var(--color-ink-900); color: var(--color-bone-000); cursor: pointer; font-family: var(--font-manrope); font-size: 12px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
 .newTrigger { gap: 8px; padding: 0 18px; }
 .newTrigger > span { font-size: 19px; font-weight: 450; line-height: 1; }
@@ -147,6 +147,6 @@
 @media (min-width: 980px) {
   .nav { top: 0; right: auto; width: 172px; grid-template-columns: 1fr; grid-template-rows: repeat(5, 72px); align-content: center; padding: 112px 0 96px; border-top: 0; border-right: 2px solid var(--color-ink-900); }
   .nav a { min-height: 72px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 0 16px; border-right: 0; border-bottom: 1px solid var(--border-default); font-size: 10px; }
-  .navUtilities { top: 20px; right: auto; bottom: auto; left: 16px; width: 140px; flex-wrap: wrap; }
+  .navUtilities { top: 20px; right: auto; bottom: auto; left: 16px; width: 140px; min-height: 0; flex-wrap: wrap; padding: 0; border-top: 0; background: transparent; }
   .newTrigger, .navUtilities .navMore { width: 100%; }
 }
