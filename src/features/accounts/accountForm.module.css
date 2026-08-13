@@ -1,5 +1,5 @@
 .createForm, .metadataForm { display: grid; gap: 22px; padding: 24px 20px; border: 2px solid var(--color-ink-900); background: #e8e3db; }
-.createForm[data-liability] { background: #d97861; }
+.createForm[data-liability] { border-top: 10px solid #b86855; background: #e8e3db; }
 .field, .metadataForm label { display: grid; gap: 8px; }
 .field > span, .metadataForm label > span, .lockedFacts span { font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .field input, .field select, .metadataForm input { width: 100%; min-height: 54px; padding: 0 14px; border: 2px solid var(--color-ink-900); border-radius: 0; background: var(--color-bone-000); color: var(--color-ink-900); font: inherit; font-size: 16px; }

@@ -22,6 +22,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const MuchasCuentas: Story = {};
+export const Normal: Story = { args: { model: makeModel(accounts.slice(0, 5)) } };
+export const ImporteExtremo: Story = { args: { model: makeModel([account("extreme", { name: "Cuenta principal", originalCents: 1_001_496_599_99n, valuedCents: 1_001_496_599_99n })]) } };
+export const ImporteMuyExtremo: Story = { args: { model: makeModel([account("very-extreme", { name: "Cuenta principal", originalCents: 98_765_432_109_87n, valuedCents: 98_765_432_109_87n })]) } };
+export const NombreExtremo: Story = { args: { model: makeModel([account("long-name", { name: "Cuenta con un nombre deliberadamente muy largo para verificar que nunca destruya la columna del saldo", originalCents: 99_999_999_00n, valuedCents: 99_999_999_00n })]) } };
+export const MuchasArchivadas: Story = { args: { model: makeModel(Array.from({ length: 12 }, (_, index) => account(`archived-${index}`, { name: `Cuenta archivada ${index + 1}`, status: "ARCHIVED", originalCents: BigInt((index + 1) * 18_400_00), valuedCents: BigInt((index + 1) * 18_400_00) }))) } };
 export const UnaCuenta: Story = { args: { model: makeModel([accounts[0]!]) } };
 export const SinCuentas: Story = { args: { model: makeModel([]) } };
 export const TodasArchivadas: Story = { args: { model: makeModel([account("old", { status: "ARCHIVED" })]) } };

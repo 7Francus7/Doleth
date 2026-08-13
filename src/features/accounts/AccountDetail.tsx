@@ -11,11 +11,18 @@ export interface AccountDetailModel {
   recent: { id: string; type: MovementType; amount: string; currency: string; occurredOn: string; description: string; accountName: string; voided: boolean; corrected: boolean }[];
 }
 
+function amountScale(value: string) {
+  const length = value.replace(/\s/g, "").length;
+  if (length >= 17) return "extreme";
+  if (length >= 14) return "long";
+  return "default";
+}
+
 export function AccountDetail({ account, statusAction }: { account: AccountDetailModel; statusAction?: ReactNode }) {
   return <div className={styles.detail}>
     <section className={styles.detailHero} data-liability={account.liability || undefined}>
       <p>{account.liability ? "Deuda actual" : "Saldo actual"}</p>
-      <strong><SensitiveAmount>{account.balance}</SensitiveAmount></strong>
+      <strong data-amount-scale={amountScale(account.balance)}><SensitiveAmount>{account.balance}</SensitiveAmount></strong>
       <span>{account.currency} · {account.typeLabel} · {account.status === "ACTIVE" ? "Activa" : "Archivada"}</span>
       {account.liability ? <small>Esta cuenta representa deuda. No forma parte de Disponible.</small> : null}
     </section>
