@@ -58,6 +58,7 @@ export default async function NewMovementPage({ searchParams }: { searchParams: 
 
   return (
     <OperationalShell
+      wide
       back={{ href: returnTo, label: "Volver" }}
       eyebrow="Carga rápida"
       title="Registrar movimiento"

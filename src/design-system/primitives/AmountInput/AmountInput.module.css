@@ -70,3 +70,52 @@
   font-size: var(--type-body-s-size);
   line-height: var(--type-body-s-line);
 }
+
+.emphasis-hero .label {
+  font-family: var(--font-ibm-plex-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.emphasis-hero .control {
+  min-height: 112px;
+  padding: 0;
+  border: 0;
+  border-bottom: 3px solid var(--color-ink-900);
+  border-radius: 0;
+  background: transparent;
+}
+
+.emphasis-hero .control:focus-within {
+  border-color: var(--color-ink-900);
+  box-shadow: none;
+}
+
+.emphasis-hero .currency {
+  color: var(--color-ink-900);
+  font-size: clamp(24px, 7vw, 42px);
+  font-weight: 700;
+}
+
+.emphasis-hero .input {
+  min-height: 108px;
+  color: var(--color-ink-900);
+  font-size: clamp(48px, 15vw, 92px);
+  font-weight: 700;
+  letter-spacing: -.065em;
+  line-height: .9;
+}
+
+.emphasis-hero .input::placeholder,
+.emphasis-hero .hint {
+  color: color-mix(in srgb, var(--color-ink-900) 68%, transparent);
+}
+
+.emphasis-hero .error {
+  border: 2px solid var(--color-ink-900);
+  border-radius: 0;
+  background: var(--color-bone-000);
+  color: var(--color-ink-900);
+}

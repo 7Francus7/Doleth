@@ -7,14 +7,17 @@ export function SubmitButton({
   children,
   pendingLabel = "Guardando…",
   disabled = false,
+  pendingOverride = false,
 }: {
   children: string;
   pendingLabel?: string;
   disabled?: boolean;
+  pendingOverride?: boolean;
 }) {
   const { pending } = useFormStatus();
+  const isPending = pending || pendingOverride;
   return (
-    <Button disabled={disabled} loading={pending} loadingLabel={pendingLabel} size="lg" type="submit" width="fill">
+    <Button disabled={disabled} loading={isPending} loadingLabel={pendingLabel} size="lg" type="submit" width="fill">
       {children}
     </Button>
   );

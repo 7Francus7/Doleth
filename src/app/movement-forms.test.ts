@@ -51,10 +51,10 @@ describe("cableado de formularios", () => {
   });
 
   it("el CTA cambia según la operación", () => {
-    expect(form).toContain("Registrar gasto");
-    expect(form).toContain("Registrar ingreso");
+    expect(form).toContain("Guardar gasto");
+    expect(form).toContain("Guardar ingreso");
     expect(form).toContain("Confirmar transferencia");
-    expect(form).toContain("Registrando gasto…");
+    expect(form).toContain("Guardando gasto…");
     expect(form).toContain("Transfiriendo…");
   });
 

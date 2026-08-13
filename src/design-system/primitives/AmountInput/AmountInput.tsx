@@ -20,6 +20,8 @@ export interface AmountInputProps {
   error?: string | undefined;
   autoFocus?: boolean;
   required?: boolean;
+  emphasis?: "default" | "hero";
+  currencyLabel?: string;
 }
 
 /**
@@ -39,6 +41,8 @@ export function AmountInput({
   error,
   autoFocus,
   required,
+  emphasis = "default",
+  currencyLabel = "$",
 }: AmountInputProps) {
   const inputId = useId();
   const hintId = useId();
@@ -53,10 +57,10 @@ export function AmountInput({
   const describedBy = [hint ? hintId : null, shownError ? errorId : null].filter(Boolean).join(" ");
 
   return (
-    <div className={styles.field}>
+    <div className={`${styles.field} ${styles[`emphasis-${emphasis}`]}`}>
       <label className={styles.label} htmlFor={inputId}>{label}</label>
       <div className={styles.control}>
-        <span aria-hidden="true" className={styles.currency}>$</span>
+        <span aria-hidden="true" className={styles.currency}>{currencyLabel}</span>
         <input
           aria-describedby={describedBy || undefined}
           aria-invalid={shownError ? true : undefined}

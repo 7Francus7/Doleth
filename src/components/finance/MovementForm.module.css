@@ -1,0 +1,71 @@
+.form { --operation-color: #d97861; display: flex; min-width: 0; flex-direction: column; gap: 0; margin-inline: calc(var(--space-20) * -1); padding: 24px 20px 128px; border-block: 2px solid var(--color-ink-900); background: var(--operation-color); color: var(--color-ink-900); }
+.form[data-operation="INCOME"] { --operation-color: #c7d36f; }
+.form[data-operation="TRANSFER"] { --operation-color: #e3b84f; }
+.form :global(button) { border-radius: 0; }
+.typeSwitch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 20px 0 0; padding: 0; border: 2px solid var(--color-ink-900); }
+.typeSwitch legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.typeSwitch label { min-width: 0; }
+.typeSwitch input { position: absolute; opacity: 0; }
+.typeSwitch span { display: flex; min-height: 52px; align-items: center; justify-content: center; padding: 8px; border-right: 1px solid var(--color-ink-900); color: var(--color-ink-900); cursor: pointer; font-family: var(--font-ibm-plex-mono); font-size: 10px; font-weight: 500; letter-spacing: .04em; text-align: center; text-transform: uppercase; }
+.typeSwitch label:last-child span { border-right: 0; }
+.typeSwitch input:checked + span { background: var(--color-ink-900); color: var(--color-bone-000); }
+.typeSwitch input:focus-visible + span { outline: 3px solid var(--color-bone-000); outline-offset: -5px; }
+.primaryChoices, .transferRoute { display: grid; margin-top: 28px; border-top: 2px solid var(--color-ink-900); }
+.pickerField { min-width: 0; }
+.fieldLabel { display: block; padding: 16px 0 8px; font-family: var(--font-ibm-plex-mono); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.pickerTrigger { position: relative; display: grid; width: 100%; min-height: 76px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 12px 0; border: 0; border-bottom: 2px solid var(--color-ink-900); background: transparent; color: var(--color-ink-900); cursor: pointer; font-family: inherit; text-align: left; }
+.pickerValue, .pickerPlaceholder { min-width: 0; overflow-wrap: anywhere; font-size: clamp(22px, 7vw, 34px); font-weight: 700; letter-spacing: -.035em; line-height: 1; }
+.pickerPlaceholder { color: color-mix(in srgb, var(--color-ink-900) 55%, transparent); }
+.pickerTrigger small { grid-column: 1; color: color-mix(in srgb, var(--color-ink-900) 72%, transparent); font-family: var(--font-ibm-plex-mono); font-size: 10px; }
+.pickerArrow { grid-column: 2; grid-row: 1 / span 2; font-family: var(--font-ibm-plex-mono); font-size: 22px; }
+.pickerTrigger:focus-visible { outline: 3px solid var(--color-ink-900); outline-offset: 3px; }
+.inlineError { padding: 10px 12px; border: 2px solid var(--color-ink-900); background: var(--color-bone-000); color: var(--color-ink-900); font-size: 13px; font-weight: 600; }
+.pickerSearch { display: grid; gap: 8px; padding: 12px 0 20px; }
+.pickerSearch span { font-family: var(--font-ibm-plex-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.pickerSearch input { min-height: 56px; padding: 0 14px; border: 2px solid var(--color-ink-900); border-radius: 4px; background: var(--color-bone-000); color: var(--color-ink-900); font: inherit; font-size: 16px; }
+.pickerOptions { display: grid; border-top: 2px solid var(--color-ink-900); }
+.pickerOption { display: grid; min-height: 68px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--color-ink-900); background: transparent; color: var(--color-ink-900); cursor: pointer; font: inherit; text-align: left; }
+.pickerOption span { font-size: 17px; font-weight: 700; }
+.pickerOption small { grid-column: 1; color: var(--color-text-secondary); font-family: var(--font-ibm-plex-mono); font-size: 10px; }
+.pickerOption strong { grid-column: 2; grid-row: 1 / span 2; font-size: 20px; }
+.pickerOption[aria-selected="true"] { background: #e8e3db; }
+.pickerOption:focus-visible, .pickerSearch input:focus { outline: 3px solid #e3b84f; outline-offset: -4px; }
+.noOptions { padding: 24px 0; color: var(--color-text-secondary); }
+.destinationAmount { display: grid; gap: 8px; margin-top: 28px; padding: 20px; border: 2px solid var(--color-ink-900); background: var(--color-bone-000); }
+.destinationAmount p { color: var(--color-text-secondary); font-size: 12px; line-height: 1.45; }
+.details { margin-top: 28px; border-block: 2px solid var(--color-ink-900); }
+.details > button { display: flex; width: 100%; min-height: 60px; align-items: center; justify-content: space-between; gap: 16px; padding: 0; border: 0; background: transparent; color: var(--color-ink-900); cursor: pointer; font: inherit; font-size: 12px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.details > button small { font-family: var(--font-ibm-plex-mono); font-size: 10px; font-weight: 400; }
+.details > button:focus-visible { outline: 3px solid var(--color-ink-900); outline-offset: 3px; }
+.detailsFields { display: grid; gap: 16px; padding: 16px 0 24px; border-top: 1px solid var(--color-ink-900); }
+.detailField { display: grid; gap: 8px; font-size: 13px; font-weight: 700; }
+.detailField input { width: 100%; min-height: 54px; padding: 0 14px; border: 2px solid var(--color-ink-900); border-radius: 4px; background: var(--color-bone-000); color: var(--color-ink-900); font: inherit; font-size: 16px; }
+.detailField > small, .detailField span small { font-size: 11px; font-weight: 450; }
+.transferSummary { display: grid; gap: 4px; margin-top: 24px; padding-left: 12px; border-left: 4px solid var(--color-ink-900); font-size: 13px; line-height: 1.45; }
+.transferSummary p:last-child { opacity: .7; }
+.submitDock { border: 0; border-radius: 0; background: var(--color-bone-000); box-shadow: none; backdrop-filter: none; }
+.submitRow > button { border-radius: 0; }
+.submitRow > button:last-child { background: var(--color-ink-900); color: var(--color-bone-000); }
+.cancelButton { border-color: var(--color-ink-900); background: var(--color-bone-000); color: var(--color-ink-900); }
+.successState { --operation-color: #d97861; display: grid; min-height: 60svh; align-content: center; gap: 16px; margin-inline: calc(var(--space-20) * -1); padding: 40px 20px; border-block: 2px solid var(--color-ink-900); background: var(--operation-color); color: var(--color-ink-900); }
+.successState[data-operation="INCOME"] { --operation-color: #c7d36f; }
+.successState[data-operation="TRANSFER"] { --operation-color: #e3b84f; }
+.successState > p { font-family: var(--font-ibm-plex-mono); font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.successState > strong { overflow-wrap: anywhere; font-size: clamp(54px, 16vw, 96px); letter-spacing: -.07em; line-height: .9; }
+.successState > span { max-width: 50ch; font-size: 14px; line-height: 1.5; }
+.successState > div { display: grid; gap: 8px; margin-top: 16px; }
+.successState a, .successState button { display: flex; min-height: 56px; align-items: center; justify-content: center; padding: 0 16px; border: 2px solid var(--color-ink-900); border-radius: 0; color: var(--color-ink-900); cursor: pointer; font: inherit; font-size: 13px; font-weight: 750; letter-spacing: .04em; text-decoration: none; text-transform: uppercase; }
+.successPrimary { background: var(--color-ink-900); color: var(--color-bone-000) !important; }
+.successSecondary, .successState button { background: transparent; }
+@media (min-width: 720px) {
+  .form { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 0 40px; margin-inline: 0; padding: 40px; border: 2px solid var(--color-ink-900); }
+  .typeSwitch { grid-column: 1; }
+  .primaryChoices, .transferRoute { grid-column: 2; grid-row: 1 / span 3; margin-top: 0; }
+  .destinationAmount { grid-column: 2; }
+  .details, .transferSummary, .submitDock { grid-column: 1 / -1; }
+  .detailsFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .submitDock { position: static; width: 100%; max-width: none; margin-top: 32px; padding: 0; background: transparent; }
+  .submitRow { max-width: 620px; margin-left: auto; }
+  .successState { margin-inline: 0; padding: 64px; border: 2px solid var(--color-ink-900); }
+  .successState > div { grid-template-columns: repeat(3, 1fr); }
+}

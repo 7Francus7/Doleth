@@ -41,6 +41,7 @@ export default async function EditMovementPage({ params, searchParams }: { param
 
   return (
     <OperationalShell
+      wide
       back={{ href: returnTo, label: "Volver" }}
       eyebrow="Corrección auditable"
       title="Corregir movimiento"
