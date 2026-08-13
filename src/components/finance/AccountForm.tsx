@@ -6,7 +6,7 @@ import { ACCOUNT_TYPES, ACCOUNT_TYPE_HINTS, ACCOUNT_TYPE_LABELS, isLiabilityAcco
 import { CURRENCY_LABELS, SUPPORTED_CURRENCIES } from "../../lib/finance/currency";
 import { SubmitButton } from "./SubmitButton";
 import { StatusMessage } from "../../design-system/feedback";
-import styles from "./finance.module.css";
+import styles from "../../features/accounts/accountForm.module.css";
 
 const initialState: FinanceActionState = { ok: false, message: "" };
 
@@ -25,7 +25,7 @@ export function AccountForm() {
     // `onReset` y no un efecto: `form.reset()` dispara este evento, así que el
     // tipo vuelve a su valor inicial dentro del manejador que ya está corriendo
     // en vez de encadenar un render extra.
-    <form action={action} className={styles.form} onReset={() => setType("BANK")} ref={formRef}>
+    <form action={action} className={styles.createForm} data-liability={liability || undefined} onReset={() => setType("BANK")} ref={formRef}>
       <label className={styles.field}>
         <span>Nombre</span>
         <input
@@ -53,8 +53,8 @@ export function AccountForm() {
       */}
       {hint ? <p className={styles.fieldHint}>{hint}</p> : null}
 
-      <div className={styles.fieldRow}>
-        <label className={styles.field}>
+      <div className={styles.accountBasics}>
+        <label className={`${styles.field} ${styles.amountField}`}>
           <span>{liability ? "Deuda actual" : "Saldo inicial"}</span>
           <input inputMode="decimal" name="initialBalance" placeholder="0,00" required />
         </label>

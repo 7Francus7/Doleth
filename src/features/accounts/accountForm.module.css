@@ -1,0 +1,25 @@
+.createForm, .metadataForm { display: grid; gap: 22px; padding: 24px 20px; border: 2px solid var(--color-ink-900); background: #e8e3db; }
+.createForm[data-liability] { background: #d97861; }
+.field, .metadataForm label { display: grid; gap: 8px; }
+.field > span, .metadataForm label > span, .lockedFacts span { font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.field input, .field select, .metadataForm input { width: 100%; min-height: 54px; padding: 0 14px; border: 2px solid var(--color-ink-900); border-radius: 0; background: var(--color-bone-000); color: var(--color-ink-900); font: inherit; font-size: 16px; }
+.field input:focus-visible, .field select:focus-visible, .metadataForm input:focus-visible { outline: 3px solid var(--color-mineral-700); outline-offset: 2px; }
+.accountBasics { display: grid; gap: 20px; padding-top: 22px; border-top: 2px solid var(--color-ink-900); }
+.amountField { grid-row: 2; }
+.amountField input { min-height: 82px; padding-inline: 0; border-width: 0 0 3px; background: transparent; font-size: clamp(38px, 13vw, 62px); font-variant-numeric: tabular-nums; font-weight: 750; letter-spacing: -.055em; }
+.fieldRow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.fieldHint { margin-top: -12px; padding-left: 10px; border-left: 3px solid var(--color-ink-900); font-size: 12px; line-height: 1.45; }
+.createForm :global(button[type="submit"]), .metadataForm :global(button[type="submit"]) { min-height: 56px; border: 2px solid var(--color-ink-900); border-radius: 0; background: var(--color-ink-900); color: var(--color-bone-000); font-weight: 750; text-transform: uppercase; }
+.lockedFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 2px solid var(--color-ink-900); }
+.lockedFacts > div { display: grid; gap: 6px; padding: 14px; }
+.lockedFacts > div + div { border-left: 1px solid var(--color-ink-900); }
+.lockedFacts p { grid-column: 1 / -1; padding: 12px 14px; border-top: 1px solid var(--color-ink-900); color: var(--color-text-secondary); font-size: 12px; line-height: 1.4; }
+.metadataForm fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; padding: 18px; border: 2px solid var(--color-ink-900); }
+.metadataForm legend { padding: 0 8px; font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+@media (min-width: 760px) {
+  .createForm, .metadataForm { padding: 36px; }
+  .createForm { grid-template-columns: minmax(0, 1fr) minmax(18rem, .7fr); }
+  .createForm > :first-child, .createForm > .accountBasics, .createForm > .fieldHint, .createForm > :global(button[type="submit"]), .createForm > :global([role="status"]) { grid-column: 1 / -1; }
+  .accountBasics { grid-template-columns: minmax(0, 1.4fr) minmax(12rem, .6fr); }
+  .amountField { grid-row: auto; }
+}

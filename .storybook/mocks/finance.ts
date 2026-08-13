@@ -12,3 +12,5 @@ const unavailableInStorybook = async (): Promise<FinanceActionState> => ({
 
 export const createMovementAction = unavailableInStorybook;
 export const correctMovementAction = unavailableInStorybook;
+export const createAccountAction = unavailableInStorybook;
+export const updateAccountMetadataAction = unavailableInStorybook;

@@ -24,6 +24,6 @@ describe("V2 Cut 3 movements surface", () => {
 
   it("Inicio y Cuentas usan accountId/type válidos", () => {
     expect(read("../features/now/NowPage.tsx")).toContain('Gastos: "/movimientos?type=EXPENSE"');
-    expect(read("./cuentas/page.tsx")).toContain("/movimientos?accountId=");
+    expect(read("../features/accounts/AccountDetail.tsx")).toContain("/movimientos?accountId=");
   });
 });

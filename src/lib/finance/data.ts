@@ -104,6 +104,38 @@ export async function getAccountsWithBalances(userId: string) {
   }));
 }
 
+export async function getAccountDetail(userId: string, id: string) {
+  const db = getDb();
+  const [accounts, account, recent] = await Promise.all([
+    getAccountsWithBalances(userId),
+    db.account.findFirst({ where: { id, userId }, include: { creditCard: true } }),
+    db.transaction.findMany({
+      where: { userId, OR: [{ sourceAccountId: id }, { destinationAccountId: id }] },
+      include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+  ]);
+  if (!account) return null;
+  const balance = accounts.find((candidate) => candidate.id === id);
+  if (!balance) return null;
+  return {
+    ...balance,
+    creditCard: account.creditCard,
+    recent: recent.map((movement) => ({
+      id: movement.id,
+      type: movement.type,
+      amount: formatCents(movement.amountCents),
+      currency: movement.currency,
+      occurredOn: movement.occurredOn.toISOString().slice(0, 10),
+      description: movement.description || movement.category?.name || movement.type,
+      accountName: movement.type === "TRANSFER" ? `${movement.sourceAccount.name} → ${movement.destinationAccount?.name ?? ""}` : movement.sourceAccount.name,
+      voided: movement.voidedAt !== null,
+      corrected: movement.correction !== null,
+    })),
+  };
+}
+
 /**
  * Cuentas con su saldo ya expresado en la moneda de lectura de la persona.
  *

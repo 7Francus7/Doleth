@@ -326,6 +326,32 @@ export async function setAccountStatusAction(formData: FormData): Promise<void> 
   refreshFinance();
 }
 
+export async function updateAccountMetadataAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const user = await requireOnboardedUserForAction();
+    const id = value(formData, "id");
+    const name = value(formData, "name");
+    if (!id) throw new Error("Cuenta inexistente.");
+    if (name.length < 2 || name.length > 60) throw new Error("El nombre debe tener entre 2 y 60 caracteres.");
+    const account = await getDb().account.findFirst({ where: { id, userId: user.id }, include: { creditCard: true } });
+    if (!account) throw new Error("Cuenta inexistente.");
+    const card = account.creditCard ? readCreditCardFields(formData) : null;
+    await getDb().$transaction(async (tx) => {
+      await tx.account.update({ where: { id_userId: { id, userId: user.id } }, data: { name } });
+      if (card && account.creditCard) {
+        await tx.creditCard.update({ where: { id: account.creditCard.id }, data: card });
+      }
+    });
+    refreshFinance();
+    return { ok: true, message: "Cuenta actualizada. Saldo inicial, tipo y moneda no cambiaron." };
+  } catch (error) {
+    return errorState(error, "update-account-metadata");
+  }
+}
+
 interface MovementAccount {
   id: string;
   name: string;
