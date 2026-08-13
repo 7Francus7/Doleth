@@ -1,4 +1,5 @@
 .toolbar { display: grid; gap: 18px; padding-block: 20px; border-block: 2px solid var(--color-ink-900); }
+.primaryTools { display: grid; gap: 18px; }
 .searchForm { display: grid; gap: 8px; }
 .searchForm > label, .filterField > span { font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .searchForm > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
@@ -80,13 +81,13 @@
 }
 @media (min-width: 980px) {
   .toolbar { grid-template-columns: minmax(0, 1.3fr) minmax(22rem, .7fr); align-items: start; gap: 20px 28px; }
-  .searchForm { grid-column: 1; }
+  .primaryTools { grid-column: 1; align-content: start; gap: 20px; }
   .searchForm > div, .searchForm input, .searchForm button { height: 56px; }
-  .typeTabs { height: 56px; grid-column: 1; align-self: start; }
+  .typeTabs { height: 56px; align-self: start; }
   .typeTabs a { min-height: 0; }
   .mobileFilterTrigger { display: none; }
-  .desktopFilters { display: grid; grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-left: 28px; border-left: 2px solid var(--color-ink-900); }
-  .desktopFilters > .filterField:first-child, .desktopFilters > .filterField:nth-child(3), .desktopFilters > .amountRange, .desktopFilters > .applyFilters { grid-column: 1 / -1; }
+  .desktopFilters { display: grid; grid-column: 2; grid-row: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-left: 28px; border-left: 2px solid var(--color-ink-900); }
+  .desktopFilters > .filterField:nth-child(3), .desktopFilters > .amountRange, .desktopFilters > .applyFilters { grid-column: 1 / -1; }
   .desktopFilters .amountRange { grid-column: 1 / -1; }
   .applyFilters { border-left: 2px solid var(--color-ink-900); }
   .dayGroup { display: grid; grid-template-columns: 112px minmax(0, 1fr); }

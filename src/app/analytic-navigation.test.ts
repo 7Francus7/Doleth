@@ -125,7 +125,7 @@ describe("restauración de scroll: solo donde hay vuelta", () => {
   const accountsPage = read("src/app/cuentas/page.tsx");
 
   it("las listas con detalle navegable sí restauran", () => {
-    expect(read("src/app/movimientos/page.tsx")).toContain("RestorableList");
+    expect(read("src/features/movements/MovementsExplorer.tsx")).toContain("RestorableList");
     expect(read("src/features/next/NextPage.tsx")).toContain("RestorableList");
   });
 

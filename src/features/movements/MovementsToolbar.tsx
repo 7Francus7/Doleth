@@ -36,7 +36,8 @@ export function MovementsToolbar({ query, accounts, categories, activeCount }: {
   </>;
 
   return <section aria-label="Buscar y filtrar movimientos" className={styles.toolbar}>
-    <form action="/movimientos" className={styles.searchForm}>
+    <div className={styles.primaryTools}>
+      <form action="/movimientos" className={styles.searchForm}>
       <label htmlFor="movement-search">Buscar movimientos</label>
       <div>
         <input defaultValue={query.q ?? ""} enterKeyHint="search" id="movement-search" name="q" onKeyDown={searchKeyDown} placeholder="Descripción, categoría, cuenta o importe" type="search" />
@@ -48,12 +49,13 @@ export function MovementsToolbar({ query, accounts, categories, activeCount }: {
       {query.categoryId ? <input name="categoryId" type="hidden" value={query.categoryId} /> : null}
       {query.min ? <input name="min" type="hidden" value={query.min} /> : null}
       {query.max ? <input name="max" type="hidden" value={query.max} /> : null}
-    </form>
+      </form>
 
-    <nav aria-label="Tipo de movimiento" className={styles.typeTabs}>
-      <Link aria-current={!query.type ? "page" : undefined} href={movementPath(query, { type: undefined, page: 1 })}>Todos</Link>
-      {(Object.entries(movementTypeLabel) as [MovementType, string][]).map(([type, label]) => <Link aria-current={query.type === type ? "page" : undefined} href={movementPath(query, { type, page: 1 })} key={type}>{label === "Transferencia" ? "Transferencias" : `${label}s`}</Link>)}
-    </nav>
+      <nav aria-label="Tipo de movimiento" className={styles.typeTabs}>
+        <Link aria-current={!query.type ? "page" : undefined} href={movementPath(query, { type: undefined, page: 1 })}>Todos</Link>
+        {(Object.entries(movementTypeLabel) as [MovementType, string][]).map(([type, label]) => <Link aria-current={query.type === type ? "page" : undefined} href={movementPath(query, { type, page: 1 })} key={type}>{label === "Transferencia" ? "Transferencias" : `${label}s`}</Link>)}
+      </nav>
+    </div>
 
     <button className={styles.mobileFilterTrigger} onClick={() => setFiltersOpen(true)} ref={triggerRef} type="button">Filtros{activeCount ? ` · ${activeCount}` : ""}</button>
     <form action="/movimientos" className={styles.desktopFilters}>
