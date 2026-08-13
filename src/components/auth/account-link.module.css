@@ -8,11 +8,12 @@
   height: 40px;
   place-items: center;
   border: var(--border-width-hairline) solid var(--border-default);
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-surface-raised) 92%, transparent);
-  color: var(--color-text-accent);
+  border: 2px solid var(--color-ink-900);
+  border-radius: 0;
+  background: var(--color-canvas-default);
+  color: var(--color-ink-900);
   text-decoration: none;
-  backdrop-filter: blur(12px);
+  backdrop-filter: none;
 }
 
 .link:focus-visible {

@@ -1,5 +1,28 @@
 # Design System - Doleth
 
+## V2 Cut 1 — Financial functional brutalism override
+
+This section is the active visual authority for the V2 shell, primary navigation,
+Inicio, and any component created or restyled inside Cut 1. Legacy product
+surfaces keep the rules below until their own V2 cut. When rules conflict inside
+the Cut 1 scope, this override wins.
+
+- Composition is editorial and structural: large financial type, hard modules,
+  full rules, visible grids, and direct labels.
+- Bone `#F7F5F1` and Ink `#171A1F` remain the foundation. Mineral green remains
+  semantic and secondary; it is not decorative chrome.
+- Cut 1 surfaces use `0–4px` radii, no gradients, no glass, no decorative
+  shadows, and no floating card stacks.
+- Navigation exposes exactly five primary destinations: Inicio, Movimientos,
+  Cuentas, Plan, and Patrimonio. `+ NUEVO` is a persistent action, not a sixth
+  destination.
+- Primary financial numbers use Manrope with tabular lining numerals. IBM Plex
+  Mono is reserved for compact evidence and structural labels. Instrument Serif
+  may frame a short interpretation but never replaces accounting clarity.
+- Mobile controls remain at least `44px`; the shell must hold at 320px without
+  horizontal page overflow. Long amounts wrap or scale within their module.
+- Motion remains causal only. The V2 shell adds no decorative entrance motion.
+
 ## Product Context
 - What this is: mobile-first personal financial truth system for people with fragmented, multi-layered financial lives.
 - Core promise: when user closes Doleth, they know exactly where they stand.

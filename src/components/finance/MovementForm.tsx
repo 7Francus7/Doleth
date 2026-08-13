@@ -72,6 +72,7 @@ export function MovementForm({
   categories,
   today,
   defaults,
+  initialType,
   idempotencyKey,
   mode = "new",
   returnTo = "/movimientos",
@@ -83,6 +84,7 @@ export function MovementForm({
   categories: Option[];
   today: string;
   defaults?: MovementDefaults;
+  initialType?: MovementDefaults["type"];
   idempotencyKey: string;
   mode?: "new" | "correction";
   returnTo?: string;
@@ -100,7 +102,7 @@ export function MovementForm({
   const router = useRouter();
 
   const initialValues: MovementDraftValues = {
-    type: defaults?.type ?? "EXPENSE",
+    type: defaults?.type ?? initialType ?? "EXPENSE",
     amount: defaults?.amount ?? "",
     sourceAccountId: defaults?.sourceAccountId ?? "",
     destinationAccountId: defaults?.destinationAccountId ?? "",

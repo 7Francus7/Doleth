@@ -21,6 +21,10 @@ body {
   margin-inline: auto;
 }
 
+@media (min-width: 980px) {
+  .app-canvas { padding-left: calc(172px + max(var(--space-32), env(safe-area-inset-left))); }
+}
+
 .app-canvas__brand {
   color: var(--color-text-secondary);
   font-size: var(--type-label-s-size);
