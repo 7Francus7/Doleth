@@ -11,6 +11,7 @@
     "lint": "eslint",
     "typecheck": "prisma generate && tsc --noEmit --incremental false",
     "test": "vitest run",
+    "release:check": "tsx scripts/release-check.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
