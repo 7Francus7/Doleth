@@ -5,6 +5,7 @@ import type { PlanModel } from "./model";
 import styles from "./plan.module.css";
 
 const STATE_LABEL = { OVERDUE: "Vencido", TODAY: "Hoy", PENDING: "Pendiente" } as const;
+const frequencyLabel = (frequency: string | null) => frequency === "MONTHLY" ? "Mensual" : frequency;
 
 export function PlanPage({ model }: { model: PlanModel }) {
   const count = model.groups.reduce((total, group) => total + group.payments.length, 0);
@@ -31,7 +32,7 @@ export function PlanPage({ model }: { model: PlanModel }) {
         {model.groups.length ? <RestorableList restorationKey={model.restorationKey}>{model.groups.map((group) => <section aria-labelledby={`plan-${group.id}`} className={styles.group} key={group.id}>
           <h3 id={`plan-${group.id}`}>{group.title}</h3>
           {group.payments.map((payment) => <Link className={styles.payment} data-state={payment.state} href={payment.href} key={payment.id}>
-            <span><b>{payment.concept}</b><small>{payment.dueLabel} · {payment.accountName}{payment.frequency ? ` · Repetir: ${payment.frequency}` : ""}</small><em>{STATE_LABEL[payment.state]}</em></span>
+            <span><b>{payment.concept}</b><small>{payment.dueLabel} · {payment.accountName}{payment.frequency ? ` · Repetir: ${frequencyLabel(payment.frequency)}` : ""}</small><em>{STATE_LABEL[payment.state]}</em></span>
             <strong><SensitiveAmount>−{payment.currency === "ARS" ? "$" : `${payment.currency} `}{payment.amount}</SensitiveAmount></strong>
             <i aria-hidden="true">→</i>
           </Link>)}</section>)}</RestorableList> : <div className={styles.empty}><h3>Nada previsto</h3><p>No hay pagos pendientes en los próximos {model.horizon} días.</p><Link href="/proximo/nuevo">Agregar pago previsto</Link></div>}

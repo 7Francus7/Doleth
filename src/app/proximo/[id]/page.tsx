@@ -25,6 +25,8 @@ const STATE_LABELS = {
   paid: "Pagado",
 } as const;
 
+const frequencyLabel = (frequency: string | null) => frequency === "MONTHLY" ? "Mensual" : frequency || "Única";
+
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 export default async function UpcomingPaymentDetailPage({
@@ -80,7 +82,7 @@ export default async function UpcomingPaymentDetailPage({
           </div>
           <div>
             <dt>Frecuencia</dt>
-            <dd>{payment.frequency || "Única"}</dd>
+            <dd>{frequencyLabel(payment.frequency)}</dd>
           </div>
           <div>
             <dt>Estado</dt>
