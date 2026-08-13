@@ -23,6 +23,7 @@ import {
 import type { RealityAccount, RealityInvestment, RealityMovement } from "./reality";
 import type { SpendingMovement } from "./spending";
 import { logServerError } from "../observability";
+import { parseAmountInput } from "./amount";
 import {
   monthPeriod,
   previousMonth,
@@ -389,45 +390,83 @@ export interface MovementFilters {
   month: string;
   type?: "EXPENSE" | "INCOME" | "TRANSFER";
   accountId?: string;
-  /** Filtro por categoría: lo usa cada causa de /cambios para mostrar su detalle. */
   categoryId?: string;
+  search?: string;
+  minAmountCents?: bigint;
+  maxAmountCents?: bigint;
+  page?: number;
 }
+
+export const MOVEMENTS_PAGE_SIZE = 40;
 
 export async function getMovements(userId: string, filters: MovementFilters) {
   const db = getDb();
   const { start, end } = monthBounds(filters.month);
-  // El accountId llega de la query string: se usa sólo para acotar dentro de lo
-  // que ya es del usuario, nunca para ampliar el alcance.
+  const page = Math.max(1, filters.page ?? 1);
+  const search = filters.search?.trim();
+  const amountSearch = search ? parseAmountInput(search) : null;
+  const exactAmount = amountSearch?.error === null ? amountSearch.cents : null;
   const accountFilter = filters.accountId
     ? { OR: [{ sourceAccountId: filters.accountId }, { destinationAccountId: filters.accountId }] }
     : {};
-  const [movements, accounts] = await Promise.all([
+  const [rows, accounts, categories, totalMovements] = await Promise.all([
     db.transaction.findMany({
       where: {
         userId,
         occurredOn: { gte: start, lt: end },
         ...(filters.type ? { type: filters.type } : {}),
         ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+        ...(filters.minAmountCents !== undefined || filters.maxAmountCents !== undefined ? {
+          amountCents: {
+            ...(filters.minAmountCents !== undefined ? { gte: filters.minAmountCents } : {}),
+            ...(filters.maxAmountCents !== undefined ? { lte: filters.maxAmountCents } : {}),
+          },
+        } : {}),
+        ...(search ? {
+          AND: [{ OR: [
+            { description: { contains: search, mode: "insensitive" as const } },
+            { category: { name: { contains: search, mode: "insensitive" as const } } },
+            { sourceAccount: { name: { contains: search, mode: "insensitive" as const } } },
+            { destinationAccount: { name: { contains: search, mode: "insensitive" as const } } },
+            ...(exactAmount !== null ? [{ amountCents: exactAmount }] : []),
+          ] }],
+        } : {}),
         ...accountFilter,
       },
-      include: { sourceAccount: true, destinationAccount: true, category: true },
+      include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+      skip: (page - 1) * MOVEMENTS_PAGE_SIZE,
+      take: MOVEMENTS_PAGE_SIZE + 1,
     }),
     db.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
+    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    db.transaction.count({ where: { userId } }),
   ]);
+  const hasNext = rows.length > MOVEMENTS_PAGE_SIZE;
+  const movements = rows.slice(0, MOVEMENTS_PAGE_SIZE);
   return {
     accounts,
+    categories,
+    page,
+    hasPrevious: page > 1,
+    hasNext,
+    totalMovements,
     movements: movements.map((movement) => ({
       id: movement.id,
       type: movement.type,
       amount: formatCents(movement.amountCents),
+      currency: movement.currency,
       occurredOn: movement.occurredOn.toISOString().slice(0, 10),
       description: movement.description || movement.category?.name || "Sin descripción",
+      categoryName: movement.category?.name ?? null,
+      sourceAccountName: movement.sourceAccount.name,
+      destinationAccountName: movement.destinationAccount?.name ?? null,
       accountName:
         movement.type === "TRANSFER"
           ? `${movement.sourceAccount.name} → ${movement.destinationAccount?.name ?? ""}`
           : movement.sourceAccount.name,
       voided: movement.voidedAt !== null,
+      corrected: movement.correction !== null,
     })),
   };
 }

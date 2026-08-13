@@ -26,6 +26,7 @@ export default async function AccountsPage() {
             <span className={styles.itemAmount}>
               <SensitiveAmount>{account.balanceCents < 0n ? "-" : ""}${formatCents(account.balanceCents < 0n ? -account.balanceCents : account.balanceCents)}</SensitiveAmount>
             </span>
+            <Link className={styles.textLink} href={`/movimientos?accountId=${account.id}`}>Ver movimientos</Link>
             <form action={setAccountStatusAction}>
               <input name="id" type="hidden" value={account.id} /><input name="status" type="hidden" value={account.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE"} />
               <button className={styles.quietButton} type="submit">{account.status === "ACTIVE" ? "Archivar" : "Reactivar"}</button>

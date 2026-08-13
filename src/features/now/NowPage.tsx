@@ -12,8 +12,8 @@ import styles from "./NowPage.module.css";
 export interface NowPageProps { model: NowViewModel }
 
 const metricHref: Record<string, string> = {
-  Ingresos: "/movimientos?tipo=INCOME",
-  Gastos: "/movimientos?tipo=EXPENSE",
+  Ingresos: "/movimientos?type=INCOME",
+  Gastos: "/movimientos?type=EXPENSE",
   Diferencia: "/movimientos",
 };
 
@@ -124,7 +124,7 @@ export function NowPage({ model }: NowPageProps) {
           {accounts.length ? (
             <div className={styles.accountList}>
               {accounts.map((account) => (
-                <Link href={`/cuentas/${account.id}`} key={account.id}>
+                <Link href={`/movimientos?accountId=${account.id}`} key={account.id}>
                   <span><small>{account.type}</small>{account.name}</span>
                   <strong><SensitiveAmount>{account.balancePrefix}{account.balance}</SensitiveAmount></strong>
                 </Link>
