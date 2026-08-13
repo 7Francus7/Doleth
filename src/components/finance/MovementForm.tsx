@@ -36,6 +36,7 @@ const initialState: FinanceActionState = { ok: false, message: "" };
 const DRAFT_DEBOUNCE_MS = 600;
 const movementTypes = ["EXPENSE", "INCOME", "TRANSFER"] as const;
 const typeLabel = { EXPENSE: "Gasto", INCOME: "Ingreso", TRANSFER: "Transferencia" } as const;
+const successLabel = { EXPENSE: "Gasto registrado", INCOME: "Ingreso registrado", TRANSFER: "Transferencia registrada" } as const;
 const ctaLabels = {
   EXPENSE: { idle: "Guardar gasto", pending: "Guardando gasto…" },
   INCOME: { idle: "Guardar ingreso", pending: "Guardando ingreso…" },
@@ -164,7 +165,7 @@ export function MovementForm({ accounts, categories, today, defaults, initialTyp
     const detailHref = state.data?.transactionId ? `/movimientos/${state.data.transactionId}?volver=${encodeURIComponent(returnTo)}` : returnTo;
     return <section className={formStyles.successState} data-operation={values.type} role="status">
       <div className={formStyles.successReceipt}>
-        <p>{typeLabel[values.type]} registrado</p>
+        <p>{successLabel[values.type]}</p>
         {state.data?.amount ? <strong>${state.data.amount}</strong> : null}
       </div>
       <p className={formStyles.successContext}>{state.data?.sourceAccountName ?? state.detail}</p>
