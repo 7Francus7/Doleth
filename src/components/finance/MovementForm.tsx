@@ -103,7 +103,7 @@ export function MovementForm({ accounts, categories, today, defaults, initialTyp
   const choicesReady = values.type === "TRANSFER"
     ? Boolean(sourceAccountId && destinationAccountId && sourceAccountId !== destinationAccountId)
     : Boolean(sourceAccountId && values.categoryId);
-  const formReady = amountReady && destinationAmountReady && choicesReady;
+  const formReady = amountReady && destinationAmountReady && choicesReady && (!isCorrection || dirty);
 
   const clearDraft = () => { try { localStorage.removeItem(storageKey); } catch {} };
 
