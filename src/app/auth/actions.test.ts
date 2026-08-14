@@ -127,6 +127,7 @@ async function clearRateLimits() {
 describe.skipIf(!hasDatabase)("flujos de identidad", () => {
   beforeEach(async () => {
     process.env.DOLETH_ACCESS_MODE = "public";
+    process.env.DOLETH_REQUIRE_EMAIL_VERIFICATION = "true";
     cookieJar.clear();
     sentEmails.length = 0;
     emailShouldFail = false;
@@ -154,6 +155,24 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
       expect(user.acceptedTermsAt).not.toBeNull();
       expect(sentEmails).toHaveLength(1);
       expect(sentEmails[0]?.to).toBe(email);
+    });
+
+    it("en Preview personal crea la cuenta activa, abre sesión y no envía correo", async () => {
+      process.env.DOLETH_REQUIRE_EMAIL_VERIFICATION = "false";
+      process.env.VERCEL_ENV = "preview";
+      const email = freshEmail("registro-personal");
+
+      try {
+        const destination = await register(email);
+        expect(destination).toBe("/onboarding");
+        const user = await getDb().user.findUniqueOrThrow({ where: { email } });
+        expect(user.status).toBe("ACTIVE");
+        expect(user.emailVerifiedAt).toBeNull();
+        expect(sentEmails).toHaveLength(0);
+        expect(cookieJar.has("doleth_session")).toBe(true);
+      } finally {
+        delete process.env.VERCEL_ENV;
+      }
     });
 
     it("guarda la contraseña hasheada, nunca en claro", async () => {
@@ -487,6 +506,28 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
       expect(state.status).toBe("error");
       expect(state.errors.unverified).toBe("1");
       expect(cookieJar.has("doleth_session")).toBe(false);
+    });
+
+    it("en Preview personal una cuenta pendiente entra y queda activa sin fingir verificación", async () => {
+      const email = freshEmail("login-personal-pendiente");
+      await register(email);
+      cookieJar.clear();
+      await clearRateLimits();
+      process.env.DOLETH_REQUIRE_EMAIL_VERIFICATION = "false";
+      process.env.VERCEL_ENV = "preview";
+
+      try {
+        const destination = await expectRedirect(
+          loginAction(emptyAuthState, formData({ email, password: PASSWORD })),
+        );
+        expect(destination).toBe("/onboarding");
+        const user = await getDb().user.findUniqueOrThrow({ where: { email } });
+        expect(user.status).toBe("ACTIVE");
+        expect(user.emailVerifiedAt).toBeNull();
+        expect(cookieJar.has("doleth_session")).toBe(true);
+      } finally {
+        delete process.env.VERCEL_ENV;
+      }
     });
 
     it("una cuenta suspendida no entra", async () => {
