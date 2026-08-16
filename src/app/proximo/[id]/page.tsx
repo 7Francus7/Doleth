@@ -8,7 +8,7 @@ import { SensitiveAmount } from "../../../components/privacy/AmountPrivacy";
 import { requireOnboardedUser } from "../../../lib/auth/guards";
 import { getDb } from "../../../lib/db";
 import { formatCentsAR } from "../../../lib/finance/amount";
-import { getOwnedUpcomingPayment } from "../../../lib/finance/data";
+import { getOwnedUpcomingPayment, loadSelectableCategories } from "../../../lib/finance/data";
 import { todayInArgentina } from "../../../lib/finance/domain";
 import { nextMonthSameDay, paymentState } from "../../../lib/finance/projection";
 import { describeDueDateAR } from "../../../lib/finance/upcomingDate";
@@ -51,6 +51,9 @@ export default async function UpcomingPaymentDetailPage({
     where: { userId: user.id, accountId: payment.plannedAccountId, transaction: { voidedAt: null } },
     _sum: { amountCents: true },
   });
+  // La categoría ya elegida viaja aunque esté archivada: confirmar un pago viejo
+  // no puede cambiarle el destino por una decisión posterior sobre el catálogo.
+  const categories = await loadSelectableCategories(user.id, payment.categoryId);
   const balanceCents = payment.plannedAccount.initialBalanceCents + (entries._sum.amountCents ?? 0n);
 
   return (
@@ -72,6 +75,15 @@ export default async function UpcomingPaymentDetailPage({
           <div className={styles.detailRow}>
             <dt>Cuenta prevista</dt>
             <dd>{payment.plannedAccount.name}</dd>
+          </div>
+          <div className={styles.detailRow}>
+            <dt>Categoría</dt>
+            {/*
+              Se dice antes de confirmar y no después: es la categoría en la que
+              va a quedar el gasto, y "Otros gastos" acá es una advertencia útil,
+              no un detalle administrativo.
+            */}
+            <dd>{payment.category?.name ?? "Sin elegir · irá a Otros gastos"}</dd>
           </div>
           <div className={styles.detailRow}>
             <dt>Frecuencia</dt>
@@ -107,6 +119,8 @@ export default async function UpcomingPaymentDetailPage({
           <ConfirmPaymentForm
             accountBalanceCents={balanceCents.toString()}
             accountName={payment.plannedAccount.name}
+            categories={categories}
+            categoryId={payment.categoryId}
             concept={payment.concept}
             paymentId={payment.id}
             plannedAmount={formatCentsAR(payment.estimatedCents)}

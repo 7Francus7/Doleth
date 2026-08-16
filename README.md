@@ -116,7 +116,9 @@ El formato se documenta en
 ## Modelo financiero
 
 - Los importes se almacenan como centavos enteros (`BigInt`). Nunca hay punto
-  flotante en el dominio.
+  flotante en el dominio. Se escriben como se escriben acá: `45.000` es cuarenta
+  y cinco mil y `12.500,50` lleva coma decimal. Cliente y servidor usan la misma
+  lectura (`parseAmountInput`), así que un mismo texto vale lo mismo en los dos.
 - Un ingreso suma y un gasto resta patrimonio.
 - Una transferencia entre cuentas propias tiene efecto patrimonial cero.
 - Un anulado queda visible pero no participa de saldos.
@@ -141,6 +143,27 @@ Una transferencia entre monedas distintas guarda los dos importes: sale una
 cantidad de pesos y entra una cantidad de dólares. Doleth pide el importe
 acreditado en vez de calcularlo, porque el precio que le hicieron a esa persona
 es un hecho de esa operación y no el promedio del mercado.
+
+### Categorías
+
+Cada persona tiene su propio catálogo. Doleth reparte uno base al terminar el
+onboarding y desde **Más → Categorías** se pueden crear las propias, renombrarlas
+y archivar las que no se usan.
+
+- Renombrar no toca el slug: los movimientos que ya la usaban se leen con el
+  nombre nuevo y ninguna referencia se rompe.
+- Archivar no borra. La categoría desaparece de los selectores y sigue nombrando
+  todo lo que ya cargó; los reportes del pasado no cambian. Al corregir un
+  movimiento viejo, su categoría archivada se sigue ofreciendo.
+- «Otros gastos» es la categoría de respaldo —adonde caen los gastos que se crean
+  sin elegir una— y por eso se puede renombrar pero no archivar.
+- Dos categorías que se leen igual (`Comida` y `comida`, `Pádel` y `Padel`) se
+  rechazan como duplicadas; el mismo nombre sí puede existir una vez como gasto y
+  otra como ingreso.
+
+Un pago previsto guarda la categoría en la que va a caer, y al confirmarlo se
+puede cambiar. Sin ella, el gasto sigue yendo al respaldo, que es lo que pasaba
+con todos los pagos previstos hasta este corte.
 
 ### Tarjetas de crédito
 

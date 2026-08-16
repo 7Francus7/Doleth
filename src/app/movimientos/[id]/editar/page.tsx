@@ -4,6 +4,7 @@ import { MovementForm } from "../../../../components/finance/MovementForm";
 import { OperationalShell } from "../../../../components/finance/OperationalShell";
 import { requireOnboardedUser } from "../../../../lib/auth/guards";
 import { getDb } from "../../../../lib/db";
+import { loadSelectableCategories } from "../../../../lib/finance/data";
 import { formatCentsAR } from "../../../../lib/finance/amount";
 import { sanitizeReturnPath } from "../../../../lib/navigation/returnPath";
 import { todayInArgentina } from "../../../../lib/finance/domain";
@@ -20,12 +21,14 @@ export default async function EditMovementPage({ params, searchParams }: { param
   const db = getDb();
   // Las tres consultas acotadas al propietario: ni el movimiento ni las opciones
   // del formulario pueden venir de otra cuenta.
-  const [movement, accounts, categories] = await Promise.all([
+  const [movement, accounts] = await Promise.all([
     db.transaction.findFirst({ where: { id, userId: user.id }, include: { sourceAccount: true } }),
     db.account.findMany({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { name: "asc" } }),
-    db.category.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } }),
   ]);
   if (!movement) notFound();
+  // La categoría del movimiento viaja aunque esté archivada: corregir el importe
+  // de un gasto viejo no puede cambiarle la categoría por no tenerla en la lista.
+  const categories = await loadSelectableCategories(user.id, movement.categoryId);
   if (movement.voidedAt) {
     const replacement = await db.transaction.findFirst({
       where: { userId: user.id, correctedFromId: movement.id },

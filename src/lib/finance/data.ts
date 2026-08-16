@@ -6,6 +6,7 @@ import { valuePortfolio, type Holding } from "./holdings";
 import { isSupportedCurrency } from "./currency";
 import { loadLatestPrices } from "./rates/prices";
 import { isLiabilityAccount } from "./accountKind";
+import type { CategoryCatalogEntry } from "./categoryRules";
 import { resolveRateBook, type ResolvedRateBook } from "./rates/store";
 import { resilientRead, type AnalysisMovement } from "./analysis";
 import {
@@ -152,17 +153,74 @@ function valueMovementAmounts<T extends { amountCents: bigint; currency: string 
   return movements.map((movement, index) => ({ ...movement, amountCents: valued[index] ?? 0n }));
 }
 
-export async function getMovementFormData(userId: string) {
+/**
+ * Categorías que un formulario puede ofrecer.
+ *
+ * Las archivadas quedan afuera: archivar existe justamente para dejar de verlas
+ * al cargar. La excepción es `keepId`, la categoría que el movimiento que se está
+ * corrigiendo ya tenía. Sin esa excepción, corregir el importe de un gasto viejo
+ * cambiaría también su categoría en silencio, porque el selector no tendría la
+ * opción que estaba elegida.
+ */
+export async function loadSelectableCategories(userId: string, keepId?: string | null) {
+  const db = getDb();
+  return db.category.findMany({
+    where: {
+      userId,
+      ...(keepId ? { OR: [{ archivedAt: null }, { id: keepId }] } : { archivedAt: null }),
+    },
+    orderBy: [{ kind: "asc" }, { name: "asc" }],
+  });
+}
+
+export async function getMovementFormData(userId: string, keepCategoryId?: string | null) {
   const db = getDb();
   const [accounts, categories] = await Promise.all([
     db.account.findMany({ where: { userId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
-    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    loadSelectableCategories(userId, keepCategoryId),
   ]);
   return {
     accounts: accounts.map(({ id, name, currency }) => ({ id, name, currency })),
     categories: categories.map(({ id, name, kind }) => ({ id, name, kind })),
     today: todayInArgentina(),
   };
+}
+
+/**
+ * El catálogo completo de una persona, con lo que cada categoría carga encima.
+ *
+ * El uso viaja con la categoría porque es lo que hace archivable la decisión:
+ * archivar una con cuarenta movimientos y archivar una vacía se parecen en la
+ * pantalla y no se parecen en nada en la cabeza de quien aprieta el botón.
+ */
+export async function getCategoryCatalog(userId: string): Promise<CategoryCatalogEntry[]> {
+  const db = getDb();
+  const [categories, movementUse, upcomingUse] = await Promise.all([
+    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    db.transaction.groupBy({
+      by: ["categoryId"],
+      where: { userId, voidedAt: null, categoryId: { not: null } },
+      _count: { _all: true },
+    }),
+    db.upcomingPayment.groupBy({
+      by: ["categoryId"],
+      where: { userId, status: "PENDING", categoryId: { not: null } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const movements = new Map(movementUse.map((row) => [row.categoryId, row._count._all]));
+  const upcoming = new Map(upcomingUse.map((row) => [row.categoryId, row._count._all]));
+
+  return categories.map((category) => ({
+    id: category.id,
+    slug: category.slug,
+    name: category.name,
+    kind: category.kind,
+    archived: category.archivedAt !== null,
+    movementCount: movements.get(category.id) ?? 0,
+    upcomingCount: upcoming.get(category.id) ?? 0,
+  }));
 }
 
 /**
@@ -443,7 +501,7 @@ export async function getOwnedMovement(userId: string, id: string) {
 export async function getOwnedUpcomingPayment(userId: string, id: string) {
   return getDb().upcomingPayment.findFirst({
     where: { id, userId },
-    include: { plannedAccount: true, transaction: true },
+    include: { plannedAccount: true, transaction: true, category: true },
   });
 }
 

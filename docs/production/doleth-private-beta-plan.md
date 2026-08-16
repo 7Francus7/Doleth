@@ -56,8 +56,10 @@ rechace el release. No es un backup de Production.
 - [x] PR draft, sin auto-merge.
 - [ ] GitHub Actions ejecutables: la cuenta está bloqueada por billing y los jobs
   terminan antes de ejecutar pasos.
-- [ ] Custom category CRUD: onboarding crea categorías aisladas por usuario, pero
-  la UI actual no permite crear una categoría personalizada.
+- [x] Custom category CRUD: `/configuracion/categorias` permite crear, renombrar
+  y archivar categorías propias, con el aislamiento por usuario probado contra
+  Postgres (`src/app/actions/categories.test.ts`). Archivar no borra y la
+  categoría de respaldo no se puede archivar.
 
 ## Decisión y siguiente gate
 
