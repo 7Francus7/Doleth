@@ -38,9 +38,13 @@ vi.mock("../../lib/auth/guards", async () => {
   };
 });
 
-const { changeRoleAction, emptyAdminState, reactivateUserAction, suspendUserAction } = await import("./actions");
+const { activatePendingUserAction, changeRoleAction, emptyAdminState, reactivateUserAction, suspendUserAction } =
+  await import("./actions");
 
-async function createUser(role: "USER" | "ADMIN", status: "ACTIVE" | "SUSPENDED" = "ACTIVE"): Promise<string> {
+async function createUser(
+  role: "USER" | "ADMIN",
+  status: "ACTIVE" | "SUSPENDED" | "PENDING_VERIFICATION" = "ACTIVE",
+): Promise<string> {
   const user = await getDb().user.create({
     data: {
       name: `Persona ${role}`,
@@ -48,7 +52,7 @@ async function createUser(role: "USER" | "ADMIN", status: "ACTIVE" | "SUSPENDED"
       passwordHash: "scrypt$65536$8$2$c2FsdGVzdA$aGFzaGRlcHJ1ZWJhbm9zaXJ2ZXBhcmFuYWRhMDA",
       role,
       status,
-      emailVerifiedAt: new Date(),
+      ...(status === "PENDING_VERIFICATION" ? {} : { emailVerifiedAt: new Date() }),
     },
   });
   return user.id;
@@ -176,6 +180,69 @@ describe.skipIf(!hasDatabase)("acciones del panel de administración", () => {
     expect(state.status).toBe("success");
     const target = await getDb().user.findUniqueOrThrow({ where: { id: targetId } });
     expect(target.status).toBe("ACTIVE");
+  });
+
+  /**
+   * La salida cuando el correo no llega.
+   *
+   * Sin esto, una cuenta que nunca recibió su enlace de verificación sólo se
+   * arregla entrando a la base a mano.
+   */
+  it("deja entrar a una cuenta que nunca confirmó su correo", async () => {
+    const targetId = await createUser("USER", "PENDING_VERIFICATION");
+    created.push(targetId);
+
+    const state = await activatePendingUserAction(emptyAdminState, formData({ userId: targetId }));
+
+    expect(state.status).toBe("success");
+    const target = await getDb().user.findUniqueOrThrow({ where: { id: targetId } });
+    expect(target.status).toBe("ACTIVE");
+  });
+
+  /**
+   * Activar no es verificar. Nadie demostró control de esa dirección, y escribir
+   * `emailVerifiedAt` inventaría una prueba que no existe.
+   */
+  it("no marca el correo como verificado al dejar entrar", async () => {
+    const targetId = await createUser("USER", "PENDING_VERIFICATION");
+    created.push(targetId);
+
+    await activatePendingUserAction(emptyAdminState, formData({ userId: targetId }));
+
+    const target = await getDb().user.findUniqueOrThrow({ where: { id: targetId } });
+    expect(target.emailVerifiedAt).toBeNull();
+  });
+
+  it("registra quién dejó entrar a quién, con su propio tipo de evento", async () => {
+    const targetId = await createUser("USER", "PENDING_VERIFICATION");
+    created.push(targetId);
+
+    await activatePendingUserAction(emptyAdminState, formData({ userId: targetId }));
+
+    const evento = await getDb().authEvent.findFirst({
+      where: { userId: targetId, type: "USER_ACTIVATED_WITHOUT_VERIFICATION" },
+    });
+    expect(evento).not.toBeNull();
+    expect(evento?.context).toContain(actingUserId);
+    // No se puede confundir con una verificación real ni con una reactivación.
+    expect(await getDb().authEvent.count({ where: { userId: targetId, type: "EMAIL_VERIFIED" } })).toBe(0);
+    expect(await getDb().authEvent.count({ where: { userId: targetId, type: "USER_REACTIVATED" } })).toBe(0);
+  });
+
+  it("no usa esta acción para resucitar una cuenta suspendida ni una dada de baja", async () => {
+    const suspendida = await createUser("USER", "SUSPENDED");
+    created.push(suspendida);
+    const borrada = await createUser("USER");
+    created.push(borrada);
+    await getDb().user.update({ where: { id: borrada }, data: { status: "DELETED" } });
+
+    const unaSuspendida = await activatePendingUserAction(emptyAdminState, formData({ userId: suspendida }));
+    const unaBorrada = await activatePendingUserAction(emptyAdminState, formData({ userId: borrada }));
+
+    expect(unaSuspendida.status).toBe("error");
+    expect(unaBorrada.status).toBe("error");
+    expect((await getDb().user.findUniqueOrThrow({ where: { id: suspendida } })).status).toBe("SUSPENDED");
+    expect((await getDb().user.findUniqueOrThrow({ where: { id: borrada } })).status).toBe("DELETED");
   });
 
   /**
