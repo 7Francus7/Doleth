@@ -1,0 +1,16 @@
+-- Activación administrativa de una cuenta sin verificar.
+--
+-- El panel ya podía volver activa una cuenta, pero el hecho quedaba registrado
+-- como `USER_REACTIVATED`, que describe otra cosa: reactivar es devolverle el
+-- acceso a alguien que lo tuvo y lo perdió. Dejar entrar por primera vez a quien
+-- nunca confirmó su correo es una decisión distinta y más delicada —se está
+-- aceptando una dirección sin prueba de control— y la bitácora tiene que poder
+-- distinguirlas cuando alguien pregunte cómo entró esa persona.
+--
+-- Tampoco es `EMAIL_VERIFIED`: nadie verificó nada. `emailVerifiedAt` sigue en
+-- NULL a propósito después de esta operación.
+--
+-- `ADD VALUE` es aditivo: no reescribe filas ni invalida valores existentes.
+-- `IF NOT EXISTS` la vuelve idempotente y permite correr `migrate deploy` dos
+-- veces sin romper.
+ALTER TYPE "AuthEventType" ADD VALUE IF NOT EXISTS 'USER_ACTIVATED_WITHOUT_VERIFICATION';

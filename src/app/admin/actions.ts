@@ -89,6 +89,52 @@ export async function suspendUserAction(
   }
 }
 
+/**
+ * Deja entrar a una cuenta que nunca confirmó su correo.
+ *
+ * Existe porque la verificación por correo puede fallar por afuera del producto
+ * —un dominio sin verificar en el proveedor, un mail que nunca llega— y sin esta
+ * acción la única salida es entrar a la base a mano. Quien administra ya puede
+ * suspender y borrar cuentas; dejar entrar a una es estrictamente menos que eso.
+ *
+ * Lo que **no** hace: tocar `emailVerifiedAt`. La dirección sigue sin estar
+ * probada, y marcarla como verificada convertiría una decisión administrativa en
+ * una prueba de control que nadie dio. La consecuencia práctica queda dicha en
+ * pantalla: sin correo que funcione, esa persona no va a poder recuperar su
+ * contraseña sola.
+ *
+ * Sólo alcanza a cuentas pendientes. Una suspendida se reactiva con su propia
+ * acción, y una borrada no vuelve desde acá.
+ */
+export async function activatePendingUserAction(
+  _previous: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    const admin = await requireAdminForAction();
+    const targetId = text(formData, "userId");
+    if (!targetId) return failure("Falta indicar la cuenta.");
+
+    const target = await getDb().user.findUnique({ where: { id: targetId } });
+    if (!target) return failure("Esa cuenta no existe.");
+    if (target.status === "ACTIVE") return success("Esa cuenta ya podía entrar.");
+    if (target.status !== "PENDING_VERIFICATION") {
+      return failure("Esta acción es sólo para cuentas que nunca confirmaron su correo.");
+    }
+
+    await getDb().user.update({ where: { id: target.id }, data: { status: "ACTIVE" } });
+    await recordAuthEvent({
+      type: "USER_ACTIVATED_WITHOUT_VERIFICATION",
+      userId: target.id,
+      context: `por:${admin.id}`,
+    });
+    revalidatePath("/admin");
+    return success("Ya puede entrar con su correo y su contraseña. La dirección sigue sin verificar.");
+  } catch (error) {
+    return toState(error);
+  }
+}
+
 export async function reactivateUserAction(
   _previous: AdminActionState,
   formData: FormData,

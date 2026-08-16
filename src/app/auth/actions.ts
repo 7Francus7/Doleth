@@ -30,6 +30,7 @@ import {
   requestSubject,
   retryMessage,
 } from "../../lib/auth/rate-limit";
+import { logServerError } from "../../lib/observability";
 import { safeInternalPath } from "../../lib/auth/redirect";
 import { createSession, destroyCurrentSession, revokeUserSessions } from "../../lib/auth/session";
 import { consumeToken, issueToken } from "../../lib/auth/tokens";
@@ -47,8 +48,10 @@ import type { AuthFormState } from "../../lib/auth/form-state";
  * Dos reglas transversales:
  *   - No se confirma nunca si una dirección tiene cuenta. Registro, recuperación y
  *     login devuelven el mismo mensaje exista o no el usuario.
- *   - Si el proveedor de correo falla, la acción falla. No decimos "revisá tu
- *     casilla" cuando el envío no ocurrió.
+ *   - Nunca decimos "revisá tu casilla" cuando el envío no ocurrió. En el alta
+ *     eso no significa fallar: la cuenta ya quedó guardada, así que se declara
+ *     que el correo no salió y qué hacer al respecto. Fingir que no hay cuenta
+ *     empuja a reintentar el alta, que no crea otra y sí gasta los intentos.
  */
 
 const failure = (message: string, errors: FieldErrors = {}): AuthFormState => ({
@@ -133,15 +136,30 @@ export async function registerAction(_previous: AuthFormState, formData: FormDat
           ...(requiresEmailVerification ? {} : { status: "ACTIVE" as const }),
         },
       });
+      // La cuenta ya existe en la base, así que el evento se registra ahora y no
+      // después del correo. Cuando el envío fallaba, esta línea no llegaba a
+      // correr: quedaba una cuenta viva sin una sola fila que dijera cuándo
+      // nació, que es justo lo que se busca cuando alguien pregunta por qué no
+      // puede entrar.
+      await recordAuthEvent({ type: "ACCOUNT_CREATED", userId: user.id, email });
+
       if (requiresEmailVerification) {
         const issued = await issueToken(user.id, "EMAIL_VERIFICATION", EMAIL_VERIFICATION_TTL_MINUTES);
-        await sendEmail(verificationEmail(email, issued.token, EMAIL_VERIFICATION_TTL_MINUTES / 60));
+        // Un fallo de entrega no es un fallo de registro. Devolver el error
+        // genérico daba a entender que no había cuenta —y la había—, así que la
+        // persona reintentaba y sólo conseguía chocar con el tope por
+        // destinatario. Ahora se declara qué pasó y qué se puede hacer.
+        try {
+          await sendEmail(verificationEmail(email, issued.token, EMAIL_VERIFICATION_TTL_MINUTES / 60));
+        } catch {
+          logServerError({ route: "/crear-cuenta", operation: "verification-email", code: "delivery-failed" });
+          destination = `${destination}&envio=fallido`;
+        }
       } else {
         await createSession(user.id);
         await db.user.update({ where: { id: user.id }, data: { lastLoginAt: now } });
         destination = "/onboarding";
       }
-      await recordAuthEvent({ type: "ACCOUNT_CREATED", userId: user.id, email });
     }
   } catch (error) {
     return failure(safeMessage(error));

@@ -264,24 +264,43 @@ describe.skipIf(!hasDatabase)("flujos de identidad", () => {
       expect((await verifyPassword(PASSWORD, user.passwordHash)).valid).toBe(true);
     });
 
-    it("si el proveedor de correo falla, la acción falla y no miente", async () => {
+    /**
+     * Que el correo no salga no borra la cuenta que se acaba de crear. Antes la
+     * acción devolvía un error genérico: la persona creía que no tenía cuenta,
+     * reintentaba el alta y sólo gastaba los intentos del tope por destinatario.
+     */
+    it("si el proveedor de correo falla, la cuenta queda creada y la pantalla lo declara", async () => {
       const email = freshEmail("correo-caido");
       emailShouldFail = true;
-      const state = await registerAction(
-        emptyAuthState,
-        formData({
-          name: "Persona",
-          email,
-          password: PASSWORD,
-          passwordConfirmation: PASSWORD,
-          acceptedTerms: "on",
-        }),
+      const destination = await expectRedirect(
+        registerAction(
+          emptyAuthState,
+          formData({
+            name: "Persona",
+            email,
+            password: PASSWORD,
+            passwordConfirmation: PASSWORD,
+            acceptedTerms: "on",
+          }),
+        ),
       );
-      expect(state.status).toBe("error");
-      expect(state.message).toMatch(/no pudimos enviar el correo/i);
 
-      const user = await getDb().user.findUnique({ where: { email } });
-      if (user) createdUserIds.push(user.id);
+      // El destino declara que el envío no ocurrió: la pantalla no dice "revisá
+      // tu casilla" por un correo que nunca salió.
+      expect(destination).toContain("/crear-cuenta/revisa-tu-correo");
+      expect(destination).toContain("envio=fallido");
+      expect(sentEmails).toHaveLength(0);
+
+      const user = await getDb().user.findUniqueOrThrow({ where: { email } });
+      createdUserIds.push(user.id);
+      expect(user.status).toBe("PENDING_VERIFICATION");
+
+      // El alta queda en la bitácora aunque el correo falle. Sin esto, una cuenta
+      // viva no tenía una sola fila que dijera cuándo nació.
+      const evento = await getDb().authEvent.findFirst({
+        where: { userId: user.id, type: "ACCOUNT_CREATED" },
+      });
+      expect(evento).not.toBeNull();
     });
 
     it("aplica rate limiting al registro", async () => {

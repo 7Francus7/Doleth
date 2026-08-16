@@ -89,6 +89,10 @@ enum AuthEventType {
   USER_SUSPENDED
   USER_REACTIVATED
   USER_ROLE_CHANGED
+  /// Un administrador dejó entrar a una cuenta que nunca verificó su correo. No
+  /// es `EMAIL_VERIFIED`: nadie demostró control de esa dirección, y decir lo
+  /// contrario en la bitácora sería inventar una prueba que no existe.
+  USER_ACTIVATED_WITHOUT_VERIFICATION
 }
 
 model User {

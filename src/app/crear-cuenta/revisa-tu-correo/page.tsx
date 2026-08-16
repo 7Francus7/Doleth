@@ -19,22 +19,30 @@ export default async function CheckYourEmailPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const email = normalizeEmail(first((await searchParams).email) ?? "");
+  const query = await searchParams;
+  const email = normalizeEmail(first(query.email) ?? "");
+  // El registro guardó la cuenta y el correo no salió. Decirlo cambia lo que esa
+  // persona hace después: sin el aviso reintenta el alta —y choca con el tope por
+  // destinatario— en vez de pedir que la habiliten.
+  const deliveryFailed = first(query.envio) === "fallido";
 
   return (
     <AuthShell
-      eyebrow="Falta un paso"
+      eyebrow={deliveryFailed ? "Tu cuenta quedó creada" : "Falta un paso"}
       intro={
-        email
-          ? `Si ${email} no tenía cuenta, ya te enviamos un enlace para confirmarla. Vence en 24 horas.`
-          : "Te enviamos un enlace para confirmar tu correo. Vence en 24 horas."
+        deliveryFailed
+          ? "No pudimos enviarte el correo de confirmación. Tu cuenta ya existe: falta habilitarla."
+          : email
+            ? `Si ${email} no tenía cuenta, ya te enviamos un enlace para confirmarla. Vence en 24 horas.`
+            : "Te enviamos un enlace para confirmar tu correo. Vence en 24 horas."
       }
-      title="Revisá tu correo"
+      title={deliveryFailed ? "El correo no salió" : "Revisá tu correo"}
     >
       <div className={styles.card}>
         <p className={styles.notice}>
-          Buscá el mensaje de Doleth en tu bandeja de entrada. Si no aparece, revisá correo no deseado antes de pedir
-          otro enlace.
+          {deliveryFailed
+            ? "No hace falta que vuelvas a registrarte: repetir el alta no crea otra cuenta y sí consume los intentos. Pedile a quien administra Doleth que te habilite, o probá el enlace de nuevo más tarde."
+            : "Buscá el mensaje de Doleth en tu bandeja de entrada. Si no aparece, revisá correo no deseado antes de pedir otro enlace."}
         </p>
         <ResendVerificationForm defaultEmail={email} />
         <div className={styles.footerLinks}>

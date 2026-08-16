@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  activatePendingUserAction,
   changeRoleAction,
   emptyAdminState,
   reactivateUserAction,
@@ -65,6 +66,17 @@ export function AdminUserActions({
 
   return (
     <div className={styles.actions}>
+      {/*
+        Una cuenta pendiente ofrece las dos cosas: dejarla entrar sin haber
+        confirmado el correo, o suspenderla. "Reactivar" no sirve para nombrar
+        esto —nunca estuvo activa— y su acción tampoco la alcanza.
+      */}
+      {status === "PENDING_VERIFICATION" ? (
+        <ActionForm action={activatePendingUserAction} fields={{ userId }}>
+          Dejar entrar
+        </ActionForm>
+      ) : null}
+
       {status === "SUSPENDED" ? (
         <ActionForm action={reactivateUserAction} fields={{ userId }}>
           Reactivar
