@@ -1,7 +1,7 @@
 export type NavIconName =
   | "home" | "activity" | "calendar" | "wallet" | "more" | "changes"
   | "progress" | "reality" | "act" | "investments" | "currency"
-  | "import" | "spending" | "integrations";
+  | "import" | "spending" | "categories" | "integrations";
 
 export interface Destination {
   href: string;
@@ -40,6 +40,7 @@ export const moreGroups: DestinationGroup[] = [
     items: [
       { href: "/inversiones", label: "Inversiones", compact: "Inversiones", icon: "investments", hint: "Detalle de tu cartera y asignación." },
       { href: "/importar", label: "Importar", compact: "Importar", icon: "import", hint: "Subir el resumen del banco o la tarjeta." },
+      { href: "/configuracion/categorias", label: "Categorías", compact: "Rubros", icon: "categories", hint: "Las palabras con las que leés tus gastos." },
       { href: "/configuracion/moneda", label: "Moneda", compact: "Moneda", icon: "currency", hint: "Leer tu plata en pesos o en dólares." },
       { href: "/integraciones", label: "Integraciones", compact: "Conexiones", icon: "integrations", hint: "Traer cotizaciones y precios." },
     ],

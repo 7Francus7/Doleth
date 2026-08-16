@@ -1,4 +1,4 @@
-import { formatCentsAR } from "./amount";
+import { formatCentsAR, parseAmountInput } from "./amount";
 
 export type MovementType = "EXPENSE" | "INCOME" | "TRANSFER";
 
@@ -13,20 +13,37 @@ export interface MonthlyMovement {
   voidedAt: Date | null;
 }
 
+/**
+ * Lee un importe escrito por una persona y devuelve centavos exactos.
+ *
+ * Usa la misma lectura que el campo del formulario (`parseAmountInput`) y no una
+ * propia. Antes eran dos: el cliente entendía "12.500" como doce mil quinientos
+ * —que es como se escribe acá— y el servidor lo rechazaba por tener tres
+ * decimales. La diferencia sólo aparecía en los formularios que no usan el campo
+ * de importe con normalización: el saldo inicial de una cuenta, el valor de una
+ * inversión, el importe de un pago previsto y los gastos fijos del onboarding.
+ * En todos ellos, escribir el precio de la forma natural devolvía un error
+ * genérico que no explicaba nada.
+ *
+ * El signo se resuelve acá porque `parseAmountInput` no admite negativos: la
+ * deuda de una tarjeta se carga en negativo y es el único caso del producto.
+ */
 export function parseMoneyToCents(value: string, allowNegative = false): bigint {
   const raw = value.trim().replace(/\s|\$/g, "");
-  const normalized = raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw;
-  const pattern = allowNegative ? /^-?\d+(?:\.\d{1,2})?$/ : /^\d+(?:\.\d{1,2})?$/;
-
-  if (!pattern.test(normalized)) {
+  const negative = raw.startsWith("-");
+  if (negative && !allowNegative) {
     throw new Error("Ingresá un importe válido con hasta dos decimales.");
   }
 
-  const negative = normalized.startsWith("-");
-  const unsigned = negative ? normalized.slice(1) : normalized;
-  const [whole = "0", fraction = ""] = unsigned.split(".");
-  const cents = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0"));
-  return negative ? -cents : cents;
+  const reading = parseAmountInput(negative ? raw.slice(1) : raw);
+  if (reading.cents === null) {
+    throw new Error(
+      reading.error === "too-large"
+        ? "El importe es demasiado grande."
+        : "Ingresá un importe válido con hasta dos decimales.",
+    );
+  }
+  return negative ? -reading.cents : reading.cents;
 }
 
 export function requirePositiveMoney(value: string): bigint {

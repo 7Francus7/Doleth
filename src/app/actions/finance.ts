@@ -6,6 +6,16 @@ import { UnauthorizedError, requireOnboardedUserForAction } from "../../lib/auth
 import { successForCorrection, successForMovement, successForVoid } from "../../lib/finance/actionFeedback";
 import { formatCentsAR } from "../../lib/finance/amount";
 import { FALLBACK_EXPENSE_SLUG } from "../../lib/finance/categories";
+import {
+  CATEGORY_KIND_LABELS,
+  archiveCategoryProblem,
+  categoryNameProblem,
+  isCategoryKind,
+  isDuplicateCategoryName,
+  normalizeCategoryName,
+  slugifyCategoryName,
+  uniqueCategorySlug,
+} from "../../lib/finance/categoryRules";
 import { isAccountKind, isLiabilityAccount } from "../../lib/finance/accountKind";
 import { CURRENCY_LABELS, SUPPORTED_CURRENCIES, isSupportedCurrency } from "../../lib/finance/currency";
 import { parseQuantityInput } from "../../lib/finance/holdings";
@@ -315,6 +325,161 @@ export async function createAccountAction(
     };
   } catch (error) {
     return errorState(error, "create-account");
+  }
+}
+
+/** Superficies donde se lee el nombre de una categoría. */
+function refreshCategories() {
+  revalidatePath("/configuracion/categorias");
+  revalidatePath("/movimientos");
+  revalidatePath("/movimientos/nuevo");
+  revalidatePath("/proximo");
+  revalidatePath("/en-que-se-fue");
+}
+
+/**
+ * Crea una categoría propia.
+ *
+ * El catálogo base cubre lo común y nada más. Alguien que paga la cuota del
+ * colegio, la obra social o el alquiler de la cochera no tiene dónde ponerlo, y
+ * "Otros gastos" no es una respuesta: un reporte donde el rubro más grande se
+ * llama "otros" no explica nada.
+ *
+ * El nombre se compara plegando acentos y mayúsculas contra el catálogo entero
+ * —incluidas las archivadas—, porque dos filas que la persona lee igual son la
+ * misma categoría para ella, aunque la base pueda guardarlas separadas.
+ */
+export async function createCategoryAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const user = await requireOnboardedUserForAction();
+    const name = normalizeCategoryName(value(formData, "name"));
+    const kind = value(formData, "kind");
+
+    const problem = categoryNameProblem(name);
+    if (problem) throw financeError("category-name-invalid", problem, "name");
+    if (!isCategoryKind(kind)) {
+      throw financeError("category-kind-invalid", "Elegí si es una categoría de gasto o de ingreso.", "kind");
+    }
+
+    const db = getDb();
+    const existing = await db.category.findMany({
+      where: { userId: user.id },
+      select: { name: true, slug: true, kind: true, archivedAt: true },
+    });
+
+    const twin = existing.find(
+      (category) => category.kind === kind && isDuplicateCategoryName(name, [category.name]),
+    );
+    if (twin) {
+      throw financeError(
+        "category-duplicate",
+        twin.archivedAt
+          ? `Ya tenés «${twin.name}», archivada. Reactivala en vez de crear otra igual.`
+          : `Ya tenés una categoría de ${CATEGORY_KIND_LABELS[kind].toLowerCase()} llamada «${twin.name}».`,
+        "name",
+      );
+    }
+
+    const slug = uniqueCategorySlug(
+      slugifyCategoryName(name),
+      existing.map((category) => category.slug),
+    );
+
+    await db.category.create({ data: { userId: user.id, name, slug, kind } });
+    refreshCategories();
+    return {
+      ok: true,
+      message: `«${name}» ya está disponible para cargar ${kind === "EXPENSE" ? "gastos" : "ingresos"}.`,
+    };
+  } catch (error) {
+    return errorState(error, "create-category");
+  }
+}
+
+/**
+ * Renombra una categoría sin tocar su slug.
+ *
+ * Renombrar no reescribe la historia: los movimientos que ya la usaban siguen
+ * apuntando a la misma fila y pasan a leerse con el nombre nuevo, que es
+ * exactamente lo que quiere quien corrige "Comida" por "Supermercado". El slug
+ * queda igual para no romper la categoría de respaldo ni las exportaciones
+ * anteriores.
+ */
+export async function renameCategoryAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const user = await requireOnboardedUserForAction();
+    const id = value(formData, "id");
+    const name = normalizeCategoryName(value(formData, "name"));
+    if (!id) throw financeError("category-missing", "Categoría inexistente.");
+
+    const problem = categoryNameProblem(name);
+    if (problem) throw financeError("category-name-invalid", problem, "name");
+
+    const db = getDb();
+    const category = await db.category.findFirst({ where: { id, userId: user.id } });
+    if (!category) throw financeError("category-missing", "Categoría inexistente.");
+    if (category.name === name) return { ok: true, message: "El nombre ya era ése. No se cambió nada." };
+
+    const others = await db.category.findMany({
+      where: { userId: user.id, kind: category.kind, id: { not: category.id } },
+      select: { name: true },
+    });
+    if (isDuplicateCategoryName(name, others.map((other) => other.name))) {
+      throw financeError("category-duplicate", `Ya tenés otra categoría llamada «${name}».`, "name");
+    }
+
+    await db.category.updateMany({ where: { id, userId: user.id }, data: { name } });
+    refreshCategories();
+    return { ok: true, message: `Ahora se llama «${name}». Los movimientos que ya la usaban se leen con el nombre nuevo.` };
+  } catch (error) {
+    return errorState(error, "rename-category");
+  }
+}
+
+/**
+ * Archiva o reactiva una categoría.
+ *
+ * Archivar no borra: la categoría desaparece de los selectores y sigue nombrando
+ * todo lo que ya cargó. Borrarla cambiaría cómo se lee el pasado, y el ledger no
+ * se reescribe por una decisión de hoy.
+ */
+export async function setCategoryStatusAction(
+  _previous: FinanceActionState,
+  formData: FormData,
+): Promise<FinanceActionState> {
+  try {
+    const user = await requireOnboardedUserForAction();
+    const id = value(formData, "id");
+    const archived = value(formData, "archived") === "true";
+    if (!id) throw financeError("category-missing", "Categoría inexistente.");
+
+    const db = getDb();
+    const category = await db.category.findFirst({ where: { id, userId: user.id } });
+    if (!category) throw financeError("category-missing", "Categoría inexistente.");
+
+    if (archived) {
+      const problem = archiveCategoryProblem(category);
+      if (problem) throw financeError("category-not-archivable", problem);
+      await db.category.updateMany({ where: { id, userId: user.id }, data: { archivedAt: new Date() } });
+      refreshCategories();
+      return {
+        ok: true,
+        message: `«${category.name}» ya no aparece al cargar. Lo que ya estaba cargado con ella no cambió.`,
+      };
+    }
+
+    if (!category.archivedAt) return { ok: true, message: "Esta categoría ya estaba disponible." };
+    await db.category.updateMany({ where: { id, userId: user.id }, data: { archivedAt: null } });
+    refreshCategories();
+    return { ok: true, message: `«${category.name}» vuelve a aparecer al cargar.` };
+  } catch (error) {
+    return errorState(error, "set-category-status");
   }
 }
 
@@ -709,11 +874,23 @@ export async function createUpcomingPaymentAction(
     const dueOn = dateOnly(value(formData, "dueOn"));
     const frequency = value(formData, "frequency") || undefined;
     const plannedAccountId = value(formData, "plannedAccountId");
+    const categoryId = value(formData, "categoryId") || undefined;
     if (concept.length < 2 || concept.length > 100) throw new Error("El concepto debe tener entre 2 y 100 caracteres.");
     const account = await db.account.findFirst({
       where: { id: plannedAccountId, userId: user.id, status: "ACTIVE" },
     });
     if (!account) throw new Error("Seleccioná una cuenta activa.");
+
+    // La categoría es opcional —quien no quiera clasificar ahora sigue como
+    // antes— pero si viene una, tiene que ser suya y tiene que ser de gasto:
+    // confirmar el pago crea un gasto, y un gasto en una categoría de ingreso
+    // ensuciaría los dos lados del reporte.
+    if (categoryId) {
+      const category = await db.category.findFirst({ where: { id: categoryId, userId: user.id } });
+      if (!category || category.kind !== "EXPENSE") {
+        throw financeError("category-mismatch", "Elegí una categoría de gasto.", "categoryId");
+      }
+    }
 
     // Protección de doble-envío, acotada al dueño: el pago idéntico de otra
     // persona no puede contar como duplicado de éste.
@@ -737,6 +914,7 @@ export async function createUpcomingPaymentAction(
         estimatedCents,
         dueOn,
         plannedAccountId,
+        ...(categoryId ? { categoryId } : {}),
         ...(frequency ? { frequency } : {}),
       },
     });
@@ -773,6 +951,10 @@ export async function payUpcomingPaymentAction(
     const paymentId = value(formData, "paymentId");
     const occurredOn = dateOnly(value(formData, "occurredOn"));
     const rawAmount = value(formData, "amount");
+    // Confirmar es el momento en que el gasto existe, así que también es el
+    // último momento razonable para decir en qué categoría cae. Lo elegido acá
+    // manda sobre lo previsto.
+    const chosenCategoryId = value(formData, "categoryId") || null;
     const redirectTo = sanitizeReturnPath(value(formData, "volver") || null, "/proximo");
     if (!paymentId) throw financeError("payment-invalid", "Próximo pago inválido.");
     if (occurredOn.toISOString().slice(0, 10) > todayInArgentina()) {
@@ -806,11 +988,23 @@ export async function payUpcomingPaymentAction(
       });
       if (!account) throw financeError("account-unavailable", "La cuenta prevista ya no está activa.");
 
-      // El catálogo de categorías es por usuario desde el corte de identidad: la
-      // de respaldo se busca dentro del suyo, no como fila global del seed.
-      const category = await tx.category.findFirst({
-        where: { userId: user.id, slug: FALLBACK_EXPENSE_SLUG },
-      });
+      // El gasto hereda la categoría que se eligió al prever el pago. Sin ella,
+      // la luz, el alquiler y el gimnasio terminaban todos en "Otros gastos" y
+      // /en-que-se-fue no podía contestar lo único que se le pregunta.
+      //
+      // El respaldo sigue existiendo para los pagos cargados antes de que la
+      // categoría fuera parte del formulario, y para quien prefiera no
+      // clasificar. El catálogo es por usuario desde el corte de identidad: se
+      // busca dentro del suyo, no como fila global del seed.
+      const wantedCategoryId = chosenCategoryId ?? payment.categoryId;
+      const chosen = wantedCategoryId
+        ? await tx.category.findFirst({ where: { id: wantedCategoryId, userId: user.id } })
+        : null;
+      if (wantedCategoryId && (!chosen || chosen.kind !== "EXPENSE")) {
+        throw financeError("category-mismatch", "Elegí una categoría de gasto.", "categoryId");
+      }
+      const category =
+        chosen ?? (await tx.category.findFirst({ where: { userId: user.id, slug: FALLBACK_EXPENSE_SLUG } }));
       if (!category) {
         throw financeError(
           "seed-missing",
@@ -942,6 +1136,9 @@ export async function repeatUpcomingPaymentAction(
         estimatedCents: source.estimatedCents,
         dueOn,
         plannedAccountId: source.plannedAccountId,
+        // Repetir copia también la categoría: el mes que viene la luz sigue
+        // siendo luz, y volver a elegirla sería pedir dos veces el mismo dato.
+        ...(source.categoryId ? { categoryId: source.categoryId } : {}),
         ...(source.frequency ? { frequency: source.frequency } : {}),
       },
     });
