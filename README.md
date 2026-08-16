@@ -39,6 +39,14 @@ Cada persona entra con su propia cuenta: correo y contraseña, con verificación
 recuperación por correo real. La clave única compartida de la etapa de un solo
 usuario ya no existe. Ver `.env.example` para la lista completa.
 
+El registro es **público**: cualquiera entra a `/crear-cuenta`, se registra,
+confirma su correo, hace la configuración inicial y empieza. La única palanca que
+lo cierra es `DOLETH_ACCESS_MODE=private-beta`, y cierra las dos puntas a la vez
+—la pantalla y la Server Action—, nunca sólo la de adelante. El ciclo completo
+está documentado en [docs/auth/auth-architecture.md](docs/auth/auth-architecture.md);
+la baja de cuenta, en
+[docs/auth/account-deletion-runbook.md](docs/auth/account-deletion-runbook.md).
+
 No se deben versionar valores reales. En producción, la cookie es `HttpOnly`,
 `SameSite=Lax` y `Secure` bajo HTTPS.
 

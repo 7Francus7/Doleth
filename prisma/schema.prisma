@@ -78,6 +78,10 @@ enum AuthEventType {
   ONBOARDING_COMPLETED
   ACCOUNT_DELETION_REQUESTED
   ACCOUNT_DELETION_CANCELED
+  /// Baja ejecutada por la propia persona desde la aplicación. La fila sobrevive
+  /// al borrado con `userId` en NULL: es lo único que queda para distinguir una
+  /// cuenta que se fue sola de una que dimos de baja nosotros.
+  ACCOUNT_DELETED
   /// Acciones del panel de administración. Existen como tipos propios en vez de
   /// reusar `PROFILE_UPDATED` porque una suspensión decidida por un tercero y un
   /// cambio que la persona se hizo a sí misma no son el mismo hecho, y la

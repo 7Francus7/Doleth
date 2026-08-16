@@ -25,7 +25,7 @@
     "db:rehearsal:seed-legacy": "tsx prisma/ops/seed-legacy-rehearsal.ts",
     "db:ensure-owner": "tsx prisma/ops/ensure-owner.ts",
     "db:audit-migrations": "tsx prisma/ops/audit-migrations.ts",
-    "test:isolation": "vitest run src/test/database-required.test.ts src/lib/finance/isolation.test.ts src/app/actions/finance.authorization.test.ts src/lib/finance/ledger-integrity.test.ts src/lib/export/export-isolation.test.ts",
+    "test:isolation": "vitest run src/test/database-required.test.ts src/app/journey.e2e.test.ts src/lib/finance/isolation.test.ts src/app/actions/finance.authorization.test.ts src/lib/finance/ledger-integrity.test.ts src/lib/export/export-isolation.test.ts",
     "db:deletions": "tsx prisma/ops/deletion.ts",
     "db:smoke-cleanup": "tsx prisma/ops/smoke-cleanup.ts",
     "beta:access": "node --conditions=react-server --import tsx prisma/ops/private-beta-access.ts",

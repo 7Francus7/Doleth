@@ -1,0 +1,16 @@
+-- Baja de cuenta hecha por la propia persona.
+--
+-- Hasta acá la aplicación sólo registraba el pedido (`User.deletionRequestedAt`)
+-- y un operador ejecutaba la baja a mano. Con el registro abierto al público eso
+-- deja de ser sostenible: quien se dio de alta solo tiene que poder irse solo.
+--
+-- El evento se distingue de `ACCOUNT_DELETION_REQUESTED` a propósito. Un pedido
+-- y una ejecución no son el mismo hecho, y la bitácora es justamente donde esa
+-- diferencia importa: la fila del evento sobrevive al borrado con `userId` en
+-- NULL (la FK es SET NULL), así que es lo único que queda para responder "esta
+-- cuenta, ¿se fue sola o la dimos de baja nosotros?".
+--
+-- `ADD VALUE` es aditivo: no reescribe ninguna fila ni invalida valores
+-- existentes. `IF NOT EXISTS` la vuelve idempotente y permite correr
+-- `migrate deploy` dos veces sin romper.
+ALTER TYPE "AuthEventType" ADD VALUE IF NOT EXISTS 'ACCOUNT_DELETED';

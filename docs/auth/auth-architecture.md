@@ -51,6 +51,7 @@ No se agregó NextAuth/Auth.js. Razones concretas:
 | `src/lib/auth/redirect.ts` | Validación de destinos de retorno. |
 | `src/lib/auth/validation.ts` | Esquemas de validación compartidos cliente/servidor. |
 | `src/lib/auth/plan.ts` | Resolución de capacidades por plan. |
+| `src/lib/auth/account-deletion.ts` | Borrado completo de una cuenta y todo lo que le pertenece, en una transacción y en orden compatible con las claves foráneas. |
 | `src/lib/auth/form-state.ts` | Tipos y estados iniciales de formulario. Vive fuera de los archivos `"use server"`, que sólo pueden exportar funciones. |
 | `src/proxy.ts` | Clasificación de rutas y cabeceras de seguridad. **No es autorización.** |
 
@@ -180,7 +181,12 @@ que agregar planes después sea cambiar una tabla, no rastrear condicionales.
 
 `AuthEvent` registra altas, verificaciones, logins (exitosos y fallidos),
 cierres de sesión, cambios de contraseña y de correo, revocaciones, onboarding y
-pedidos de baja.
+bajas de cuenta.
+
+`ACCOUNT_DELETED` es el único evento cuya fila sobrevive a su protagonista: la FK
+a `User` es `SET NULL`, así que después del borrado queda el hecho sin la
+persona. Es lo que permite distinguir después una cuenta que se fue sola de una
+que dimos de baja nosotros, sin conservar a nadie que pidió no ser conservado.
 
 Nunca guarda contraseñas, tokens (ni parciales) ni datos financieros. El correo
 y la IP se guardan **seudonimizados** con HMAC usando `DOLETH_SESSION_SECRET`

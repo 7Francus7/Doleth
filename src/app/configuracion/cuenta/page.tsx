@@ -179,12 +179,10 @@ export default async function AccountSettingsPage() {
         </Section>
 
         <Section
-          intro="Registramos el pedido y lo procesamos manualmente. No decimos que borramos nada hasta hacerlo."
-          title="Dar de baja la cuenta"
+          intro="Borramos todo en el momento y no guardamos una copia. Pedimos tu contraseña y una confirmación escrita porque no hay vuelta atrás."
+          title="Eliminar mi cuenta"
         >
-          <DeleteAccountSection
-            requestedOn={user.deletionRequestedAt ? dateFormatter.format(user.deletionRequestedAt) : null}
-          />
+          <DeleteAccountSection />
         </Section>
 
         <p className={styles.sectionIntro}>

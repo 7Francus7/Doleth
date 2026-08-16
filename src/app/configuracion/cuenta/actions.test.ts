@@ -42,11 +42,13 @@ vi.mock("../../../lib/auth/email", async () => {
 const {
   changePasswordAction,
   confirmEmailChangeAction,
-  requestAccountDeletionAction,
+  deleteAccountAction,
   requestEmailChangeAction,
   revokeOtherSessionsAction,
   updateProfileAction,
 } = await import("./actions");
+const { provisionUserCategories } = await import("../../../lib/finance/provisioning");
+const { createPostings } = await import("../../../lib/finance/domain");
 const { emptyAccountState } = await import("../../../lib/auth/form-state");
 const { createSession, getSession, revokeUserSessions } = await import("../../../lib/auth/session");
 const { hashPassword, verifyPassword } = await import("../../../lib/auth/password");
@@ -308,35 +310,120 @@ describe.skipIf(!hasDatabase)("acciones de la cuenta", () => {
       expect(estado.errors.timeZone).toBeDefined();
     });
 
-    it("la baja exige contraseña y la frase de confirmación, y no borra datos", async () => {
-      const user = await createSignedInUser("baja");
+    it("una confirmación mal escrita no borra nada", async () => {
+      const user = await createSignedInUser("baja-frase");
       await getDb().account.create({
         data: { userId: user.id, name: "Cuenta que no se borra", type: "BANK", initialBalanceCents: 1000n },
       });
 
-      const sinFrase = await requestAccountDeletionAction(
+      const estado = await deleteAccountAction(
         emptyAccountState,
         formData({ currentPassword: PASSWORD, confirmation: "eliminar" }),
       );
-      expect(sinFrase.errors.confirmation).toBeDefined();
 
-      const sinPassword = await requestAccountDeletionAction(
+      expect(estado.errors.confirmation).toBeDefined();
+      expect(await getDb().user.count({ where: { id: user.id } })).toBe(1);
+      expect(await getDb().account.count({ where: { userId: user.id } })).toBe(1);
+    });
+
+    it("tener la sesión abierta no alcanza: sin la contraseña no se borra nada", async () => {
+      const user = await createSignedInUser("baja-password");
+      await getDb().account.create({
+        data: { userId: user.id, name: "Cuenta que no se borra", type: "BANK", initialBalanceCents: 1000n },
+      });
+
+      const estado = await deleteAccountAction(
         emptyAccountState,
         formData({ currentPassword: "clave equivocada 123", confirmation: "ELIMINAR" }),
       );
-      expect(sinPassword.errors.currentPassword).toBeDefined();
 
-      const correcta = await requestAccountDeletionAction(
-        emptyAccountState,
-        formData({ currentPassword: PASSWORD, confirmation: "ELIMINAR" }),
-      );
-      expect(correcta.status).toBe("success");
-
-      const actualizado = await getDb().user.findUniqueOrThrow({ where: { id: user.id } });
-      expect(actualizado.deletionRequestedAt).not.toBeNull();
-      // El pedido queda registrado; los datos siguen ahí. No decimos que borramos.
-      expect(actualizado.status).toBe("ACTIVE");
+      expect(estado.errors.currentPassword).toBeDefined();
+      expect(await getDb().user.count({ where: { id: user.id } })).toBe(1);
       expect(await getDb().account.count({ where: { userId: user.id } })).toBe(1);
+    });
+
+    it("con contraseña y frase correctas borra la cuenta entera y cierra la sesión", async () => {
+      const user = await createSignedInUser("baja-completa");
+
+      // Una cuenta con datos de verdad: si el orden de borrado estuviera mal,
+      // las claves foráneas RESTRICT harían fallar la transacción acá.
+      await provisionUserCategories(user.id, getDb());
+      const cuenta = await getDb().account.create({
+        data: { userId: user.id, name: "Mercado Pago", type: "WALLET", initialBalanceCents: 10_000_000n },
+      });
+      const categoria = await getDb().category.findFirstOrThrow({ where: { userId: user.id, kind: "EXPENSE" } });
+      const movimiento = await getDb().transaction.create({
+        data: {
+          userId: user.id,
+          type: "EXPENSE",
+          amountCents: 2_000_000n,
+          occurredOn: new Date("2026-08-10T00:00:00.000Z"),
+          description: "Gasto de prueba",
+          sourceAccountId: cuenta.id,
+          categoryId: categoria.id,
+          idempotencyKey: `baja-${randomUUID()}`,
+          entries: { create: createPostings("EXPENSE", 2_000_000n, cuenta.id) },
+        },
+      });
+      await getDb().upcomingPayment.create({
+        data: {
+          userId: user.id,
+          concept: "Alquiler",
+          estimatedCents: 5_000_000n,
+          dueOn: new Date("2026-09-01T00:00:00.000Z"),
+          plannedAccountId: cuenta.id,
+        },
+      });
+      await getDb().investment.create({
+        data: {
+          userId: user.id,
+          name: "Plazo fijo",
+          kind: "BOND",
+          investedCents: 1_000_000n,
+          currentValueCents: 1_100_000n,
+        },
+      });
+
+      await expect(
+        deleteAccountAction(emptyAccountState, formData({ currentPassword: PASSWORD, confirmation: "ELIMINAR" })),
+      ).rejects.toThrow("REDIRECT:/cuenta-eliminada");
+
+      // Nada del usuario sobrevive.
+      expect(await getDb().user.count({ where: { id: user.id } })).toBe(0);
+      expect(await getDb().account.count({ where: { userId: user.id } })).toBe(0);
+      expect(await getDb().transaction.count({ where: { userId: user.id } })).toBe(0);
+      expect(await getDb().ledgerEntry.count({ where: { transactionId: movimiento.id } })).toBe(0);
+      expect(await getDb().upcomingPayment.count({ where: { userId: user.id } })).toBe(0);
+      expect(await getDb().investment.count({ where: { userId: user.id } })).toBe(0);
+      expect(await getDb().category.count({ where: { userId: user.id } })).toBe(0);
+      expect(await getDb().session.count({ where: { userId: user.id } })).toBe(0);
+      expect(await getDb().authToken.count({ where: { userId: user.id } })).toBe(0);
+
+      // La sesión muere aunque la cookie siguiera en el navegador.
+      expect(await getSession()).toBeNull();
+
+      // El hecho queda en la bitácora, sin persona detrás.
+      const evento = await getDb().authEvent.findFirst({
+        where: { type: "ACCOUNT_DELETED" },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(evento).not.toBeNull();
+      expect(evento?.userId).toBeNull();
+    });
+
+    it("el mismo correo puede volver a registrarse después de la baja", async () => {
+      const user = await createSignedInUser("baja-reuso");
+      const correo = user.email;
+
+      await expect(
+        deleteAccountAction(emptyAccountState, formData({ currentPassword: PASSWORD, confirmation: "ELIMINAR" })),
+      ).rejects.toThrow("REDIRECT:/cuenta-eliminada");
+
+      const nuevo = await getDb().user.create({
+        data: { name: "Otra vez", email: correo, passwordHash: await hashPassword(PASSWORD) },
+      });
+      createdUserIds.push(nuevo.id);
+      expect(nuevo.id).not.toBe(user.id);
     });
   });
 });
