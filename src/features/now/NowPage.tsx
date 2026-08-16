@@ -1,30 +1,23 @@
 "use client";
 
-import { AnimatePresence, LayoutGroup } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DolethBrand } from "../../components/brand/DolethBrand";
 import { SensitiveAmount, SensitiveText } from "../../components/privacy/AmountPrivacy";
-import { ActionStrip } from "../../design-system/composites/ActionStrip";
-import { AttentionBanner } from "../../design-system/composites/AttentionBanner";
 import { FinancialRow } from "../../design-system/composites/FinancialRow";
-import { InformationBlock } from "../../design-system/composites/InformationBlock";
-import { StabilityStatement } from "../../design-system/composites/StabilityStatement";
-import { SystemRail } from "../../design-system/composites/SystemRail";
-import { Divider } from "../../design-system/primitives/Divider";
-import { NumericValue } from "../../design-system/primitives/NumericValue";
-import { SectionTitle } from "../../design-system/primitives/SectionTitle";
-import { Surface } from "../../design-system/primitives/Surface";
-import { TextLink } from "../../design-system/primitives/TextLink";
-import { EvidenceBreakdownExperience } from "../evidence";
+import { ActionStrip } from "../../design-system/composites/ActionStrip";
+import { PrioritySurface, type PrioritySurfaceTone } from "../../design-system/composites/PrioritySurface";
 import type { NowViewModel } from "./model";
 import styles from "./NowPage.module.css";
 
-export interface NowPageProps {
-  model: NowViewModel;
-}
+export interface NowPageProps { model: NowViewModel }
 
-/** Rutas de cada acción. Navegación interna: la app no se recarga. */
+const metricHref: Record<string, string> = {
+  Ingresos: "/movimientos?type=INCOME",
+  Gastos: "/movimientos?type=EXPENSE",
+  Diferencia: "/movimientos",
+};
+
 const ACTION_ROUTES: Record<string, string> = {
   register: "/movimientos/nuevo",
   resolve: "/proximo",
@@ -37,158 +30,129 @@ const ACTION_ROUTES: Record<string, string> = {
 
 export function NowPage({ model }: NowPageProps) {
   const router = useRouter();
-  const actionStripProps = styles.actions ? { className: styles.actions } : {};
-  const informationProps = styles.information ? { className: styles.information } : {};
   const accounts = model.accounts ?? [];
-  const handleAction = (actionId: string) => {
-    router.push(ACTION_ROUTES[actionId] ?? "/movimientos/nuevo");
-  };
+  const measuredHero = "value" in model.hero && model.hero.value;
+  const investment = model.investments;
+  const heroTone: PrioritySurfaceTone = model.hero.scenario === "attention"
+    ? "pressure"
+    : model.hero.scenario === "stable"
+      ? "positive"
+      : "neutral";
 
   return (
-    <main className="app-canvas">
+    <main className={`app-canvas ${styles.canvas}`}>
       <div className={`app-canvas__content ${styles.content}`}>
-        <header className={styles.topBar}>
-          <div>
-            <DolethBrand />
-            <h1 className={styles.screenTitle}>Ahora</h1>
-          </div>
-          <Link aria-label="Gestionar cuentas" className={styles.accountShortcut} href="/cuentas">
-            <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-              <path d="M4 7.5h16v11H4zM7 7.5V5.8c0-.9.7-1.6 1.6-1.6h6.8c.9 0 1.6.7 1.6 1.6v1.7M7.5 12h9" />
-            </svg>
-          </Link>
+        <header className={styles.masthead}>
+          <DolethBrand />
+          <div className={styles.issueLine}><span>Inicio</span><span>Situación actual</span></div>
         </header>
-        <SystemRail {...model.rail} />
-        <LayoutGroup id="now-primary-state">
-          <AnimatePresence initial={false}>
-            {model.banner ? (
-              <AttentionBanner key="attention" {...model.banner} onAction={handleAction} />
-            ) : null}
-          </AnimatePresence>
-          <EvidenceBreakdownExperience
-            evidence={model.evidence}
-            hero={model.hero}
-            valueActionLabel="Ver cómo se calculó"
-          />
-        </LayoutGroup>
-        <StabilityStatement {...model.stability} />
-        <ActionStrip {...model.actions} {...actionStripProps} onAction={handleAction} />
+
+        {model.banner ? (
+          <aside className={styles.alert}>
+            <span>Atención</span>
+            <p>{model.banner.title}</p>
+            <small><SensitiveText>{model.banner.detail}</SensitiveText></small>
+          </aside>
+        ) : null}
+
+        <PrioritySurface
+          aria-labelledby="total-title"
+          as="section"
+          className={styles.hero}
+          data-state={model.hero.scenario}
+          tone={heroTone}
+        >
+          <div className={styles.heroCopy}>
+            <p className={styles.kicker}>Posición disponible</p>
+            <h1 id="total-title"><SensitiveText>{model.hero.stateText}</SensitiveText></h1>
+          </div>
+          <div className={styles.heroValue}>
+            {measuredHero ? (
+              <strong><SensitiveAmount>{model.hero.valuePrefix}{model.hero.value}</SensitiveAmount></strong>
+            ) : (
+              <strong aria-label="Sin total disponible">—</strong>
+            )}
+            <span>{model.hero.valueLabel}</span>
+            {model.hero.secondaryValue ? <small><SensitiveText>{model.hero.secondaryValue}</SensitiveText></small> : null}
+          </div>
+          {model.hero.inlineNote ? <p className={styles.heroNote}><SensitiveText>{model.hero.inlineNote}</SensitiveText></p> : null}
+        </PrioritySurface>
+
+        <ActionStrip
+          {...model.actions}
+          {...(styles.actionStrip ? { className: styles.actionStrip } : {})}
+          onAction={(actionId) => router.push(ACTION_ROUTES[actionId] ?? "/movimientos/nuevo")}
+        />
+
+        <section aria-label="Resumen del período" className={styles.metrics}>
+          {model.position.rows.map((row) => (
+            <Link className={styles.metric} href={metricHref[row.label] ?? "/movimientos"} key={row.label}>
+              <span>{row.label}</span>
+              <strong><SensitiveAmount>{row.valuePrefix}{row.value}{row.valueSuffix}</SensitiveAmount></strong>
+            </Link>
+          ))}
+          <Link className={styles.metric} href={investment?.href ?? "/mi-realidad#inversiones"}>
+            <span>Invertido</span>
+            <strong>
+              {investment?.hasInvestments ? (
+                <SensitiveAmount>{investment.valuePrefix}{investment.value}</SensitiveAmount>
+              ) : "—"}
+            </strong>
+            <small>{investment?.hasInvestments ? investment.deltaLabel || "Cartera registrada" : "Sin cartera registrada"}</small>
+          </Link>
+        </section>
 
         {model.projection ? (
-          <section aria-labelledby="projection-title">
-          <Surface
-            border="subtle"
-            className={styles.projection}
-            padding="md"
-            radius="lg"
-            tone="base"
-          >
-            <h2 className={styles.projectionEyebrow} id="projection-title">{model.projection.title}</h2>
-            <NumericValue
-              prefix={model.projection.amountPrefix}
-              size="lg"
-              state="confirmed"
-              tone={model.projection.amountState === "attention" ? "attention" : "neutral"}
-              value={model.projection.amount}
-            />
-            <p className={styles.projectionHeadline}><SensitiveText>{model.projection.headline}</SensitiveText></p>
-            <div className={styles.projectionRows}>
-              {model.projection.rows.map((row, index) => (
-                <div className={styles.projectionUnit} key={row.label}>
-                  {index > 0 ? <Divider /> : null}
-                  <FinancialRow {...row} density="compact" />
-                </div>
-              ))}
+          <section aria-labelledby="projection-title" className={styles.projection}>
+            <div>
+              <p className={styles.kicker}>{model.projection.title}</p>
+              <h2 id="projection-title"><SensitiveText>{model.projection.headline}</SensitiveText></h2>
             </div>
-            <p className={styles.projectionNote}><SensitiveText>{model.projection.note}</SensitiveText></p>
-            {model.projection.excludedNote ? (
-              <p className={styles.projectionNote}><SensitiveText>{model.projection.excludedNote}</SensitiveText></p>
-            ) : null}
-            <TextLink href={model.projection.linkHref} kind="standalone" showChevron>
-              {model.projection.linkLabel}
-            </TextLink>
-          </Surface>
+            <strong><SensitiveAmount>{model.projection.amountPrefix}{model.projection.amount}</SensitiveAmount></strong>
+            <Link href={model.projection.linkHref}>{model.projection.linkLabel} →</Link>
           </section>
         ) : null}
 
-        {accounts.length > 0 ? (
-          <section aria-labelledby="accounts-title" className={styles.accountsSection}>
-            <div className={styles.sectionHeader}>
+        <div className={styles.ledgerGrid}>
+          {model.operational?.map((section) => (
+            <section aria-labelledby={`section-${section.title.replaceAll(" ", "-")}`} className={styles.ledger} key={section.title}>
+              <header>
+                <h2 id={`section-${section.title.replaceAll(" ", "-")}`}>{section.title}</h2>
+                <Link href={section.actionHref}>{section.actionLabel}</Link>
+              </header>
+              {section.notice ? <p className={styles.notice}>{section.notice}</p> : null}
               <div>
-                <p className={styles.sectionEyebrow}>Base financiera</p>
-                <h2 id="accounts-title">Mis cuentas</h2>
+                {section.rows.map((row, index) => <FinancialRow {...row} key={`${row.label}-${index}`} />)}
               </div>
-              <Link href="/cuentas">Gestionar</Link>
-            </div>
-            <div className={styles.accountScroller}>
+            </section>
+          ))}
+        </div>
+
+        <section aria-labelledby="accounts-title" className={styles.accounts}>
+          <header>
+            <div><p className={styles.kicker}>Base financiera</p><h2 id="accounts-title">Cuentas</h2></div>
+            <Link href="/cuentas">Ver todas</Link>
+          </header>
+          {accounts.length ? (
+            <div className={styles.accountList}>
               {accounts.map((account) => (
-                <article className={styles.accountCard} data-state={account.state} key={account.id}>
-                  <div className={styles.accountCardTopline}>
-                    <span>{account.type}</span>
-                    <span aria-hidden="true">•••</span>
-                  </div>
-                  <p>{account.name}</p>
+                <Link href={`/movimientos?accountId=${account.id}`} key={account.id}>
+                  <span><small>{account.type}</small>{account.name}</span>
                   <strong><SensitiveAmount>{account.balancePrefix}{account.balance}</SensitiveAmount></strong>
-                </article>
-              ))}
-              <Link className={styles.addAccountCard} href="/cuentas/nueva">
-                <span aria-hidden="true">+</span>
-                Nueva cuenta
-              </Link>
-            </div>
-          </section>
-        ) : null}
-
-        {model.operational?.map((section) => (
-          <Surface border="subtle" className={styles.position} key={section.title} padding="md" radius="lg" tone="base">
-            <SectionTitle action="link" actionHref={section.actionHref} actionLabel={section.actionLabel} title={section.title} />
-            {section.notice ? <p className={styles.degradedNotice}>{section.notice}</p> : null}
-            <div className={styles.positionRows}>
-              {section.rows.map((row, index) => (
-                <div className={styles.positionUnit} key={`${row.label}-${row.value}-${index}`}>
-                  {index > 0 ? <Divider /> : null}
-                  <FinancialRow {...row} />
-                </div>
+                </Link>
               ))}
             </div>
-          </Surface>
-        ))}
+          ) : (
+            <Link className={styles.emptyAccount} href="/cuentas/nueva">+ Crear primera cuenta</Link>
+          )}
+        </section>
 
-        {model.investments ? (
-          <Link className={styles.investmentsEntry} data-empty={!model.investments.hasInvestments} href={model.investments.href}>
-            <div className={styles.investmentsCopy}>
-              <span className={styles.investmentsEyebrow}>Cartera de inversiones</span>
-              {model.investments.hasInvestments ? (
-                <strong className={styles.investmentsValue}>
-                  <SensitiveAmount>{model.investments.valuePrefix}{model.investments.value}</SensitiveAmount>
-                </strong>
-              ) : (
-                <span className={styles.investmentsCta}>Registrá tu primera inversión</span>
-              )}
-            </div>
-            {model.investments.hasInvestments && model.investments.deltaLabel ? (
-              <span className={styles.investmentsDelta} data-state={model.investments.deltaState}>
-                {model.investments.deltaLabel}
-              </span>
-            ) : (
-              <span aria-hidden="true" className={styles.investmentsChevron}>›</span>
-            )}
-          </Link>
-        ) : null}
-
-        <Surface border="subtle" className={styles.position} padding="md" radius="lg" tone="base">
-          <SectionTitle title={model.position.title} />
-          <div className={styles.positionRows}>
-            {model.position.rows.map((row, index) => (
-              <div className={styles.positionUnit} key={`${row.label}-${row.value}`}>
-                {index > 0 ? <Divider /> : null}
-                <FinancialRow {...row} />
-              </div>
-            ))}
-          </div>
-        </Surface>
-
-        <InformationBlock {...model.information} {...informationProps} />
+        <footer className={styles.evidence}>
+          <div><p className={styles.kicker}>{model.information.title}</p><p>{model.information.primaryLine}</p></div>
+          <p><SensitiveText>{model.information.causalLine}</SensitiveText></p>
+          <p className={styles.stability}>{model.stability.children}</p>
+          <Link href={model.information.linkHref}>{model.information.linkLabel} →</Link>
+        </footer>
       </div>
     </main>
   );

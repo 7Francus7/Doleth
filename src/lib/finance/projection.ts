@@ -57,6 +57,8 @@ export interface UpcomingCommitment {
   accountId: string;
   accountName: string;
   accountBalanceCents: bigint;
+  /** Moneda real de la cuenta prevista. Ausente solo en fixtures legacy. */
+  currency?: string;
   /** Etiqueta libre de frecuencia. El dominio no modela recurrencia real. */
   frequency: string | null;
   /** Desempate estable cuando fecha e importe coinciden. */

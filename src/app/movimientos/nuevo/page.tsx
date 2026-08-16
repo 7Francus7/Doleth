@@ -21,6 +21,10 @@ export default async function NewMovementPage({ searchParams }: { searchParams: 
   const query = await searchParams;
   const returnTo = sanitizeReturnPath(first(query.volver), "/movimientos");
   const repeatId = first(query.repetir);
+  const requestedType = first(query.tipo);
+  const initialType = requestedType === "EXPENSE" || requestedType === "INCOME" || requestedType === "TRANSFER"
+    ? requestedType
+    : undefined;
   const data = await getMovementFormData(user.id);
 
   // "Registrar otro igual": se copia la intención, nunca la identidad ni la fecha.
@@ -54,6 +58,7 @@ export default async function NewMovementPage({ searchParams }: { searchParams: 
 
   return (
     <OperationalShell
+      wide
       back={{ href: returnTo, label: "Volver" }}
       eyebrow="Carga rápida"
       title="Registrar movimiento"
@@ -63,6 +68,7 @@ export default async function NewMovementPage({ searchParams }: { searchParams: 
         <MovementForm
           {...data}
           idempotencyKey={randomUUID()}
+          {...(initialType ? { initialType } : {})}
           returnTo={returnTo}
           {...(repeatDefaults ? { defaults: repeatDefaults, basedOnPrevious: true, referenceOnly } : {})}
         />

@@ -12,13 +12,20 @@ body {
   padding:
     max(var(--space-24), env(safe-area-inset-top))
     max(var(--space-20), env(safe-area-inset-right))
-    max(var(--space-24), env(safe-area-inset-bottom))
+    calc(9.5rem + env(safe-area-inset-bottom))
     max(var(--space-20), env(safe-area-inset-left));
 }
 
 .app-canvas__content {
   width: min(100%, 42rem);
   margin-inline: auto;
+}
+
+@media (min-width: 980px) {
+  .app-canvas {
+    padding-bottom: max(var(--space-24), env(safe-area-inset-bottom));
+    padding-left: calc(172px + max(var(--space-32), env(safe-area-inset-left)));
+  }
 }
 
 .app-canvas__brand {

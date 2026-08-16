@@ -1,11 +1,12 @@
 import "server-only";
 import { getDb } from "../db";
 import { formatCents, monthBounds, summarizeMonth, todayInArgentina } from "./domain";
-import { getDisplayContextFromBook, valueAmounts, type DisplayContext } from "./display";
-import { valuePortfolio, type Holding } from "./holdings";
+import { describeMissing, describeRate, getDisplayContextFromBook, valueAmounts, type DisplayContext } from "./display";
+import { formatQuantity, valuePortfolio, type Holding } from "./holdings";
 import { isSupportedCurrency } from "./currency";
 import { loadLatestPrices } from "./rates/prices";
 import { isLiabilityAccount } from "./accountKind";
+import type { CategoryCatalogEntry } from "./categoryRules";
 import { resolveRateBook, type ResolvedRateBook } from "./rates/store";
 import { resilientRead, type AnalysisMovement } from "./analysis";
 import {
@@ -23,6 +24,7 @@ import {
 import type { RealityAccount, RealityInvestment, RealityMovement } from "./reality";
 import type { SpendingMovement } from "./spending";
 import { logServerError } from "../observability";
+import { parseAmountInput } from "./amount";
 import {
   monthPeriod,
   previousMonth,
@@ -49,7 +51,7 @@ function toCommitment(
     estimatedCents: bigint;
     frequency: string | null;
     plannedAccountId: string;
-    plannedAccount: { name: string };
+    plannedAccount: { name: string; currency: string };
     createdAt: Date;
   },
   balanceByAccount: ReadonlyMap<string, bigint>,
@@ -62,6 +64,7 @@ function toCommitment(
     accountId: payment.plannedAccountId,
     accountName: payment.plannedAccount.name,
     accountBalanceCents: balanceByAccount.get(payment.plannedAccountId) ?? 0n,
+    currency: payment.plannedAccount.currency,
     frequency: payment.frequency,
     createdAtMs: payment.createdAt.getTime(),
   };
@@ -101,6 +104,38 @@ export async function getAccountsWithBalances(userId: string) {
     initialBalanceCents: account.initialBalanceCents,
     balanceCents: account.initialBalanceCents + (totalsByAccount.get(account.id) ?? 0n),
   }));
+}
+
+export async function getAccountDetail(userId: string, id: string) {
+  const db = getDb();
+  const [accounts, account, recent] = await Promise.all([
+    getAccountsWithBalances(userId),
+    db.account.findFirst({ where: { id, userId }, include: { creditCard: true } }),
+    db.transaction.findMany({
+      where: { userId, OR: [{ sourceAccountId: id }, { destinationAccountId: id }] },
+      include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+      take: 5,
+    }),
+  ]);
+  if (!account) return null;
+  const balance = accounts.find((candidate) => candidate.id === id);
+  if (!balance) return null;
+  return {
+    ...balance,
+    creditCard: account.creditCard,
+    recent: recent.map((movement) => ({
+      id: movement.id,
+      type: movement.type,
+      amount: formatCents(movement.amountCents),
+      currency: movement.currency,
+      occurredOn: movement.occurredOn.toISOString().slice(0, 10),
+      description: movement.description || movement.category?.name || movement.type,
+      accountName: movement.type === "TRANSFER" ? `${movement.sourceAccount.name} → ${movement.destinationAccount?.name ?? ""}` : movement.sourceAccount.name,
+      voided: movement.voidedAt !== null,
+      corrected: movement.correction !== null,
+    })),
+  };
 }
 
 /**
@@ -152,17 +187,74 @@ function valueMovementAmounts<T extends { amountCents: bigint; currency: string 
   return movements.map((movement, index) => ({ ...movement, amountCents: valued[index] ?? 0n }));
 }
 
-export async function getMovementFormData(userId: string) {
+/**
+ * Categorías que un formulario puede ofrecer.
+ *
+ * Las archivadas quedan afuera: archivar existe justamente para dejar de verlas
+ * al cargar. La excepción es `keepId`, la categoría que el movimiento que se está
+ * corrigiendo ya tenía. Sin esa excepción, corregir el importe de un gasto viejo
+ * cambiaría también su categoría en silencio, porque el selector no tendría la
+ * opción que estaba elegida.
+ */
+export async function loadSelectableCategories(userId: string, keepId?: string | null) {
+  const db = getDb();
+  return db.category.findMany({
+    where: {
+      userId,
+      ...(keepId ? { OR: [{ archivedAt: null }, { id: keepId }] } : { archivedAt: null }),
+    },
+    orderBy: [{ kind: "asc" }, { name: "asc" }],
+  });
+}
+
+export async function getMovementFormData(userId: string, keepCategoryId?: string | null) {
   const db = getDb();
   const [accounts, categories] = await Promise.all([
     db.account.findMany({ where: { userId, status: "ACTIVE" }, orderBy: { name: "asc" } }),
-    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    loadSelectableCategories(userId, keepCategoryId),
   ]);
   return {
     accounts: accounts.map(({ id, name, currency }) => ({ id, name, currency })),
     categories: categories.map(({ id, name, kind }) => ({ id, name, kind })),
     today: todayInArgentina(),
   };
+}
+
+/**
+ * El catálogo completo de una persona, con lo que cada categoría carga encima.
+ *
+ * El uso viaja con la categoría porque es lo que hace archivable la decisión:
+ * archivar una con cuarenta movimientos y archivar una vacía se parecen en la
+ * pantalla y no se parecen en nada en la cabeza de quien aprieta el botón.
+ */
+export async function getCategoryCatalog(userId: string): Promise<CategoryCatalogEntry[]> {
+  const db = getDb();
+  const [categories, movementUse, upcomingUse] = await Promise.all([
+    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    db.transaction.groupBy({
+      by: ["categoryId"],
+      where: { userId, voidedAt: null, categoryId: { not: null } },
+      _count: { _all: true },
+    }),
+    db.upcomingPayment.groupBy({
+      by: ["categoryId"],
+      where: { userId, status: "PENDING", categoryId: { not: null } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const movements = new Map(movementUse.map((row) => [row.categoryId, row._count._all]));
+  const upcoming = new Map(upcomingUse.map((row) => [row.categoryId, row._count._all]));
+
+  return categories.map((category) => ({
+    id: category.id,
+    slug: category.slug,
+    name: category.name,
+    kind: category.kind,
+    archived: category.archivedAt !== null,
+    movementCount: movements.get(category.id) ?? 0,
+    upcomingCount: upcoming.get(category.id) ?? 0,
+  }));
 }
 
 /**
@@ -389,45 +481,83 @@ export interface MovementFilters {
   month: string;
   type?: "EXPENSE" | "INCOME" | "TRANSFER";
   accountId?: string;
-  /** Filtro por categoría: lo usa cada causa de /cambios para mostrar su detalle. */
   categoryId?: string;
+  search?: string;
+  minAmountCents?: bigint;
+  maxAmountCents?: bigint;
+  page?: number;
 }
+
+export const MOVEMENTS_PAGE_SIZE = 40;
 
 export async function getMovements(userId: string, filters: MovementFilters) {
   const db = getDb();
   const { start, end } = monthBounds(filters.month);
-  // El accountId llega de la query string: se usa sólo para acotar dentro de lo
-  // que ya es del usuario, nunca para ampliar el alcance.
+  const page = Math.max(1, filters.page ?? 1);
+  const search = filters.search?.trim();
+  const amountSearch = search ? parseAmountInput(search) : null;
+  const exactAmount = amountSearch?.error === null ? amountSearch.cents : null;
   const accountFilter = filters.accountId
     ? { OR: [{ sourceAccountId: filters.accountId }, { destinationAccountId: filters.accountId }] }
     : {};
-  const [movements, accounts] = await Promise.all([
+  const [rows, accounts, categories, totalMovements] = await Promise.all([
     db.transaction.findMany({
       where: {
         userId,
         occurredOn: { gte: start, lt: end },
         ...(filters.type ? { type: filters.type } : {}),
         ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+        ...(filters.minAmountCents !== undefined || filters.maxAmountCents !== undefined ? {
+          amountCents: {
+            ...(filters.minAmountCents !== undefined ? { gte: filters.minAmountCents } : {}),
+            ...(filters.maxAmountCents !== undefined ? { lte: filters.maxAmountCents } : {}),
+          },
+        } : {}),
+        ...(search ? {
+          AND: [{ OR: [
+            { description: { contains: search, mode: "insensitive" as const } },
+            { category: { name: { contains: search, mode: "insensitive" as const } } },
+            { sourceAccount: { name: { contains: search, mode: "insensitive" as const } } },
+            { destinationAccount: { name: { contains: search, mode: "insensitive" as const } } },
+            ...(exactAmount !== null ? [{ amountCents: exactAmount }] : []),
+          ] }],
+        } : {}),
         ...accountFilter,
       },
-      include: { sourceAccount: true, destinationAccount: true, category: true },
+      include: { sourceAccount: true, destinationAccount: true, category: true, correction: true },
       orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+      skip: (page - 1) * MOVEMENTS_PAGE_SIZE,
+      take: MOVEMENTS_PAGE_SIZE + 1,
     }),
     db.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
+    db.category.findMany({ where: { userId }, orderBy: [{ kind: "asc" }, { name: "asc" }] }),
+    db.transaction.count({ where: { userId } }),
   ]);
+  const hasNext = rows.length > MOVEMENTS_PAGE_SIZE;
+  const movements = rows.slice(0, MOVEMENTS_PAGE_SIZE);
   return {
     accounts,
+    categories,
+    page,
+    hasPrevious: page > 1,
+    hasNext,
+    totalMovements,
     movements: movements.map((movement) => ({
       id: movement.id,
       type: movement.type,
       amount: formatCents(movement.amountCents),
+      currency: movement.currency,
       occurredOn: movement.occurredOn.toISOString().slice(0, 10),
       description: movement.description || movement.category?.name || "Sin descripción",
+      categoryName: movement.category?.name ?? null,
+      sourceAccountName: movement.sourceAccount.name,
+      destinationAccountName: movement.destinationAccount?.name ?? null,
       accountName:
         movement.type === "TRANSFER"
           ? `${movement.sourceAccount.name} → ${movement.destinationAccount?.name ?? ""}`
           : movement.sourceAccount.name,
       voided: movement.voidedAt !== null,
+      corrected: movement.correction !== null,
     })),
   };
 }
@@ -443,7 +573,7 @@ export async function getOwnedMovement(userId: string, id: string) {
 export async function getOwnedUpcomingPayment(userId: string, id: string) {
   return getDb().upcomingPayment.findFirst({
     where: { id, userId },
-    include: { plannedAccount: true, transaction: true },
+    include: { plannedAccount: true, transaction: true, category: true },
   });
 }
 
@@ -485,6 +615,71 @@ export async function getPortfolio(userId: string, now = new Date()) {
   return { portfolio: valuePortfolio(holdings, prices), book, display: getDisplayContextFromBook(book, now) };
 }
 
+/**
+ * Lectura de Corte 6: cuentas e inversiones comparten moneda de presentación,
+ * pero no una contabilidad. Se convierten con el mismo libro y viajan separadas
+ * para impedir que la UI construya un total combinado no demostrable.
+ */
+export async function getPatrimonyData(userId: string, now = new Date()) {
+  const db = getDb();
+  const [accountData, investments] = await Promise.all([
+    getValuedAccounts(userId, now),
+    db.investment.findMany({ where: { userId }, orderBy: [{ status: "asc" }, { currentValueCents: "desc" }, { createdAt: "asc" }] }),
+  ]);
+  const symbols = investments.map((investment) => investment.symbol).filter((symbol): symbol is string => Boolean(symbol));
+  const prices = await loadLatestPrices(symbols);
+  const holdings: Holding[] = investments.map((investment) => ({
+    id: investment.id,
+    name: investment.name,
+    kind: investment.kind,
+    currency: isSupportedCurrency(investment.currency) ? investment.currency : "ARS",
+    investedCents: investment.investedCents,
+    quantityMicros: investment.quantityMicros,
+    symbol: investment.symbol,
+    declaredValueCents: investment.currentValueCents,
+  }));
+  const valuedById = new Map(valuePortfolio(holdings, prices).holdings.map((holding) => [holding.id, holding]));
+  const active = investments.filter((investment) => investment.status === "ACTIVE");
+  const activeValues = active.map((investment) => ({
+    balanceCents: valuedById.get(investment.id)?.valueCents ?? investment.currentValueCents,
+    currency: investment.currency,
+  }));
+  const activeBasis = active.map((investment) => ({ balanceCents: investment.investedCents, currency: investment.currency }));
+  const currentValuation = valueAmounts(activeValues, accountData.book, now);
+  const basisValuation = valueAmounts(activeBasis, accountData.book, now);
+  const currentById = new Map(active.map((investment, index) => [investment.id, currentValuation.valued[index] ?? 0n]));
+  const basisById = new Map(active.map((investment, index) => [investment.id, basisValuation.valued[index] ?? 0n]));
+
+  return {
+    display: accountData.context,
+    accounts: accountData.accounts,
+    investments: investments.map((investment) => {
+      const valued = valuedById.get(investment.id);
+      return {
+        id: investment.id,
+        name: investment.name,
+        kind: investment.kind,
+        symbol: investment.symbol,
+        currency: investment.currency,
+        investedCents: investment.investedCents,
+        valueCents: valued?.valueCents ?? investment.currentValueCents,
+        convertedInvestedCents: basisById.get(investment.id) ?? 0n,
+        convertedValueCents: currentById.get(investment.id) ?? 0n,
+        quantity: investment.quantityMicros === null ? null : formatQuantity(investment.quantityMicros),
+        note: investment.note,
+        status: investment.status,
+        mode: valued?.mode ?? "declared",
+        priceProvider: valued?.price?.provider ?? null,
+        priceAsOf: valued?.price?.asOf.toISOString().slice(0, 10) ?? null,
+      };
+    }),
+    investmentsComplete: currentValuation.context.complete,
+    investedBasisComplete: basisValuation.context.complete,
+    accountValuationNote: describeMissing(accountData.context) ?? describeRate(accountData.context),
+    investmentValuationNote: describeMissing(currentValuation.context) ?? describeRate(currentValuation.context),
+  };
+}
+
 export async function getUpcomingPayments(userId: string) {
   const db = getDb();
   const [payments, accounts] = await Promise.all([
@@ -504,6 +699,7 @@ export interface ConfirmedPayment {
   dueOn: string;
   amountCents: bigint;
   accountName: string;
+  currency: string;
   transactionId: string | null;
 }
 
@@ -530,7 +726,7 @@ export async function getUpcomingData(userId: string): Promise<UpcomingData> {
     }),
     db.upcomingPayment.findMany({
       where: { userId, status: "PAID" },
-      include: { plannedAccount: true },
+      include: { plannedAccount: true, transaction: true },
       orderBy: [{ dueOn: "desc" }, { updatedAt: "desc" }],
       take: 5,
     }),
@@ -552,8 +748,11 @@ export async function getUpcomingData(userId: string): Promise<UpcomingData> {
       id: payment.id,
       concept: payment.concept,
       dueOn: dayString(payment.dueOn),
-      amountCents: payment.estimatedCents,
+      // Una confirmación permite ajustar el previsto: la historia debe mostrar
+      // lo que realmente salió, no volver al estimado original.
+      amountCents: payment.transaction?.amountCents ?? payment.estimatedCents,
       accountName: payment.plannedAccount.name,
+      currency: payment.plannedAccount.currency,
       transactionId: payment.transactionId,
     })),
     paidCount,

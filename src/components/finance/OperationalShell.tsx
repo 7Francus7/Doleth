@@ -10,6 +10,7 @@ export function OperationalShell({
   actions,
   back,
   children,
+  wide = false,
 }: {
   eyebrow: string;
   title: string;
@@ -17,10 +18,11 @@ export function OperationalShell({
   actions?: ReactNode;
   back?: { href: string; label: string };
   children: ReactNode;
+  wide?: boolean;
 }) {
   return (
     <main className="app-canvas">
-      <div className={`app-canvas__content ${styles.page}`}>
+      <div className={`app-canvas__content ${styles.page} ${wide ? styles.pageWide : ""}`}>
         <header className={styles.header}>
           <Link aria-label="Volver a Ahora" className={styles.back} href="/ahora"><DolethBrand compact /></Link>
           {back ? <Link className={styles.backContext} href={back.href}><span aria-hidden="true">←</span> {back.label}</Link> : null}

@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import {
-  cancelAccountDeletionAction,
   changePasswordAction,
-  requestAccountDeletionAction,
+  deleteAccountAction,
   requestEmailChangeAction,
   revokeOtherSessionsAction,
   updateProfileAction,
@@ -213,39 +212,29 @@ export function SessionsSection({
   );
 }
 
-export function DeleteAccountSection({ requestedOn }: { requestedOn: string | null }) {
-  const [requestState, requestAction] = useActionState(requestAccountDeletionAction, emptyAccountState);
-  const [cancelState, cancelAction] = useActionState(cancelAccountDeletionAction, emptyAccountState);
-
-  if (requestedOn) {
-    return (
-      <div className={styles.form}>
-        <Feedback state={cancelState} />
-        <p className={styles.notice}>
-          Pediste la baja el {requestedOn}. Tus datos siguen intactos mientras procesamos el pedido. Podés cancelarlo
-          cuando quieras.
-        </p>
-        <form action={cancelAction}>
-          <AuthSubmit kind="secondary" pendingLabel="Cancelando…">
-            Cancelar el pedido de baja
-          </AuthSubmit>
-        </form>
-      </div>
-    );
-  }
+export function DeleteAccountSection() {
+  const [state, action] = useActionState(deleteAccountAction, emptyAccountState);
 
   return (
-    <form action={requestAction} className={styles.form} noValidate>
-      <Feedback state={requestState} />
+    <form action={action} className={styles.form} noValidate>
+      <Feedback state={state} />
       <div className={settings.consequences}>
-        <p>Al pedir la baja:</p>
+        <p>
+          <strong>Esto no se puede deshacer.</strong> Al confirmar borramos, en el momento:
+        </p>
         <ul>
-          <li>Se registra tu pedido y lo procesamos de forma manual.</li>
-          <li>Tus cuentas, movimientos e inversiones dejan de estar accesibles desde la aplicación.</li>
-          <li>Podés cancelar el pedido mientras no lo hayamos ejecutado.</li>
+          <li>tus cuentas y sus saldos;</li>
+          <li>todos tus movimientos, transferencias y correcciones;</li>
+          <li>tus inversiones, próximos pagos y categorías;</li>
+          <li>tus importaciones y cotizaciones propias;</li>
+          <li>tu nombre, tu correo y tu contraseña.</li>
         </ul>
         <p>
-          Antes de pedirla, guardá lo que necesites: el historial completo está en{" "}
+          Se cierran todas tus sesiones, en este y en cualquier otro dispositivo. No guardamos una copia y no
+          podemos recuperarlo después.
+        </p>
+        <p>
+          Si querés conservar tu historial, descargalo antes desde{" "}
           <Link className={styles.link} href="/movimientos">
             Movimientos
           </Link>
@@ -254,7 +243,7 @@ export function DeleteAccountSection({ requestedOn }: { requestedOn: string | nu
       </div>
       <TextField
         autoComplete="off"
-        error={requestState.errors.confirmation}
+        error={state.errors.confirmation}
         hint="Escribí ELIMINAR en mayúsculas para confirmar que entendés las consecuencias."
         label="Confirmación"
         name="confirmation"
@@ -263,13 +252,13 @@ export function DeleteAccountSection({ requestedOn }: { requestedOn: string | nu
       />
       <PasswordField
         autoComplete="current-password"
-        error={requestState.errors.currentPassword}
+        error={state.errors.currentPassword}
         label="Tu contraseña actual"
         name="currentPassword"
         required
       />
-      <AuthSubmit kind="ghost" pendingLabel="Registrando…">
-        Pedir la baja de mi cuenta
+      <AuthSubmit kind="ghost" pendingLabel="Eliminando…">
+        Eliminar mi cuenta para siempre
       </AuthSubmit>
     </form>
   );

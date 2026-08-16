@@ -1,0 +1,22 @@
+.form, .repeatForm { display: grid; gap: 20px; padding: 24px 20px; border: 2px solid var(--color-ink-900); background: #e8e3db; }
+.confirmSummary { display: grid; gap: 14px; }
+.confirmTitle { font-size: clamp(24px, 7vw, 34px); letter-spacing: -.035em; }
+.detailGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 2px solid var(--color-ink-900); }
+.detailRow { display: grid; gap: 5px; padding: 13px; border-right: 1px solid var(--color-ink-900); border-bottom: 1px solid var(--color-ink-900); }
+.detailRow:last-child { grid-column: 1 / -1; }
+.detailRow dt, .field > span { font-family: var(--font-ibm-plex-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.detailRow dd { overflow-wrap: anywhere; font-size: 14px; font-weight: 700; }
+.field { display: grid; gap: 8px; }
+.field input, .field select { width: 100%; min-height: 54px; padding: 0 14px; border: 2px solid var(--color-ink-900); border-radius: 0; background: var(--color-bone-000); color: inherit; font: inherit; font-size: 16px; }
+.field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--color-mineral-700); outline-offset: 2px; }
+.fieldHelp { padding-left: 10px; border-left: 3px solid var(--color-ink-900); color: var(--color-text-secondary); font-size: 12px; line-height: 1.45; }
+.form :global(button[type="submit"]), .repeatForm :global(button[type="submit"]) { min-height: 56px; border: 2px solid var(--color-ink-900); border-radius: 0; background: var(--color-ink-900); color: var(--color-bone-000); font-weight: 750; text-transform: uppercase; }
+.primaryLink, .quietLink { display: flex; min-height: 48px; align-items: center; justify-content: center; padding: 0 14px; border: 2px solid var(--color-ink-900); color: inherit; font-size: 10px; font-weight: 750; text-decoration: none; text-transform: uppercase; }
+.primaryLink { background: var(--color-ink-900); color: var(--color-bone-000); }
+.success { display: grid; gap: 14px; padding: 28px 20px; border: 2px solid var(--color-ink-900); background: #e8e3db; }
+.success > p { font-family: var(--font-ibm-plex-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.success h2 { font-size: clamp(26px, 8vw, 40px); letter-spacing: -.04em; }
+.success > span { color: var(--color-text-secondary); font-size: 13px; }
+.success > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.repeatForm { margin-top: 20px; }
+@media (min-width: 760px) { .form, .repeatForm { padding: 34px; } }

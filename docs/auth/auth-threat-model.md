@@ -202,6 +202,5 @@ consultan la base. Regresión fijada en `proxy.test.ts`.
 | Sin segundo factor | Producto personal en etapa inicial; el 2FA sin canal de recuperación robusto genera más pérdidas de cuenta que las que evita | TOTP con códigos de respaldo |
 | Sin verificación contra contraseñas filtradas | Requiere un servicio externo (HIBP k-anonymity); hoy la política es longitud + lista corta de comunes | Consulta al rango de HIBP en registro y cambio |
 | Sesión de 30 días sin reautenticación periódica | Es una app financiera personal, de uso frecuente desde el propio teléfono; toda operación sensible ya pide la contraseña | Reautenticación por antigüedad de sesión |
-| Baja de cuenta como solicitud, no como borrado | No simulamos lo que no hacemos: el pedido queda registrado y se procesa a mano | Proceso de borrado con período de gracia y exportación |
-| Sin exportación de datos | Deuda reconocida en la pantalla de baja | Exportación a CSV antes de dar de baja |
+| Baja de cuenta sin período de gracia ni copia previa | El borrado es inmediato e irreversible por diseño: un período de gracia guarda datos de alguien que pidió no ser guardado. Se compensa con doble confirmación (contraseña + `ELIMINAR`) y con el enlace a Movimientos para descargar antes | Exportación obligatoria ofrecida dentro del propio flujo de baja |
 | Rate limiting por ventana fija | Permite hasta 2× el límite en el borde entre ventanas. Suficiente para el volumen actual | Ventana deslizante |

@@ -7,5 +7,5 @@ export const metadata: Metadata = { title: "Nueva cuenta" };
 
 export default async function NewAccountPage() {
   await requireOnboardedUser("/cuentas/nueva");
-  return <OperationalShell eyebrow="Configuración inicial" title="Nueva cuenta" intro="Cargá el saldo disponible al comenzar. Después, Doleth solo lo modifica mediante movimientos."><AccountForm /></OperationalShell>;
+  return <OperationalShell back={{ href: "/cuentas", label: "Volver a cuentas" }} eyebrow="Punto de partida" title="Nueva cuenta" intro="Definí dónde está tu dinero al comenzar. Después, el saldo cambia únicamente mediante movimientos."><AccountForm /></OperationalShell>;
 }

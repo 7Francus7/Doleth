@@ -5,6 +5,7 @@ import {
   formatDateAR,
   monthBounds,
   idempotencyDecision,
+  parseMoneyToCents,
   paymentConversionDecision,
   requirePositiveMoney,
   reversePostings,
@@ -111,5 +112,49 @@ describe("invariantes contables", () => {
   it("muestra fechas en formato local", () => {
     expect(formatDateAR("2026-07-22")).toBe("22/07/2026");
     expect(formatDateAR(new Date("2026-07-22T00:00:00.000Z"))).toBe("22/07/2026");
+  });
+});
+
+/**
+ * El servidor lee los importes igual que el campo del formulario.
+ *
+ * Los formularios que no usan el campo con normalización —saldo inicial, valor
+ * de una inversión, importe de un pago previsto, gastos fijos del onboarding—
+ * mandan el texto crudo. Cuando el servidor tenía su propia lectura, "45.000"
+ * era cuarenta y cinco mil para la pantalla y un error para la acción.
+ */
+describe("lectura de importes en el servidor", () => {
+  it("lee el punto como separador de miles, que es como se escribe acá", () => {
+    expect(parseMoneyToCents("45.000")).toBe(4_500_000n);
+    expect(parseMoneyToCents("1.250.500")).toBe(125_050_000n);
+  });
+
+  it("lee la coma como decimal", () => {
+    expect(parseMoneyToCents("12.500,50")).toBe(1_250_050n);
+    expect(parseMoneyToCents("0,99")).toBe(99n);
+  });
+
+  it("sigue leyendo el valor canónico que manda el campo de importe", () => {
+    expect(parseMoneyToCents("12500.50")).toBe(1_250_050n);
+    expect(parseMoneyToCents("12500.00")).toBe(1_250_000n);
+  });
+
+  it("tolera el signo pesos y los espacios", () => {
+    expect(parseMoneyToCents("$ 45.000")).toBe(4_500_000n);
+  });
+
+  it("acepta negativo sólo donde el producto lo admite: la deuda de una tarjeta", () => {
+    expect(parseMoneyToCents("-240.000", true)).toBe(-24_000_000n);
+    expect(() => parseMoneyToCents("-240.000")).toThrow();
+  });
+
+  it("rechaza lo que no es un importe", () => {
+    expect(() => parseMoneyToCents("mil pesos")).toThrow();
+    expect(() => parseMoneyToCents("")).toThrow();
+    expect(() => parseMoneyToCents("1,2,3")).toThrow();
+  });
+
+  it("declara el importe demasiado grande en vez de dar un error genérico", () => {
+    expect(() => parseMoneyToCents("9.999.999.999")).toThrow(/demasiado grande/);
   });
 });

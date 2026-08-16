@@ -1,5 +1,226 @@
 # Design System - Doleth
 
+## V2 Visual Authority — Warm Financial Brutalism
+
+This section is the active visual authority for every Doleth V2 cut. Legacy
+surfaces keep the rules below until their own V2 cut. When rules conflict inside
+V2 scope, this authority wins.
+
+### Identity
+
+**Warm Financial Brutalism** means functional financial brutalism with editorial
+color and tactility. Doleth combines two complementary sources:
+
+- editorial structure, dominant typography, ink/bone contrast, rules, rawness,
+  and deliberate composition;
+- flat color, large tactile surfaces, simple forms, clear graphic modules, and
+  strong mobile reachability.
+
+The result must feel like a recognizable, fast, tactile editorial financial
+tool. It must not feel like a traditional bank, blue fintech, SaaS dashboard,
+chaotic web brutalism, childish color app, or generic portfolio concept.
+
+### Luminous Priority UI
+
+**Warm Financial Brutalism is the structure. Luminous Priority UI is the
+hierarchy.** This layer raises only the fact or action that deserves immediate
+attention; it never replaces the editorial grid, hard edges, typography, or
+financial semantics.
+
+#### Three intensity levels
+
+1. **Hero / primary.** One or, exceptionally, two elements per viewport. Valid
+   uses: the main financial truth, the primary CTA, `+ NUEVO`, an active
+   selection, or one critical metric. It may use a dark surface, derived radial
+   gradient, low-alpha glow, internal blur, and controlled saturation.
+2. **Structural.** Bone or warm-neutral field, rules, borders, strong type, and
+   moderate semantic color. Metrics, accounts, commitments, movements, and
+   filters belong here by default.
+3. **Supporting.** Metadata, dates, labels, explanations, and secondary states.
+   Use quiet type and neutral backgrounds. No gradient, glow, saturated field,
+   or decorative depth.
+
+#### Priority surfaces
+
+Use the `PrioritySurface` primitive only when a contained fact or action is the
+first thing a person must read or do. Controlled variants are `neutral`,
+`pressure`, `positive`, `investment`, and `action`. Variant names express
+purpose in addition to color; visible text remains mandatory.
+
+- Dark mineral or ink is the default base.
+- Pressure derives from coral and warm amber; never use pure red.
+- Positive derives from mineral and soft lime; it must not imply that every
+  positive number deserves emphasis.
+- Investment derives from mineral and stone.
+- Action derives from warm yellow or mineral according to surrounding contrast.
+- Structural border, copy, amount, and CTA must remain legible if gradient,
+  blur, transparency, and shadow are removed.
+
+#### Gradient, glow, blur, and transparency
+
+- Gradients behave as diffuse internal light: radial or softly layered,
+  low-saturation, and derived only from the approved palette.
+- Glow behaves as ambient illumination: wide radius, low alpha, and never around
+  individual text. It must not be the sole active, focus, or status signal.
+- Blur is limited to internal light or one protagonist/navigation layer. Do not
+  apply backdrop blur to repeated content surfaces.
+- Transparency may add depth inside a priority surface but must never reduce AA
+  text contrast or make content behind it necessary for comprehension.
+- No neon edges, moving blobs, particles, glass-card collections, or gradients
+  on every CTA/card.
+
+#### CTA and navigation priority
+
+- One primary CTA may share the hero's luminous family while preserving a hard
+  `0–4px` silhouette, explicit label, border, focus outline, and pressed state.
+- `+ NUEVO` is the global creation action, not a sixth destination. It may be
+  more luminous than the navigation but must remain structurally separate.
+- Active navigation uses at least two signals among field, border/indicator,
+  weight, and `aria-current`; glow or color alone is insufficient.
+- Secondary actions remain flat and quiet so they cannot compete with the CTA.
+
+#### Typography priority
+
+- Hero interpretation may use Instrument Serif; the dominant amount uses
+  Manrope tabular numerals.
+- Page titles are materially smaller than hero interpretation.
+- Section titles and metrics remain structural; row copy remains scannable.
+- Supporting metadata steps down in size, contrast, and spacing. Do not enlarge
+  every level to manufacture hierarchy.
+
+#### Motion and accessibility
+
+- Hover, focus, press, and active feedback use `150–250ms` causal transitions.
+- No constant ambient animation. `prefers-reduced-motion` removes nonessential
+  transitions without removing hierarchy or state.
+- All foreground/background pairs meet WCAG AA. Focus uses a visible structural
+  outline. Every luminous state retains text and non-luminous fallback cues.
+
+### Composition
+
+- Use one composed visual field, not a collection of independent cards.
+- Large financial type, hard modules, full rules, visible grids, and direct
+  labels remain the structural base.
+- Flat color blocks may carry an entire financial fact or interaction. Color is
+  part of the grid, never a decoration placed inside a neutral card.
+- Dark ink fields may contrast with one or two chromatic modules. Do not turn
+  every adjacent block into a different color.
+- A colored module has one clear job: type, total, state, or action.
+- Outside Luminous Priority level 1, no gradients, neon, decorative
+  transparency, glass, soft floating stacks, or white-card-shadow-icon patterns.
+
+### V2 Color palette
+
+Foundation:
+
+- Ink: `#171A1F`
+- Bone: `#F7F5F1`
+- Warm gray: `#E8E3DB`
+- Stone: `#A8A49C`
+
+Controlled chromatic fields:
+
+- Coral: `#D97861`
+- Soft lime: `#C7D36F`
+- Warm yellow: `#E3B84F`
+- Mineral: `#48615B`
+
+These values establish the initial token direction and may be tuned only after
+measured WCAG contrast verification. Ink is the default text on coral, lime,
+yellow, stone, and bone. Bone is the default text on Ink and dark Mineral.
+
+Usage discipline:
+
+1. use at most two chromatic families in one viewport, excluding neutral fields;
+2. reserve large color fields for primary facts or primary interactions;
+3. repeat a color only when the semantic role repeats;
+4. never use operation color as the only signal — always show its text label;
+5. operation color and financial state are separate dimensions: coral expense
+   does not mean error, and lime income does not automatically mean success;
+6. every text/background pairing must meet WCAG AA for its actual size and weight.
+
+### Operation language
+
+Operation colors create recognition across movement lists, creation entry points,
+forms, and confirmations:
+
+| Operation | Primary field | Required textual signal |
+| --- | --- | --- |
+| Expense | Coral `#D97861` | “Gasto” and signed amount |
+| Income | Soft lime `#C7D36F` | “Ingreso” and signed amount |
+| Transfer | Warm yellow `#E3B84F` | “Transferencia”, origin, and destination |
+| Investment | Mineral `#48615B` or Stone `#A8A49C` | “Inversión” and instrument/account context |
+
+Compact rows may use a hard color edge, label field, or background segment. Full
+color is reserved for dominant totals, creation surfaces, and selected operation
+states. Icons may support recognition but never replace the label.
+
+### Financial surfaces
+
+A valid colored financial surface can contain:
+
+- `GASTOS`
+- `$428.300`
+- `−8% VS JULIO`
+
+as one coral compositional block. The label, value, and comparison form a single
+fact. Do not wrap that fact inside another card or add an icon badge, shadow, and
+descriptive filler.
+
+### Shape and tactility
+
+- Structural modules and composed surfaces: `0–4px` radius.
+- Inputs and high-frequency controls: up to `8px` when it improves touch clarity.
+- Sheets and modal layers: up to `12px` on exposed top corners only.
+- Pills: filters, tags, and real states only.
+- Large touch targets and generous padding create tactility; roundness does not.
+- Shadows remain absent from structural content and optional/subtle on a modal
+  sheet only when separation cannot be achieved through tone and border.
+
+### Navigation
+
+- Keep exactly five primary destinations: Inicio, Movimientos, Cuentas, Plan,
+  and Patrimonio.
+- `+ NUEVO` is a persistent primary action, not a sixth destination, and may use
+  a stronger flat-color treatment than navigation items.
+- Active destination must be unequivocal through structure, contrast, and text;
+  color alone is insufficient.
+- Mobile controls remain at least `44px`, reachable, keyboard-visible, and valid
+  at 320px without horizontal page overflow.
+
+### Forms — authority for Cut 2
+
+Movement creation must feel large, tactile, progressive, and fast:
+
+1. operation type establishes the surface and is always written as text;
+2. amount is the dominant control and receives focus first;
+3. category and account follow as the next essential decisions;
+4. date, description, and other secondary fields appear progressively without
+   hiding required consequences;
+5. the primary submit action stays evident and reachable on mobile;
+6. validation appears beside the cause and never relies only on color.
+
+The creation surface may use the operation field across the page or sheet:
+
+- Gasto → coral;
+- Ingreso → soft lime;
+- Transferencia → warm yellow;
+- Inversión → mineral or stone.
+
+Changing type may change the field color and relevant inputs, but must not alter
+stored data, trigger a mutation, or discard entered information without explicit
+warning. Contrast, focus, errors, disabled states, and long amounts must be tested
+for every operation field.
+
+### Typography and motion continuity
+
+- Primary financial numbers use Manrope with tabular lining numerals.
+- IBM Plex Mono is reserved for evidence, structural labels, and compact deltas.
+- Instrument Serif may frame a short interpretation but never replaces
+  accounting clarity.
+- Motion remains causal only: type changes, sheet transitions, validation, and
+  confirmed consequences. No decorative entrances or color floods.
+
 ## Product Context
 - What this is: mobile-first personal financial truth system for people with fragmented, multi-layered financial lives.
 - Core promise: when user closes Doleth, they know exactly where they stand.

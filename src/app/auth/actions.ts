@@ -6,6 +6,7 @@ import { recordAuthEvent } from "../../lib/auth/audit";
 import {
   EMAIL_VERIFICATION_TTL_MINUTES,
   PASSWORD_RESET_TTL_MINUTES,
+  emailVerificationRequired,
   publicEmailAuthEnabled,
 } from "../../lib/auth/config";
 import {
@@ -90,6 +91,8 @@ export async function registerAction(_previous: AuthFormState, formData: FormDat
   if (!validation.ok) return failure("Revisá los datos marcados.", validation.errors);
 
   const { name, email, password } = validation.values;
+  const requiresEmailVerification = emailVerificationRequired();
+  let destination = `/crear-cuenta/revisa-tu-correo?email=${encodeURIComponent(email)}`;
 
   try {
     const subject = await requestSubject();
@@ -100,8 +103,10 @@ export async function registerAction(_previous: AuthFormState, formData: FormDat
     // dirección es nueva como si ya existía sin verificar, así que sin él
     // alcanzaría con rotar de IP para usar el alta como relay contra una casilla
     // ajena.
-    const perEmail = await consumeRateLimit(RATE_LIMITS.registerEmail, await emailSubject(email));
-    if (!perEmail.allowed) return failure(retryMessage(perEmail.retryAfterSeconds));
+    if (requiresEmailVerification) {
+      const perEmail = await consumeRateLimit(RATE_LIMITS.registerEmail, await emailSubject(email));
+      if (!perEmail.allowed) return failure(retryMessage(perEmail.retryAfterSeconds));
+    }
 
     const db = getDb();
     const existing = await db.user.findUnique({ where: { email } });
@@ -109,26 +114,40 @@ export async function registerAction(_previous: AuthFormState, formData: FormDat
     if (existing) {
       // No revelamos que la dirección ya tiene cuenta. Si sigue sin verificar,
       // reenviamos el enlace; si ya está activa, no hacemos nada visible.
-      if (existing.status === "PENDING_VERIFICATION") {
+      if (existing.status === "PENDING_VERIFICATION" && requiresEmailVerification) {
         const issued = await issueToken(existing.id, "EMAIL_VERIFICATION", EMAIL_VERIFICATION_TTL_MINUTES);
         await sendEmail(verificationEmail(email, issued.token, EMAIL_VERIFICATION_TTL_MINUTES / 60));
         await recordAuthEvent({ type: "VERIFICATION_RESENT", userId: existing.id, context: "registro_repetido" });
       } else {
         await recordAuthEvent({ type: "ACCOUNT_CREATED", email, success: false, context: "email_ya_registrado" });
       }
+      if (!requiresEmailVerification) destination = "/iniciar-sesion";
     } else {
+      const now = new Date();
       const user = await db.user.create({
-        data: { name, email, passwordHash: await hashPassword(password), acceptedTermsAt: new Date() },
+        data: {
+          name,
+          email,
+          passwordHash: await hashPassword(password),
+          acceptedTermsAt: now,
+          ...(requiresEmailVerification ? {} : { status: "ACTIVE" as const }),
+        },
       });
-      const issued = await issueToken(user.id, "EMAIL_VERIFICATION", EMAIL_VERIFICATION_TTL_MINUTES);
-      await sendEmail(verificationEmail(email, issued.token, EMAIL_VERIFICATION_TTL_MINUTES / 60));
+      if (requiresEmailVerification) {
+        const issued = await issueToken(user.id, "EMAIL_VERIFICATION", EMAIL_VERIFICATION_TTL_MINUTES);
+        await sendEmail(verificationEmail(email, issued.token, EMAIL_VERIFICATION_TTL_MINUTES / 60));
+      } else {
+        await createSession(user.id);
+        await db.user.update({ where: { id: user.id }, data: { lastLoginAt: now } });
+        destination = "/onboarding";
+      }
       await recordAuthEvent({ type: "ACCOUNT_CREATED", userId: user.id, email });
     }
   } catch (error) {
     return failure(safeMessage(error));
   }
 
-  redirect(`/crear-cuenta/revisa-tu-correo?email=${encodeURIComponent(email)}`);
+  redirect(destination);
 }
 
 export async function resendVerificationAction(
@@ -257,12 +276,15 @@ export async function loginAction(_previous: AuthFormState, formData: FormData):
     }
 
     if (user.status === "PENDING_VERIFICATION") {
-      await recordAuthEvent({ type: "LOGIN_FAILED", userId: user.id, success: false, context: "sin_verificar" });
-      return {
-        status: "error",
-        message: "Confirmá tu correo antes de entrar. Podés pedir un enlace nuevo abajo.",
-        errors: { unverified: "1" },
-      };
+      if (emailVerificationRequired()) {
+        await recordAuthEvent({ type: "LOGIN_FAILED", userId: user.id, success: false, context: "sin_verificar" });
+        return {
+          status: "error",
+          message: "Confirmá tu correo antes de entrar. Podés pedir un enlace nuevo abajo.",
+          errors: { unverified: "1" },
+        };
+      }
+      await db.user.update({ where: { id: user.id }, data: { status: "ACTIVE" } });
     }
     if (user.status === "SUSPENDED") {
       await recordAuthEvent({ type: "LOGIN_FAILED", userId: user.id, success: false, context: "suspendida" });

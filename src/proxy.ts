@@ -26,6 +26,10 @@ const PUBLIC_PATHS = new Set([
   "/olvide-mi-contrasena",
   "/restablecer-contrasena",
   "/restablecer-contrasena/listo",
+  // Confirmación de la baja. Va sin sesión porque quien llega acá acaba de
+  // perder la suya: pedirle una lo mandaría al login sin enterarse nunca de que
+  // la baja salió bien.
+  "/cuenta-eliminada",
   "/terminos",
   "/privacidad",
   // Chequeo de salud del despliegue. Va sin sesión a propósito: quien necesita

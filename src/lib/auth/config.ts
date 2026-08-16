@@ -44,6 +44,24 @@ export function publicEmailAuthEnabled(): boolean {
   return accessMode() === "public";
 }
 
+/**
+ * La verificación sigue siendo obligatoria salvo opt-out explícito. El opt-out
+ * existe para deployments personales protegidos; nunca puede alcanzar Production.
+ */
+export function emailVerificationRequired(): boolean {
+  const configured = process.env.DOLETH_REQUIRE_EMAIL_VERIFICATION?.trim().toLowerCase() || "true";
+  if (configured !== "true" && configured !== "false") {
+    throw new ConfigurationError("DOLETH_REQUIRE_EMAIL_VERIFICATION debe ser true o false.");
+  }
+
+  const required = configured === "true";
+  const target = process.env.VERCEL_TARGET_ENV ?? process.env.VERCEL_ENV;
+  if (!required && target === "production") {
+    throw new ConfigurationError("DOLETH_REQUIRE_EMAIL_VERIFICATION=false no puede usarse en Production.");
+  }
+  return required;
+}
+
 function canonicalHttpsUrl(raw: string, variable: string): string {
   let parsed: URL;
   try {

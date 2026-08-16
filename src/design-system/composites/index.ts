@@ -7,6 +7,7 @@ export * from "./EvidenceRow";
 export * from "./FinancialRow";
 export * from "./Hero";
 export * from "./InformationBlock";
+export * from "./PrioritySurface";
 export * from "./ReserveBlock";
 export * from "./StabilityStatement";
 export * from "./SystemRail";

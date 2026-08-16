@@ -117,28 +117,25 @@ describe("primitivas de enlace", () => {
 
 // ---------------------------------------------------------------------------
 // Restauración de scroll: se aplica donde hay una vuelta significativa desde un
-// detalle. /cuentas no tiene detalle todavía, así que restaurar ahí sería una
-// mecánica sin motivo. Este test se rompe el día que aparezca ese detalle.
+// detalle. Corte 4 incorpora el detalle de cuenta y, con él, este contrato.
 // ---------------------------------------------------------------------------
 
 describe("restauración de scroll: solo donde hay vuelta", () => {
-  const accountsPage = read("src/app/cuentas/page.tsx");
-
   it("las listas con detalle navegable sí restauran", () => {
-    expect(read("src/app/movimientos/page.tsx")).toContain("RestorableList");
+    expect(read("src/features/movements/MovementsExplorer.tsx")).toContain("RestorableList");
     expect(read("src/features/next/NextPage.tsx")).toContain("RestorableList");
   });
 
-  it("/cuentas no navega a un detalle: no hay posición que recuperar", () => {
+  it("/cuentas navega a detalle y conserva la posición", () => {
     const detailRoutes = readdirSync(join(process.cwd(), "src/app/cuentas"), {
       withFileTypes: true,
     })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name);
-    // "nueva" es un formulario, no un detalle de la lista.
-    expect(detailRoutes).toEqual(["nueva"]);
-    expect(accountsPage).not.toContain("RestorableList");
-    expect(accountsPage).not.toMatch(/href=\{`\/cuentas\//);
+    expect(detailRoutes).toEqual(expect.arrayContaining(["nueva", "[id]"]));
+    const accountsSurface = read("src/features/accounts/AccountsPage.tsx");
+    expect(accountsSurface).toContain("RestorableList");
+    expect(accountsSurface).toMatch(/href=\{`\/cuentas\//);
   });
 });
 

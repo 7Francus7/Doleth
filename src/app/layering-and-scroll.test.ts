@@ -37,7 +37,8 @@ describe("capas: un sheet modal nunca queda bajo la navegación fija", () => {
 
 describe("scroll restoration: cableado del contenedor de la lista", () => {
   const list = read("src/components/finance/RestorableList.tsx");
-  const page = read("src/app/movimientos/page.tsx");
+  const page = read("src/features/movements/MovementsExplorer.tsx");
+  const movementModel = read("src/features/movements/model.ts");
   const upcoming = read("src/features/next/NextPage.tsx");
   const upcomingModel = read("src/features/next/data/getNextModel.ts");
 
@@ -63,8 +64,8 @@ describe("scroll restoration: cableado del contenedor de la lista", () => {
   });
 
   it("la lista de movimientos usa el contenedor con su ruta normalizada", () => {
-    expect(page).toContain("<RestorableList className={styles.list} restorationKey={listPath}>");
-    expect(page).toContain("normalizeListPath(\"/movimientos\"");
+    expect(page).toContain("<RestorableList className={styles.history} restorationKey={listPath}>");
+    expect(movementModel).toContain("normalizeListPath(\"/movimientos\"");
   });
 
   it("la línea temporal de próximo usa el mismo contenedor", () => {

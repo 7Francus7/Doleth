@@ -78,6 +78,10 @@ enum AuthEventType {
   ONBOARDING_COMPLETED
   ACCOUNT_DELETION_REQUESTED
   ACCOUNT_DELETION_CANCELED
+  /// Baja ejecutada por la propia persona desde la aplicación. La fila sobrevive
+  /// al borrado con `userId` en NULL: es lo único que queda para distinguir una
+  /// cuenta que se fue sola de una que dimos de baja nosotros.
+  ACCOUNT_DELETED
   /// Acciones del panel de administración. Existen como tipos propios en vez de
   /// reusar `PROFILE_UPDATED` porque una suspensión decidida por un tercero y un
   /// cambio que la persona se hizo a sí misma no son el mismo hecho, y la
@@ -483,15 +487,21 @@ model Category {
   slug         String
   name         String
   kind         CategoryKind
+  /// Fecha en la que dejó de ofrecerse al cargar. Archivar no borra: los
+  /// movimientos que ya la usaban la siguen nombrando, y los reportes del pasado
+  /// no cambian porque hoy no se use más.
+  archivedAt   DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   transactions Transaction[]
+  upcomingPayments UpcomingPayment[]
 
   @@unique([id, userId])
   @@unique([userId, slug])
   @@index([kind])
   @@index([userId, kind])
+  @@index([userId, archivedAt])
 }
 
 model Transaction {
@@ -591,15 +601,21 @@ model UpcomingPayment {
   dueOn            DateTime              @db.Date
   frequency        String?
   plannedAccountId String
+  /// Categoría prevista del gasto. Opcional: los pagos cargados antes de esta
+  /// columna, y los que nadie quiso clasificar, se confirman con la categoría de
+  /// respaldo como hasta ahora.
+  categoryId       String?
   status           UpcomingPaymentStatus @default(PENDING)
   transactionId    String?               @unique
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   user             User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
   plannedAccount   Account               @relation(fields: [plannedAccountId, userId], references: [id, userId], onDelete: Restrict)
+  category         Category?             @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict)
   transaction      Transaction?          @relation(fields: [transactionId, userId], references: [id, userId], onDelete: Restrict)
 
   @@unique([transactionId, userId])
   @@index([status, dueOn])
   @@index([userId, status, dueOn])
+  @@index([categoryId, userId])
 }

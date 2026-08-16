@@ -11,7 +11,7 @@ export default async function NewInvestmentPage() {
     <OperationalShell
       eyebrow="Cartera"
       title="Nueva inversión"
-      intro="Cargá el monto aportado y su valor actual. Doleth no estima cotizaciones: los valores los actualizás vos."
+      intro="Registrá una tenencia actual. Si cargás símbolo y cantidad, Doleth usa el último precio disponible; si no, conserva el valor que declarás."
     >
       <InvestmentForm />
     </OperationalShell>
